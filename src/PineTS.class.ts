@@ -8,6 +8,7 @@ import { IProvider } from '@pinets/marketData/IProvider';
 /**
  * This class is a wrapper for the Pine Script language, it allows to run Pine Script code in a JavaScript environment
  */
+const MAX_PERIODS = 5000;
 export class PineTS {
     public data: any = [];
 
@@ -47,7 +48,7 @@ export class PineTS {
     ) {
         this._readyPromise = new Promise((resolve) => {
             this.loadMarketData(source, tickerId, timeframe, limit, sDate, eDate).then((data) => {
-                const marketData = data.reverse();
+                const marketData = data.reverse().slice(0, MAX_PERIODS);
 
                 this._periods = marketData.length;
                 this.data = marketData;

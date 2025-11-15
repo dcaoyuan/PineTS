@@ -19,6 +19,9 @@ export class PineMath {
         }
         //return [source];
     }
+    __eq(a: number, b: number) {
+        return Math.abs(a - b) < 1e-8;
+    }
 
     abs(source: number[]) {
         return Math.abs(source[0]);

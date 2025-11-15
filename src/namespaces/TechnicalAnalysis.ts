@@ -28,187 +28,753 @@ export class TechnicalAnalysis {
         //return [source];
     }
 
-    ema(source, _period) {
+    ema(source, _period, _callId?) {
         const period = Array.isArray(_period) ? _period[0] : _period;
-        const result = ema(source.slice(0).reverse(), period);
 
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
+        // Incremental EMA calculation
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `ema_${period}`;
 
-    sma(source, _period, _cacheId?) {
-        const period = Array.isArray(_period) ? _period[0] : _period;
-        const reversedSource = source.slice(0).reverse();
-
-        if (this.context.useTACache && _cacheId) {
-            // Initialize cache if it doesn't exist
-            if (!this.context.cache[_cacheId]) {
-                this.context.cache[_cacheId] = {};
-            }
-
-            const cacheObj = this.context.cache[_cacheId];
-
-            // Check if we can use cache
-            if (cacheObj) {
-                const result = sma_cache(reversedSource, period, cacheObj);
-                const idx = this.context.idx;
-                return this.context.precision(result[idx]);
-            }
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { prevEma: null, initSum: 0, initCount: 0 };
         }
 
-        // Calculate from scratch if no cache or cache conditions not met
-        const result = sma(reversedSource, period);
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0];
+
+        if (state.initCount < period) {
+            // Accumulate for SMA initialization
+            state.initSum += currentValue;
+            state.initCount++;
+
+            if (state.initCount === period) {
+                state.prevEma = state.initSum / period;
+                return this.context.precision(state.prevEma);
+            }
+            return NaN;
+        }
+
+        // Calculate EMA incrementally: EMA = alpha * current + (1 - alpha) * prevEMA
+        const alpha = 2 / (period + 1);
+        const ema = currentValue * alpha + state.prevEma * (1 - alpha);
+        state.prevEma = ema;
+
+        return this.context.precision(ema);
     }
 
-    vwma(source, _period) {
+    sma(source, _period, _callId?) {
         const period = Array.isArray(_period) ? _period[0] : _period;
-        const volume = this.context.data.volume;
 
-        const result = vwma(source.slice(0).reverse(), volume.slice(0).reverse(), period);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+        // Incremental SMA calculation using rolling sum
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `sma_${period}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { window: [], sum: 0 };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0] || 0;
+
+        // Add current value to window
+        state.window.unshift(currentValue);
+        state.sum += currentValue;
+
+        if (state.window.length < period) {
+            // Not enough data yet
+            return NaN;
+        }
+
+        if (state.window.length > period) {
+            // Remove oldest value from sum
+            const oldValue = state.window.pop();
+            state.sum -= oldValue;
+        }
+
+        const sma = state.sum / period;
+        return this.context.precision(sma);
     }
 
-    wma(source, _period) {
+    vwma(source, _period, _callId?) {
         const period = Array.isArray(_period) ? _period[0] : _period;
-        const result = wma(source.slice(0).reverse(), period);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // Volume-Weighted Moving Average
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `vwma_${period}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { window: [], volumeWindow: [] };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0];
+        const currentVolume = this.context.data.volume[0];
+
+        state.window.unshift(currentValue);
+        state.volumeWindow.unshift(currentVolume);
+
+        if (state.window.length < period) {
+            return NaN;
+        }
+
+        if (state.window.length > period) {
+            state.window.pop();
+            state.volumeWindow.pop();
+        }
+
+        let sumVolPrice = 0;
+        let sumVol = 0;
+        for (let i = 0; i < period; i++) {
+            sumVolPrice += state.window[i] * state.volumeWindow[i];
+            sumVol += state.volumeWindow[i];
+        }
+
+        const vwma = sumVolPrice / sumVol;
+        return this.context.precision(vwma);
     }
 
-    hma(source, _period) {
+    wma(source, _period, _callId?) {
         const period = Array.isArray(_period) ? _period[0] : _period;
-        const result = hma(source.slice(0).reverse(), period);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // Weighted Moving Average
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `wma_${period}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { window: [] };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0];
+
+        state.window.unshift(currentValue);
+
+        if (state.window.length < period) {
+            return NaN;
+        }
+
+        if (state.window.length > period) {
+            state.window.pop();
+        }
+
+        let numerator = 0;
+        let denominator = 0;
+        for (let i = 0; i < period; i++) {
+            const weight = period - i;
+            numerator += state.window[i] * weight;
+            denominator += weight;
+        }
+
+        const wma = numerator / denominator;
+        return this.context.precision(wma);
     }
 
-    rma(source, _period) {
+    hma(source, _period, _callId?) {
         const period = Array.isArray(_period) ? _period[0] : _period;
-        const result = rma(source.slice(0).reverse(), period);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // Hull Moving Average: HMA = WMA(2*WMA(n/2) - WMA(n), sqrt(n))
+        const halfPeriod = Math.floor(period / 2);
+        const sqrtPeriod = Math.floor(Math.sqrt(period));
+
+        // Pass derived call IDs to internal WMA calls to avoid state collision
+        const wma1 = this.wma(source, halfPeriod, _callId ? `${_callId}_wma1` : undefined);
+        const wma2 = this.wma(source, period, _callId ? `${_callId}_wma2` : undefined);
+
+        if (isNaN(wma1) || isNaN(wma2)) {
+            return NaN;
+        }
+
+        // Create synthetic source for final WMA: 2*wma1 - wma2
+        // We need to feed this into WMA calculation
+        // Store the raw value in a temporary series
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `hma_raw_${period}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = [];
+        }
+
+        const rawHma = 2 * wma1 - wma2;
+        this.context.taState[stateKey].unshift(rawHma);
+
+        // Apply WMA to the raw HMA values
+        const hmaStateKey = _callId ? `${_callId}_hma_final` : `hma_final_${period}`;
+        if (!this.context.taState[hmaStateKey]) {
+            this.context.taState[hmaStateKey] = { window: [] };
+        }
+
+        const state = this.context.taState[hmaStateKey];
+        state.window.unshift(rawHma);
+
+        if (state.window.length < sqrtPeriod) {
+            return NaN;
+        }
+
+        if (state.window.length > sqrtPeriod) {
+            state.window.pop();
+        }
+
+        let numerator = 0;
+        let denominator = 0;
+        for (let i = 0; i < sqrtPeriod; i++) {
+            const weight = sqrtPeriod - i;
+            numerator += state.window[i] * weight;
+            denominator += weight;
+        }
+
+        const hma = numerator / denominator;
+        return this.context.precision(hma);
     }
 
-    change(source, _length = 1) {
-        const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = change(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    rsi(source, _period) {
+    rma(source, _period, _callId?) {
         const period = Array.isArray(_period) ? _period[0] : _period;
-        const result = rsi(source.slice(0).reverse(), period);
-        //result.reverse();
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // Incremental RMA calculation
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `rma_${period}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { prevRma: null, initSum: 0, initCount: 0 };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0] || 0;
+
+        if (state.initCount < period) {
+            // Accumulate for SMA initialization
+            state.initSum += currentValue;
+            state.initCount++;
+
+            if (state.initCount === period) {
+                state.prevRma = state.initSum / period;
+                return this.context.precision(state.prevRma);
+            }
+            return NaN;
+        }
+
+        // Calculate RMA incrementally: RMA = alpha * current + (1 - alpha) * prevRMA
+        const alpha = 1 / period;
+        const rma = currentValue * alpha + state.prevRma * (1 - alpha);
+        state.prevRma = rma;
+
+        return this.context.precision(rma);
     }
 
-    atr(_period) {
+    change(source, _length = 1, _callId?) {
+        const length = Array.isArray(_length) ? _length[0] : _length;
+
+        // Simple lookback - store window
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `change_${length}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { window: [] };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0];
+
+        state.window.unshift(currentValue);
+
+        if (state.window.length <= length) {
+            return NaN;
+        }
+
+        if (state.window.length > length + 1) {
+            state.window.pop();
+        }
+
+        const change = currentValue - state.window[length];
+        return this.context.precision(change);
+    }
+
+    rsi(source, _period, _callId?) {
         const period = Array.isArray(_period) ? _period[0] : _period;
-        const high = this.context.data.high.slice().reverse();
-        const low = this.context.data.low.slice().reverse();
-        const close = this.context.data.close.slice().reverse();
-        const result = atr(high, low, close, period);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // Incremental RSI calculation
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `rsi_${period}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = {
+                prevValue: null,
+                avgGain: 0,
+                avgLoss: 0,
+                initGains: [],
+                initLosses: [],
+            };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0];
+
+        // Calculate gain/loss from previous value
+        if (state.prevValue !== null) {
+            const diff = currentValue - state.prevValue;
+            const gain = diff > 0 ? diff : 0;
+            const loss = diff < 0 ? -diff : 0;
+
+            // Accumulate gains/losses until we have 'period' values
+            if (state.initGains.length < period) {
+                state.initGains.push(gain);
+                state.initLosses.push(loss);
+
+                // Once we have 'period' gain/loss pairs, calculate first RSI
+                if (state.initGains.length === period) {
+                    // Calculate first RSI using simple averages
+                    state.avgGain = state.initGains.reduce((a, b) => a + b, 0) / period;
+                    state.avgLoss = state.initLosses.reduce((a, b) => a + b, 0) / period;
+                    state.prevValue = currentValue;
+
+                    const rsi = state.avgLoss === 0 ? 100 : 100 - 100 / (1 + state.avgGain / state.avgLoss);
+                    return this.context.precision(rsi);
+                }
+                state.prevValue = currentValue;
+                return NaN;
+            }
+
+            // Calculate RSI using smoothed averages (Wilder's smoothing)
+            state.avgGain = (state.avgGain * (period - 1) + gain) / period;
+            state.avgLoss = (state.avgLoss * (period - 1) + loss) / period;
+
+            const rsi = state.avgLoss === 0 ? 100 : 100 - 100 / (1 + state.avgGain / state.avgLoss);
+            state.prevValue = currentValue;
+            return this.context.precision(rsi);
+        }
+
+        // First bar - just store the value
+        state.prevValue = currentValue;
+        return NaN;
     }
 
-    mom(source, _length) {
+    atr(_period, _callId?) {
+        const period = Array.isArray(_period) ? _period[0] : _period;
+
+        // Incremental ATR calculation
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `atr_${period}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = {
+                prevAtr: null,
+                initSum: 0,
+                initCount: 0,
+                prevClose: null,
+            };
+        }
+
+        const state = this.context.taState[stateKey];
+        const high = this.context.data.high[0];
+        const low = this.context.data.low[0];
+        const close = this.context.data.close[0];
+
+        // Calculate True Range
+        let tr;
+        if (state.prevClose !== null) {
+            const hl = high - low;
+            const hc = Math.abs(high - state.prevClose);
+            const lc = Math.abs(low - state.prevClose);
+            tr = Math.max(hl, hc, lc);
+        } else {
+            tr = high - low;
+        }
+
+        state.prevClose = close;
+
+        if (state.initCount < period) {
+            // Accumulate TR for SMA initialization
+            state.initSum += tr;
+            state.initCount++;
+
+            if (state.initCount === period) {
+                state.prevAtr = state.initSum / period;
+                return this.context.precision(state.prevAtr);
+            }
+            return NaN;
+        }
+
+        // Calculate ATR using RMA formula
+        const atr = (state.prevAtr * (period - 1) + tr) / period;
+        state.prevAtr = atr;
+
+        return this.context.precision(atr);
+    }
+
+    mom(source, _length, _callId?) {
         const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = mom(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // Momentum is same as change
+        return this.change(source, length);
     }
 
-    roc(source, _length) {
+    roc(source, _length, _callId?) {
         const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = roc(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // ROC = ((current - previous) / previous) * 100
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `roc_${length}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { window: [] };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0];
+
+        state.window.unshift(currentValue);
+
+        if (state.window.length <= length) {
+            return NaN;
+        }
+
+        if (state.window.length > length + 1) {
+            state.window.pop();
+        }
+
+        const prevValue = state.window[length];
+        const roc = ((currentValue - prevValue) / prevValue) * 100;
+        return this.context.precision(roc);
     }
 
-    dev(source, _length) {
+    dev(source, _length, _callId?) {
         const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = dev(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // Mean Absolute Deviation
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `dev_${length}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { window: [], sum: 0 };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0] || 0;
+
+        state.window.unshift(currentValue);
+        state.sum += currentValue;
+
+        if (state.window.length < length) {
+            return NaN;
+        }
+
+        if (state.window.length > length) {
+            const oldValue = state.window.pop();
+            state.sum -= oldValue;
+        }
+
+        const mean = state.sum / length;
+        let sumDeviation = 0;
+        for (let i = 0; i < length; i++) {
+            sumDeviation += Math.abs(state.window[i] - mean);
+        }
+
+        const dev = sumDeviation / length;
+        return this.context.precision(dev);
     }
 
-    variance(source, _length) {
+    variance(source, _length, _callId?) {
         const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = variance(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // Variance calculation
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `variance_${length}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { window: [] };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0];
+
+        state.window.unshift(currentValue);
+
+        if (state.window.length < length) {
+            return NaN;
+        }
+
+        if (state.window.length > length) {
+            state.window.pop();
+        }
+
+        let sum = 0;
+        let sumSquares = 0;
+        for (let i = 0; i < length; i++) {
+            sum += state.window[i];
+            sumSquares += state.window[i] * state.window[i];
+        }
+
+        const mean = sum / length;
+        const variance = sumSquares / length - mean * mean;
+
+        return this.context.precision(variance);
     }
 
-    highest(source, _length) {
+    highest(source, _length, _callId?) {
         const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = highest(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // Rolling maximum
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `highest_${length}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { window: [] };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0];
+
+        state.window.unshift(currentValue);
+
+        if (state.window.length < length) {
+            return NaN;
+        }
+
+        if (state.window.length > length) {
+            state.window.pop();
+        }
+
+        const max = Math.max(...state.window.filter((v) => !isNaN(v)));
+        return this.context.precision(max);
     }
 
-    lowest(source, _length) {
+    lowest(source, _length, _callId?) {
         const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = lowest(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // Rolling minimum
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `lowest_${length}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { window: [] };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0];
+
+        state.window.unshift(currentValue);
+
+        if (state.window.length < length) {
+            return NaN;
+        }
+
+        if (state.window.length > length) {
+            state.window.pop();
+        }
+
+        const validValues = state.window.filter((v) => !isNaN(v) && v !== undefined);
+        const min = validValues.length > 0 ? Math.min(...validValues) : NaN;
+        return this.context.precision(min);
     }
 
-    median(source, _length) {
+    median(source, _length, _callId?) {
         const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = median(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // Rolling median
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `median_${length}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { window: [] };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0];
+
+        state.window.unshift(currentValue);
+
+        if (state.window.length < length) {
+            return NaN;
+        }
+
+        if (state.window.length > length) {
+            state.window.pop();
+        }
+
+        const sorted = state.window.slice().sort((a, b) => a - b);
+        const mid = Math.floor(length / 2);
+        const median = length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+
+        return this.context.precision(median);
     }
 
-    stdev(source, _length, _bias = true) {
+    stdev(source, _length, _bias = true, _callId?) {
         const length = Array.isArray(_length) ? _length[0] : _length;
         const bias = Array.isArray(_bias) ? _bias[0] : _bias;
-        const result = stdev(source.slice(0).reverse(), length, bias);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // Standard Deviation
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `stdev_${length}_${bias}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { window: [], sum: 0 };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0];
+
+        state.window.unshift(currentValue);
+        state.sum += currentValue;
+
+        if (state.window.length < length) {
+            return NaN;
+        }
+
+        if (state.window.length > length) {
+            const oldValue = state.window.pop();
+            state.sum -= oldValue;
+        }
+
+        const mean = state.sum / length;
+        let sumSquaredDiff = 0;
+        for (let i = 0; i < length; i++) {
+            sumSquaredDiff += Math.pow(state.window[i] - mean, 2);
+        }
+
+        const divisor = bias ? length : length - 1;
+        const stdev = Math.sqrt(sumSquaredDiff / divisor);
+
+        return this.context.precision(stdev);
     }
 
-    linreg(source, _length, _offset) {
+    linreg(source, _length, _offset, _callId?) {
         const length = Array.isArray(_length) ? _length[0] : _length;
         const offset = Array.isArray(_offset) ? _offset[0] : _offset;
-        const result = linreg(source.slice(0).reverse(), length, offset);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+
+        // Linear Regression
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = _callId || `linreg_${length}_${offset}`;
+
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = { window: [] };
+        }
+
+        const state = this.context.taState[stateKey];
+        const currentValue = source[0];
+
+        state.window.unshift(currentValue);
+
+        if (state.window.length < length) {
+            return NaN;
+        }
+
+        if (state.window.length > length) {
+            state.window.pop();
+        }
+
+        let sumX = 0;
+        let sumY = 0;
+        let sumXY = 0;
+        let sumXX = 0;
+        const n = length;
+
+        // Calculate regression coefficients
+        // window[0] is most recent (x = length - 1), window[length-1] is oldest (x = 0)
+        for (let j = 0; j < length; j++) {
+            const x = length - 1 - j; // Most recent bar has highest x value
+            const y = state.window[j];
+            sumX += x;
+            sumY += y;
+            sumXY += x * y;
+            sumXX += x * x;
+        }
+
+        const denominator = n * sumXX - sumX * sumX;
+        if (denominator === 0) {
+            return NaN;
+        }
+
+        const slope = (n * sumXY - sumX * sumY) / denominator;
+        const intercept = (sumY - slope * sumX) / n;
+
+        // Pine formula: intercept + slope * (length - 1 - offset)
+        const linRegValue = intercept + slope * (length - 1 - offset);
+
+        return this.context.precision(linRegValue);
     }
 
-    supertrend(_factor, _atrPeriod) {
+    supertrend(_factor, _atrPeriod, _callId?) {
         const factor = Array.isArray(_factor) ? _factor[0] : _factor;
         const atrPeriod = Array.isArray(_atrPeriod) ? _atrPeriod[0] : _atrPeriod;
 
-        const high = this.context.data.high.slice().reverse();
-        const low = this.context.data.low.slice().reverse();
-        const close = this.context.data.close.slice().reverse();
-        const [supertrend, direction] = calculateSupertrend(high, low, close, factor, atrPeriod);
+        // Incremental Supertrend calculation
+        if (!this.context.taState) this.context.taState = {};
+        const stateKey = `supertrend_${factor}_${atrPeriod}`;
 
-        const idx = this.context.idx;
-        return [[this.context.precision(supertrend[idx]), direction[idx]]];
+        if (!this.context.taState[stateKey]) {
+            this.context.taState[stateKey] = {
+                prevUpperBand: null,
+                prevLowerBand: null,
+                prevSupertrend: null,
+                prevDirection: null,
+            };
+        }
+
+        const state = this.context.taState[stateKey];
+        const high = this.context.data.high[0];
+        const low = this.context.data.low[0];
+        const close = this.context.data.close[0];
+
+        // Get ATR value (already optimized) - use derived call ID
+        const atrValue = this.atr(atrPeriod, _callId ? `${_callId}_atr` : undefined);
+
+        if (isNaN(atrValue)) {
+            return [[NaN, 0]];
+        }
+
+        const hl2 = (high + low) / 2;
+        let upperBand = hl2 + factor * atrValue;
+        let lowerBand = hl2 - factor * atrValue;
+
+        // Adjust bands based on previous values
+        if (state.prevUpperBand !== null) {
+            if (upperBand < state.prevUpperBand || this.context.data.close[1] > state.prevUpperBand) {
+                upperBand = upperBand;
+            } else {
+                upperBand = state.prevUpperBand;
+            }
+
+            if (lowerBand > state.prevLowerBand || this.context.data.close[1] < state.prevLowerBand) {
+                lowerBand = lowerBand;
+            } else {
+                lowerBand = state.prevLowerBand;
+            }
+        }
+
+        // Determine trend direction and supertrend value
+        let direction;
+        let supertrend;
+
+        if (state.prevSupertrend === null) {
+            // First valid bar
+            direction = close <= upperBand ? -1 : 1;
+            supertrend = direction === -1 ? upperBand : lowerBand;
+        } else {
+            if (state.prevSupertrend === state.prevUpperBand) {
+                if (close > upperBand) {
+                    direction = 1;
+                    supertrend = lowerBand;
+                } else {
+                    direction = -1;
+                    supertrend = upperBand;
+                }
+            } else {
+                if (close < lowerBand) {
+                    direction = -1;
+                    supertrend = upperBand;
+                } else {
+                    direction = 1;
+                    supertrend = lowerBand;
+                }
+            }
+        }
+
+        // Update state
+        state.prevUpperBand = upperBand;
+        state.prevLowerBand = lowerBand;
+        state.prevSupertrend = supertrend;
+        state.prevDirection = direction;
+
+        return [[this.context.precision(supertrend), direction]];
     }
 
     crossover(source1, source2) {

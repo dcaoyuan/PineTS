@@ -140,7 +140,7 @@ export class BinanceProvider implements IProvider {
                 currentStart = data[data.length - 1].closeTime + 1;
 
                 // Keep this safety check to exit when we get less than full page
-                if (data.length < 1000) break;
+                //if (data.length < 1000) break;
             }
 
             return allData;
@@ -149,8 +149,6 @@ export class BinanceProvider implements IProvider {
             return [];
         }
     }
-    //TODO : allow querying more than 1000 klines
-    //TODO : immplement cache
     async getMarketData(tickerId: string, timeframe: string, limit?: number, sDate?: number, eDate?: number): Promise<any> {
         try {
             // Check cache first
@@ -166,14 +164,26 @@ export class BinanceProvider implements IProvider {
                 console.error(`Unsupported timeframe: ${timeframe}`);
                 return [];
             }
-            let url = `${BINANCE_API_URL}/klines?symbol=${tickerId}&interval=${interval}`;
-            if (!limit && sDate && eDate) {
-                return this.getMarketDataInterval(tickerId, timeframe, sDate, eDate);
+
+            // Determine if we need to paginate
+            const needsPagination = this.shouldPaginate(timeframe, limit, sDate, eDate);
+
+            if (needsPagination && sDate && eDate) {
+                // Fetch all data using pagination, then apply limit if specified
+                const allData = await this.getMarketDataInterval(tickerId, timeframe, sDate, eDate);
+                const result = limit ? allData.slice(0, limit) : allData;
+
+                // Cache the results with original params
+                this.cacheManager.set(cacheParams, result);
+                return result;
             }
+
+            // Single request for <= 1000 candles
+            let url = `${BINANCE_API_URL}/klines?symbol=${tickerId}&interval=${interval}`;
 
             //example https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=1000
             if (limit) {
-                url += `&limit=${limit}`;
+                url += `&limit=${Math.min(limit, 1000)}`; // Cap at 1000 for single request
             }
 
             if (sDate) {
@@ -213,5 +223,42 @@ export class BinanceProvider implements IProvider {
             console.error('Error in binance.klines:', error);
             return [];
         }
+    }
+
+    /**
+     * Determines if pagination is needed based on the parameters
+     */
+    private shouldPaginate(timeframe: string, limit?: number, sDate?: number, eDate?: number): boolean {
+        // If limit is explicitly > 1000, we need pagination
+        if (limit && limit > 1000) {
+            return true;
+        }
+
+        // If we have both start and end dates, calculate required candles
+        if (sDate && eDate) {
+            const interval = timeframe_to_binance[timeframe.toUpperCase()];
+            const timeframeDurations = {
+                '1m': 60 * 1000,
+                '3m': 3 * 60 * 1000,
+                '5m': 5 * 60 * 1000,
+                '15m': 15 * 60 * 1000,
+                '30m': 30 * 60 * 1000,
+                '1h': 60 * 60 * 1000,
+                '2h': 2 * 60 * 60 * 1000,
+                '4h': 4 * 60 * 60 * 1000,
+                '1d': 24 * 60 * 60 * 1000,
+                '1w': 7 * 24 * 60 * 60 * 1000,
+                '1M': 30 * 24 * 60 * 60 * 1000,
+            };
+
+            const intervalDuration = timeframeDurations[interval];
+            if (intervalDuration) {
+                const requiredCandles = Math.ceil((eDate - sDate) / intervalDuration);
+                // Need pagination if date range requires more than 1000 candles
+                return requiredCandles > 1000;
+            }
+        }
+
+        return false;
     }
 }

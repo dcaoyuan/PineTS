@@ -1482,10 +1482,11 @@ function transformCallExpression(node: any, scopeManager: ScopeManager, namespac
             return transformFunctionArgument(arg, namespace, scopeManager);
         });
 
-        // //TODO : support cache
-        // if (namespace === 'ta') {
-        //     node.arguments.push(scopeManager.nextCacheIdArg);
-        // }
+        // Inject unique call ID for TA functions to enable proper state management
+        if (namespace === 'ta') {
+            node.arguments.push(scopeManager.getNextTACallId());
+        }
+
         node._transformed = true;
     }
     // Check if this is a regular function call (not a namespace method)
@@ -1971,8 +1972,44 @@ export function transpile(fn: string | Function): Function {
         },
     });
 
+    //transform equality checks to math.__eq calls
+    transformEqualityChecks(ast);
+
     const transformedCode = astring.generate(ast);
 
     const _wraperFunction = new Function('', `return ${transformedCode}`);
     return _wraperFunction(this);
+}
+
+// Add this new function before the transpile function
+function transformEqualityChecks(ast: any): void {
+    walk.simple(ast, {
+        BinaryExpression(node: any) {
+            // Check if this is an equality operator
+            if (node.operator === '==' || node.operator === '===') {
+                // Store the original operands
+                const leftOperand = node.left;
+                const rightOperand = node.right;
+
+                // Transform the BinaryExpression into a CallExpression
+                Object.assign(node, {
+                    type: 'CallExpression',
+                    callee: {
+                        type: 'MemberExpression',
+                        object: {
+                            type: 'Identifier',
+                            name: 'math',
+                        },
+                        property: {
+                            type: 'Identifier',
+                            name: '__eq',
+                        },
+                        computed: false,
+                    },
+                    arguments: [leftOperand, rightOperand],
+                    _transformed: true,
+                });
+            }
+        },
+    });
 }

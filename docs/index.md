@@ -43,6 +43,14 @@ The visualization is done using the [Lightweight Charts](https://tradingview.git
 
 ## Documentation
 
+### [Getting Started](getting-started.md)
+
+Learn the basics of converting Pine Script to PineTS and understand key differences.
+
+### [Initialization and Usage](initialization-and-usage.md)
+
+Complete guide on how to initialize PineTS and run indicators with detailed API documentation, including all constructor parameters, run method options, and return value formats.
+
 ### [Language Coverage](lang-coverage.md)
 
 Click here to [explore](lang-coverage.md) the [Pine Script language](lang-coverage.md) features implemented in PineTS, including execution model, time series, and more.

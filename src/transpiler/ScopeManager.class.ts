@@ -14,6 +14,7 @@ export class ScopeManager {
     private paramIdCounter: number = 0;
     private cacheIdCounter: number = 0;
     private tempVarCounter: number = 0;
+    private taCallIdCounter: number = 0;
 
     public get nextParamIdArg(): any {
         return {
@@ -26,6 +27,13 @@ export class ScopeManager {
         return {
             type: 'Identifier',
             name: `'cache_${this.cacheIdCounter++}'`,
+        };
+    }
+
+    public getNextTACallId(): any {
+        return {
+            type: 'Literal',
+            value: `_ta${this.taCallIdCounter++}`,
         };
     }
     constructor() {

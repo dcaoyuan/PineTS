@@ -7693,6 +7693,7 @@
       __publicField$7(this, "paramIdCounter", 0);
       __publicField$7(this, "cacheIdCounter", 0);
       __publicField$7(this, "tempVarCounter", 0);
+      __publicField$7(this, "taCallIdCounter", 0);
       this.pushScope("glb");
     }
     get nextParamIdArg() {
@@ -7705,6 +7706,12 @@
       return {
         type: "Identifier",
         name: `'cache_${this.cacheIdCounter++}'`
+      };
+    }
+    getNextTACallId() {
+      return {
+        type: "Literal",
+        value: `_ta${this.taCallIdCounter++}`
       };
     }
     pushScope(type) {
@@ -7726,6 +7733,14 @@
       this.contextBoundVars.add(name);
       if (isRootParam) {
         this.rootParams.add(name);
+      }
+    }
+    removeContextBoundVar(name) {
+      if (this.contextBoundVars.has(name)) {
+        this.contextBoundVars.delete(name);
+        if (this.rootParams.has(name)) {
+          this.rootParams.delete(name);
+        }
       }
     }
     addArrayPatternElement(name) {
@@ -8374,38 +8389,46 @@
           return prop;
         });
       } else if (node.argument.type === "Identifier") {
-        const [scopedName, kind] = scopeManager.getVariable(node.argument.name);
-        node.argument = {
-          type: "MemberExpression",
-          object: {
-            type: "MemberExpression",
-            object: {
-              type: "Identifier",
-              name: CONTEXT_NAME
-            },
-            property: {
-              type: "Identifier",
-              name: kind
-            },
-            computed: false
-          },
-          property: {
-            type: "Identifier",
-            name: scopedName
-          },
-          computed: false
-        };
-        node.argument = {
-          type: "MemberExpression",
-          object: node.argument,
-          property: {
-            type: "Literal",
-            value: 0
-          },
-          computed: true
-        };
+        transformIdentifier(node.argument, scopeManager);
+        if (node.argument.type === "Identifier") {
+          addArrayAccess(node.argument);
+        }
       }
       if (curScope === "fn") {
+        if (node.argument.type === "Identifier" && scopeManager.isContextBound(node.argument.name) && !scopeManager.isRootParam(node.argument.name)) {
+          node.argument = {
+            type: "MemberExpression",
+            object: node.argument,
+            property: {
+              type: "Literal",
+              value: 0
+            },
+            computed: true
+          };
+        } else if (node.argument.type === "MemberExpression") {
+          if (node.argument.object.type === "Identifier" && scopeManager.isContextBound(node.argument.object.name) && !scopeManager.isRootParam(node.argument.object.name)) {
+            if (!node.argument._indexTransformed) {
+              transformArrayIndex(node.argument, scopeManager);
+              node.argument._indexTransformed = true;
+            }
+          }
+        } else if (node.argument.type === "BinaryExpression" || node.argument.type === "LogicalExpression" || node.argument.type === "ConditionalExpression" || node.argument.type === "CallExpression") {
+          recursive(node.argument, scopeManager, {
+            Identifier(node2, state) {
+              transformIdentifier(node2, state);
+              if (node2.type === "Identifier" && !node2._arrayAccessed) {
+                addArrayAccess(node2);
+                node2._arrayAccessed = true;
+              }
+            },
+            MemberExpression(node2) {
+              transformMemberExpression(node2, "", scopeManager);
+            },
+            CallExpression(node2, state) {
+              transformCallExpression(node2, state);
+            }
+          });
+        }
         node.argument = {
           type: "CallExpression",
           callee: {
@@ -8756,6 +8779,9 @@
         }
         return transformFunctionArgument(arg, namespace2, scopeManager);
       });
+      if (namespace2 === "ta") {
+        node.arguments.push(scopeManager.getNextTACallId());
+      }
       node._transformed = true;
     } else if (node.callee && node.callee.type === "Identifier") {
       node.arguments = node.arguments.map((arg) => {
@@ -8796,9 +8822,11 @@
     });
   }
   function transformFunctionDeclaration(node, scopeManager) {
+    const boundParamNames = [];
     node.params.forEach((param) => {
       if (param.type === "Identifier") {
         scopeManager.addContextBoundVar(param.name, false);
+        boundParamNames.push(param.name);
       }
     });
     if (node.body && node.body.type === "BlockStatement") {
@@ -9146,14 +9174,43 @@
         transformIfStatement(node, state, c);
       }
     });
+    transformEqualityChecks(ast);
     const transformedCode = generate(ast);
     const _wraperFunction = new Function("", `return ${transformedCode}`);
     return _wraperFunction(this);
+  }
+  function transformEqualityChecks(ast) {
+    simple(ast, {
+      BinaryExpression(node) {
+        if (node.operator === "==" || node.operator === "===") {
+          const leftOperand = node.left;
+          const rightOperand = node.right;
+          Object.assign(node, {
+            type: "CallExpression",
+            callee: {
+              type: "MemberExpression",
+              object: {
+                type: "Identifier",
+                name: "math"
+              },
+              property: {
+                type: "Identifier",
+                name: "__eq"
+              },
+              computed: false
+            },
+            arguments: [leftOperand, rightOperand],
+            _transformed: true
+          });
+        }
+      }
+    });
   }
 
   var __defProp$6 = Object.defineProperty;
   var __defNormalProp$6 = (obj, key, value) => key in obj ? __defProp$6(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __publicField$6 = (obj, key, value) => __defNormalProp$6(obj, typeof key !== "symbol" ? key + "" : key, value);
+  const MAX_PERIODS = 5e3;
   class PineTS {
     constructor(source, tickerId, timeframe, limit, sDate, eDate) {
       this.source = source;
@@ -9183,7 +9240,7 @@
       __publicField$6(this, "_ready", false);
       this._readyPromise = new Promise((resolve) => {
         this.loadMarketData(source, tickerId, timeframe, limit, sDate, eDate).then((data) => {
-          const marketData = data.reverse();
+          const marketData = data.reverse().slice(0, MAX_PERIODS);
           this._periods = marketData.length;
           this.data = marketData;
           const _open = marketData.map((d) => d.open);
@@ -9441,6 +9498,9 @@
         return this.context.params[name];
       }
     }
+    __eq(a, b) {
+      return Math.abs(a - b) < 1e-8;
+    }
     abs(source) {
       return Math.abs(source[0]);
     }
@@ -9604,407 +9664,453 @@
         return this.context.params[name];
       }
     }
-    ema(source, _period) {
+    ema(source, _period, _callId) {
       const period = Array.isArray(_period) ? _period[0] : _period;
-      const result = ema(source.slice(0).reverse(), period);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    sma(source, _period, _cacheId) {
-      const period = Array.isArray(_period) ? _period[0] : _period;
-      const reversedSource = source.slice(0).reverse();
-      if (this.context.useTACache && _cacheId) {
-        if (!this.context.cache[_cacheId]) {
-          this.context.cache[_cacheId] = {};
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `ema_${period}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { prevEma: null, initSum: 0, initCount: 0 };
+      }
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0];
+      if (state.initCount < period) {
+        state.initSum += currentValue;
+        state.initCount++;
+        if (state.initCount === period) {
+          state.prevEma = state.initSum / period;
+          return this.context.precision(state.prevEma);
         }
-        const cacheObj = this.context.cache[_cacheId];
-        if (cacheObj) {
-          const result2 = sma_cache(reversedSource, period, cacheObj);
-          const idx2 = this.context.idx;
-          return this.context.precision(result2[idx2]);
-        }
+        return NaN;
       }
-      const result = sma(reversedSource, period);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
+      const alpha = 2 / (period + 1);
+      const ema2 = currentValue * alpha + state.prevEma * (1 - alpha);
+      state.prevEma = ema2;
+      return this.context.precision(ema2);
     }
-    vwma(source, _period) {
+    sma(source, _period, _callId) {
       const period = Array.isArray(_period) ? _period[0] : _period;
-      const volume = this.context.data.volume;
-      const result = vwma(source.slice(0).reverse(), volume.slice(0).reverse(), period);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    wma(source, _period) {
-      const period = Array.isArray(_period) ? _period[0] : _period;
-      const result = wma(source.slice(0).reverse(), period);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    hma(source, _period) {
-      const period = Array.isArray(_period) ? _period[0] : _period;
-      const result = hma(source.slice(0).reverse(), period);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    rma(source, _period) {
-      const period = Array.isArray(_period) ? _period[0] : _period;
-      const result = rma(source.slice(0).reverse(), period);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    change(source, _length = 1) {
-      const length = Array.isArray(_length) ? _length[0] : _length;
-      const result = change(source.slice(0).reverse(), length);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    rsi(source, _period) {
-      const period = Array.isArray(_period) ? _period[0] : _period;
-      const result = rsi(source.slice(0).reverse(), period);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    atr(_period) {
-      const period = Array.isArray(_period) ? _period[0] : _period;
-      const high = this.context.data.high.slice().reverse();
-      const low = this.context.data.low.slice().reverse();
-      const close = this.context.data.close.slice().reverse();
-      const result = atr(high, low, close, period);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    mom(source, _length) {
-      const length = Array.isArray(_length) ? _length[0] : _length;
-      const result = mom(source.slice(0).reverse(), length);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    roc(source, _length) {
-      const length = Array.isArray(_length) ? _length[0] : _length;
-      const result = roc(source.slice(0).reverse(), length);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    dev(source, _length) {
-      const length = Array.isArray(_length) ? _length[0] : _length;
-      const result = dev(source.slice(0).reverse(), length);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    variance(source, _length) {
-      const length = Array.isArray(_length) ? _length[0] : _length;
-      const result = variance(source.slice(0).reverse(), length);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    highest(source, _length) {
-      const length = Array.isArray(_length) ? _length[0] : _length;
-      const result = highest(source.slice(0).reverse(), length);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    lowest(source, _length) {
-      const length = Array.isArray(_length) ? _length[0] : _length;
-      const result = lowest(source.slice(0).reverse(), length);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    median(source, _length) {
-      const length = Array.isArray(_length) ? _length[0] : _length;
-      const result = median(source.slice(0).reverse(), length);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    stdev(source, _length, _bias = true) {
-      const length = Array.isArray(_length) ? _length[0] : _length;
-      const bias = Array.isArray(_bias) ? _bias[0] : _bias;
-      const result = stdev(source.slice(0).reverse(), length, bias);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    linreg(source, _length, _offset) {
-      const length = Array.isArray(_length) ? _length[0] : _length;
-      const offset = Array.isArray(_offset) ? _offset[0] : _offset;
-      const result = linreg(source.slice(0).reverse(), length, offset);
-      const idx = this.context.idx;
-      return this.context.precision(result[idx]);
-    }
-    supertrend(_factor, _atrPeriod) {
-      const factor = Array.isArray(_factor) ? _factor[0] : _factor;
-      const atrPeriod = Array.isArray(_atrPeriod) ? _atrPeriod[0] : _atrPeriod;
-      const high = this.context.data.high.slice().reverse();
-      const low = this.context.data.low.slice().reverse();
-      const close = this.context.data.close.slice().reverse();
-      const [supertrend, direction] = calculateSupertrend(high, low, close, factor, atrPeriod);
-      const idx = this.context.idx;
-      return [[this.context.precision(supertrend[idx]), direction[idx]]];
-    }
-  }
-  function atr(high, low, close, period) {
-    const tr = new Array(high.length);
-    tr[0] = high[0] - low[0];
-    for (let i = 1; i < high.length; i++) {
-      const hl = high[i] - low[i];
-      const hc = Math.abs(high[i] - close[i - 1]);
-      const lc = Math.abs(low[i] - close[i - 1]);
-      tr[i] = Math.max(hl, hc, lc);
-    }
-    const atr2 = new Array(high.length).fill(NaN);
-    let sum = 0;
-    for (let i = 0; i < period; i++) {
-      sum += tr[i];
-    }
-    atr2[period - 1] = sum / period;
-    for (let i = period; i < tr.length; i++) {
-      atr2[i] = (atr2[i - 1] * (period - 1) + tr[i]) / period;
-    }
-    return atr2;
-  }
-  function ema(source, period) {
-    const result = new Array(source.length).fill(NaN);
-    const alpha = 2 / (period + 1);
-    let sum = 0;
-    for (let i = 0; i < period; i++) {
-      sum += source[i] || 0;
-    }
-    result[period - 1] = sum / period;
-    for (let i = period; i < source.length; i++) {
-      result[i] = source[i] * alpha + result[i - 1] * (1 - alpha);
-    }
-    return result;
-  }
-  function rsi(source, period) {
-    const result = new Array(source.length).fill(NaN);
-    const gains = new Array(source.length).fill(0);
-    const losses = new Array(source.length).fill(0);
-    for (let i = 1; i < source.length; i++) {
-      const diff = source[i] - source[i - 1];
-      gains[i] = diff > 0 ? diff : 0;
-      losses[i] = diff < 0 ? -diff : 0;
-    }
-    let avgGain = 0;
-    let avgLoss = 0;
-    for (let i = 1; i <= period; i++) {
-      avgGain += gains[i];
-      avgLoss += losses[i];
-    }
-    avgGain /= period;
-    avgLoss /= period;
-    result[period] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
-    for (let i = period + 1; i < source.length; i++) {
-      avgGain = (avgGain * (period - 1) + gains[i]) / period;
-      avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
-      result[i] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
-    }
-    return result;
-  }
-  function rma(source, period) {
-    const result = new Array(source.length).fill(NaN);
-    const alpha = 1 / period;
-    let sum = 0;
-    for (let i = 0; i < period; i++) {
-      sum += source[i] || 0;
-    }
-    result[period - 1] = sum / period;
-    for (let i = period; i < source.length; i++) {
-      const currentValue = source[i] || 0;
-      result[i] = currentValue * alpha + result[i - 1] * (1 - alpha);
-    }
-    return result;
-  }
-  function sma_cache(source, period, cacheObj) {
-    const result = cacheObj.previousResult || new Array(source.length).fill(NaN);
-    const lastProcessedIndex = cacheObj.lastProcessedIndex || -1;
-    let previousSum = cacheObj.previousSum || 0;
-    if (lastProcessedIndex === -1 || source.length !== lastProcessedIndex + 1) {
-      previousSum = 0;
-      for (let i = 0; i < period; i++) {
-        previousSum += source[i] || 0;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `sma_${period}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { window: [], sum: 0 };
       }
-      result[period - 1] = previousSum / period;
-      for (let i = 0; i < period - 1; i++) {
-        result[i] = NaN;
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0] || 0;
+      state.window.unshift(currentValue);
+      state.sum += currentValue;
+      if (state.window.length < period) {
+        return NaN;
       }
-      for (let i = period; i < source.length; i++) {
-        previousSum = previousSum - (source[i - period] || 0) + (source[i] || 0);
-        result[i] = previousSum / period;
+      if (state.window.length > period) {
+        const oldValue = state.window.pop();
+        state.sum -= oldValue;
       }
-    } else if (source.length === lastProcessedIndex + 2) {
-      const newIndex = source.length - 1;
-      previousSum = previousSum - (source[newIndex - period] || 0) + (source[newIndex] || 0);
-      result[newIndex] = previousSum / period;
-    } else {
-      return sma(source, period);
+      const sma2 = state.sum / period;
+      return this.context.precision(sma2);
     }
-    cacheObj.previousSum = previousSum;
-    cacheObj.lastProcessedIndex = source.length - 1;
-    cacheObj.previousResult = result;
-    return result;
-  }
-  function sma(source, period) {
-    const result = new Array(source.length).fill(NaN);
-    for (let i = period - 1; i < source.length; i++) {
-      let sum = 0;
-      for (let j = 0; j < period; j++) {
-        sum += source[i - j] || 0;
+    vwma(source, _period, _callId) {
+      const period = Array.isArray(_period) ? _period[0] : _period;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `vwma_${period}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { window: [], volumeWindow: [] };
       }
-      result[i] = sum / period;
-    }
-    return result;
-  }
-  function vwma(source, volume, period) {
-    const result = new Array(source.length).fill(NaN);
-    for (let i = period - 1; i < source.length; i++) {
-      let sumVol = 0;
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0];
+      const currentVolume = this.context.data.volume[0];
+      state.window.unshift(currentValue);
+      state.volumeWindow.unshift(currentVolume);
+      if (state.window.length < period) {
+        return NaN;
+      }
+      if (state.window.length > period) {
+        state.window.pop();
+        state.volumeWindow.pop();
+      }
       let sumVolPrice = 0;
-      for (let j = 0; j < period; j++) {
-        sumVol += volume[i - j];
-        sumVolPrice += source[i - j] * volume[i - j];
+      let sumVol = 0;
+      for (let i = 0; i < period; i++) {
+        sumVolPrice += state.window[i] * state.volumeWindow[i];
+        sumVol += state.volumeWindow[i];
       }
-      result[i] = sumVolPrice / sumVol;
+      const vwma2 = sumVolPrice / sumVol;
+      return this.context.precision(vwma2);
     }
-    return result;
-  }
-  function hma(source, period) {
-    const halfPeriod = Math.floor(period / 2);
-    const wma1 = wma(source, halfPeriod);
-    const wma2 = wma(source, period);
-    const rawHma = wma1.map((value, index) => 2 * value - wma2[index]);
-    const sqrtPeriod = Math.floor(Math.sqrt(period));
-    const result = wma(rawHma, sqrtPeriod);
-    return result;
-  }
-  function wma(source, period) {
-    const result = new Array(source.length);
-    for (let i = period - 1; i < source.length; i++) {
+    wma(source, _period, _callId) {
+      const period = Array.isArray(_period) ? _period[0] : _period;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `wma_${period}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { window: [] };
+      }
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0];
+      state.window.unshift(currentValue);
+      if (state.window.length < period) {
+        return NaN;
+      }
+      if (state.window.length > period) {
+        state.window.pop();
+      }
       let numerator = 0;
       let denominator = 0;
-      for (let j = 0; j < period; j++) {
-        numerator += source[i - j] * (period - j);
-        denominator += period - j;
+      for (let i = 0; i < period; i++) {
+        const weight = period - i;
+        numerator += state.window[i] * weight;
+        denominator += weight;
       }
-      result[i] = numerator / denominator;
+      const wma2 = numerator / denominator;
+      return this.context.precision(wma2);
     }
-    for (let i = 0; i < period - 1; i++) {
-      result[i] = NaN;
+    hma(source, _period, _callId) {
+      const period = Array.isArray(_period) ? _period[0] : _period;
+      const halfPeriod = Math.floor(period / 2);
+      const sqrtPeriod = Math.floor(Math.sqrt(period));
+      const wma1 = this.wma(source, halfPeriod, _callId ? `${_callId}_wma1` : void 0);
+      const wma2 = this.wma(source, period, _callId ? `${_callId}_wma2` : void 0);
+      if (isNaN(wma1) || isNaN(wma2)) {
+        return NaN;
+      }
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `hma_raw_${period}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = [];
+      }
+      const rawHma = 2 * wma1 - wma2;
+      this.context.taState[stateKey].unshift(rawHma);
+      const hmaStateKey = _callId ? `${_callId}_hma_final` : `hma_final_${period}`;
+      if (!this.context.taState[hmaStateKey]) {
+        this.context.taState[hmaStateKey] = { window: [] };
+      }
+      const state = this.context.taState[hmaStateKey];
+      state.window.unshift(rawHma);
+      if (state.window.length < sqrtPeriod) {
+        return NaN;
+      }
+      if (state.window.length > sqrtPeriod) {
+        state.window.pop();
+      }
+      let numerator = 0;
+      let denominator = 0;
+      for (let i = 0; i < sqrtPeriod; i++) {
+        const weight = sqrtPeriod - i;
+        numerator += state.window[i] * weight;
+        denominator += weight;
+      }
+      const hma2 = numerator / denominator;
+      return this.context.precision(hma2);
     }
-    return result;
-  }
-  function change(source, length = 1) {
-    const result = new Array(source.length).fill(NaN);
-    for (let i = length; i < source.length; i++) {
-      result[i] = source[i] - source[i - length];
+    rma(source, _period, _callId) {
+      const period = Array.isArray(_period) ? _period[0] : _period;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `rma_${period}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { prevRma: null, initSum: 0, initCount: 0 };
+      }
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0] || 0;
+      if (state.initCount < period) {
+        state.initSum += currentValue;
+        state.initCount++;
+        if (state.initCount === period) {
+          state.prevRma = state.initSum / period;
+          return this.context.precision(state.prevRma);
+        }
+        return NaN;
+      }
+      const alpha = 1 / period;
+      const rma2 = currentValue * alpha + state.prevRma * (1 - alpha);
+      state.prevRma = rma2;
+      return this.context.precision(rma2);
     }
-    return result;
-  }
-  function mom(source, length) {
-    const result = new Array(source.length).fill(NaN);
-    for (let i = length; i < source.length; i++) {
-      result[i] = source[i] - source[i - length];
+    change(source, _length = 1, _callId) {
+      const length = Array.isArray(_length) ? _length[0] : _length;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `change_${length}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { window: [] };
+      }
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0];
+      state.window.unshift(currentValue);
+      if (state.window.length <= length) {
+        return NaN;
+      }
+      if (state.window.length > length + 1) {
+        state.window.pop();
+      }
+      const change2 = currentValue - state.window[length];
+      return this.context.precision(change2);
     }
-    return result;
-  }
-  function roc(source, length) {
-    const result = new Array(source.length).fill(NaN);
-    for (let i = length; i < source.length; i++) {
-      result[i] = (source[i] - source[i - length]) / source[i - length] * 100;
+    rsi(source, _period, _callId) {
+      const period = Array.isArray(_period) ? _period[0] : _period;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `rsi_${period}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = {
+          prevValue: null,
+          avgGain: 0,
+          avgLoss: 0,
+          initGains: [],
+          initLosses: []
+        };
+      }
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0];
+      if (state.prevValue !== null) {
+        const diff = currentValue - state.prevValue;
+        const gain = diff > 0 ? diff : 0;
+        const loss = diff < 0 ? -diff : 0;
+        if (state.initGains.length < period) {
+          state.initGains.push(gain);
+          state.initLosses.push(loss);
+          if (state.initGains.length === period) {
+            state.avgGain = state.initGains.reduce((a, b) => a + b, 0) / period;
+            state.avgLoss = state.initLosses.reduce((a, b) => a + b, 0) / period;
+            state.prevValue = currentValue;
+            const rsi3 = state.avgLoss === 0 ? 100 : 100 - 100 / (1 + state.avgGain / state.avgLoss);
+            return this.context.precision(rsi3);
+          }
+          state.prevValue = currentValue;
+          return NaN;
+        }
+        state.avgGain = (state.avgGain * (period - 1) + gain) / period;
+        state.avgLoss = (state.avgLoss * (period - 1) + loss) / period;
+        const rsi2 = state.avgLoss === 0 ? 100 : 100 - 100 / (1 + state.avgGain / state.avgLoss);
+        state.prevValue = currentValue;
+        return this.context.precision(rsi2);
+      }
+      state.prevValue = currentValue;
+      return NaN;
     }
-    return result;
-  }
-  function dev(source, length) {
-    const result = new Array(source.length).fill(NaN);
-    const smaValues = sma(source, length);
-    for (let i = length - 1; i < source.length; i++) {
+    atr(_period, _callId) {
+      const period = Array.isArray(_period) ? _period[0] : _period;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `atr_${period}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = {
+          prevAtr: null,
+          initSum: 0,
+          initCount: 0,
+          prevClose: null
+        };
+      }
+      const state = this.context.taState[stateKey];
+      const high = this.context.data.high[0];
+      const low = this.context.data.low[0];
+      const close = this.context.data.close[0];
+      let tr;
+      if (state.prevClose !== null) {
+        const hl = high - low;
+        const hc = Math.abs(high - state.prevClose);
+        const lc = Math.abs(low - state.prevClose);
+        tr = Math.max(hl, hc, lc);
+      } else {
+        tr = high - low;
+      }
+      state.prevClose = close;
+      if (state.initCount < period) {
+        state.initSum += tr;
+        state.initCount++;
+        if (state.initCount === period) {
+          state.prevAtr = state.initSum / period;
+          return this.context.precision(state.prevAtr);
+        }
+        return NaN;
+      }
+      const atr2 = (state.prevAtr * (period - 1) + tr) / period;
+      state.prevAtr = atr2;
+      return this.context.precision(atr2);
+    }
+    mom(source, _length, _callId) {
+      const length = Array.isArray(_length) ? _length[0] : _length;
+      return this.change(source, length);
+    }
+    roc(source, _length, _callId) {
+      const length = Array.isArray(_length) ? _length[0] : _length;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `roc_${length}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { window: [] };
+      }
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0];
+      state.window.unshift(currentValue);
+      if (state.window.length <= length) {
+        return NaN;
+      }
+      if (state.window.length > length + 1) {
+        state.window.pop();
+      }
+      const prevValue = state.window[length];
+      const roc2 = (currentValue - prevValue) / prevValue * 100;
+      return this.context.precision(roc2);
+    }
+    dev(source, _length, _callId) {
+      const length = Array.isArray(_length) ? _length[0] : _length;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `dev_${length}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { window: [], sum: 0 };
+      }
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0] || 0;
+      state.window.unshift(currentValue);
+      state.sum += currentValue;
+      if (state.window.length < length) {
+        return NaN;
+      }
+      if (state.window.length > length) {
+        const oldValue = state.window.pop();
+        state.sum -= oldValue;
+      }
+      const mean = state.sum / length;
       let sumDeviation = 0;
-      for (let j = 0; j < length; j++) {
-        sumDeviation += Math.abs(source[i - j] - smaValues[i]);
+      for (let i = 0; i < length; i++) {
+        sumDeviation += Math.abs(state.window[i] - mean);
       }
-      result[i] = sumDeviation / length;
+      const dev2 = sumDeviation / length;
+      return this.context.precision(dev2);
     }
-    return result;
-  }
-  function variance(source, length) {
-    const result = new Array(source.length).fill(NaN);
-    for (let i = length - 1; i < source.length; i++) {
+    variance(source, _length, _callId) {
+      const length = Array.isArray(_length) ? _length[0] : _length;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `variance_${length}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { window: [] };
+      }
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0];
+      state.window.unshift(currentValue);
+      if (state.window.length < length) {
+        return NaN;
+      }
+      if (state.window.length > length) {
+        state.window.pop();
+      }
       let sum = 0;
       let sumSquares = 0;
-      for (let j = 0; j < length; j++) {
-        sum += source[i - j];
-        sumSquares += source[i - j] * source[i - j];
+      for (let i = 0; i < length; i++) {
+        sum += state.window[i];
+        sumSquares += state.window[i] * state.window[i];
       }
       const mean = sum / length;
-      result[i] = sumSquares / length - mean * mean;
+      const variance2 = sumSquares / length - mean * mean;
+      return this.context.precision(variance2);
     }
-    return result;
-  }
-  function highest(source, length) {
-    const result = new Array(source.length).fill(NaN);
-    for (let i = length - 1; i < source.length; i++) {
-      let max = -Infinity;
-      for (let j = 0; j < length; j++) {
-        const value = source[i - j];
-        if (isNaN(value)) {
-          max = max === -Infinity ? NaN : max;
-        } else {
-          max = Math.max(max, value);
-        }
+    highest(source, _length, _callId) {
+      const length = Array.isArray(_length) ? _length[0] : _length;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `highest_${length}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { window: [] };
       }
-      result[i] = max;
-    }
-    return result;
-  }
-  function lowest(source, length) {
-    const result = new Array(source.length).fill(NaN);
-    for (let i = length - 1; i < source.length; i++) {
-      let min = Infinity;
-      for (let j = 0; j < length; j++) {
-        const value = source[i - j];
-        if (isNaN(value) || value === void 0) {
-          min = min === Infinity ? NaN : min;
-        } else {
-          min = Math.min(min, value);
-        }
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0];
+      state.window.unshift(currentValue);
+      if (state.window.length < length) {
+        return NaN;
       }
-      result[i] = min;
+      if (state.window.length > length) {
+        state.window.pop();
+      }
+      const max = Math.max(...state.window.filter((v) => !isNaN(v)));
+      return this.context.precision(max);
     }
-    return result;
-  }
-  function median(source, length) {
-    const result = new Array(source.length).fill(NaN);
-    for (let i = length - 1; i < source.length; i++) {
-      const window = source.slice(i - length + 1, i + 1);
-      const sorted = window.slice().sort((a, b) => a - b);
+    lowest(source, _length, _callId) {
+      const length = Array.isArray(_length) ? _length[0] : _length;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `lowest_${length}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { window: [] };
+      }
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0];
+      state.window.unshift(currentValue);
+      if (state.window.length < length) {
+        return NaN;
+      }
+      if (state.window.length > length) {
+        state.window.pop();
+      }
+      const validValues = state.window.filter((v) => !isNaN(v) && v !== void 0);
+      const min = validValues.length > 0 ? Math.min(...validValues) : NaN;
+      return this.context.precision(min);
+    }
+    median(source, _length, _callId) {
+      const length = Array.isArray(_length) ? _length[0] : _length;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `median_${length}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { window: [] };
+      }
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0];
+      state.window.unshift(currentValue);
+      if (state.window.length < length) {
+        return NaN;
+      }
+      if (state.window.length > length) {
+        state.window.pop();
+      }
+      const sorted = state.window.slice().sort((a, b) => a - b);
       const mid = Math.floor(length / 2);
-      result[i] = length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+      const median2 = length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+      return this.context.precision(median2);
     }
-    return result;
-  }
-  function stdev(source, length, biased = true) {
-    const result = new Array(source.length).fill(NaN);
-    const smaValues = sma(source, length);
-    for (let i = length - 1; i < source.length; i++) {
-      let sum = 0;
-      for (let j = 0; j < length; j++) {
-        sum += Math.pow(source[i - j] - smaValues[i], 2);
+    stdev(source, _length, _bias = true, _callId) {
+      const length = Array.isArray(_length) ? _length[0] : _length;
+      const bias = Array.isArray(_bias) ? _bias[0] : _bias;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `stdev_${length}_${bias}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { window: [], sum: 0 };
       }
-      const divisor = biased ? length : length - 1;
-      result[i] = Math.sqrt(sum / divisor);
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0];
+      state.window.unshift(currentValue);
+      state.sum += currentValue;
+      if (state.window.length < length) {
+        return NaN;
+      }
+      if (state.window.length > length) {
+        const oldValue = state.window.pop();
+        state.sum -= oldValue;
+      }
+      const mean = state.sum / length;
+      let sumSquaredDiff = 0;
+      for (let i = 0; i < length; i++) {
+        sumSquaredDiff += Math.pow(state.window[i] - mean, 2);
+      }
+      const divisor = bias ? length : length - 1;
+      const stdev2 = Math.sqrt(sumSquaredDiff / divisor);
+      return this.context.precision(stdev2);
     }
-    return result;
-  }
-  function linreg(source, length, offset) {
-    const size = source.length;
-    const output = new Array(size).fill(NaN);
-    for (let i = length - 1; i < size; i++) {
+    linreg(source, _length, _offset, _callId) {
+      const length = Array.isArray(_length) ? _length[0] : _length;
+      const offset = Array.isArray(_offset) ? _offset[0] : _offset;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = _callId || `linreg_${length}_${offset}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = { window: [] };
+      }
+      const state = this.context.taState[stateKey];
+      const currentValue = source[0];
+      state.window.unshift(currentValue);
+      if (state.window.length < length) {
+        return NaN;
+      }
+      if (state.window.length > length) {
+        state.window.pop();
+      }
       let sumX = 0;
       let sumY = 0;
       let sumXY = 0;
       let sumXX = 0;
       const n = length;
       for (let j = 0; j < length; j++) {
-        const x = j;
-        const y = source[i - length + 1 + j];
+        const x = length - 1 - j;
+        const y = state.window[j];
         sumX += x;
         sumY += y;
         sumXY += x * y;
@@ -10012,72 +10118,167 @@
       }
       const denominator = n * sumXX - sumX * sumX;
       if (denominator === 0) {
-        output[i] = NaN;
-        continue;
+        return NaN;
       }
       const slope = (n * sumXY - sumX * sumY) / denominator;
       const intercept = (sumY - slope * sumX) / n;
       const linRegValue = intercept + slope * (length - 1 - offset);
-      output[i] = linRegValue;
+      return this.context.precision(linRegValue);
     }
-    return output;
+    supertrend(_factor, _atrPeriod, _callId) {
+      const factor = Array.isArray(_factor) ? _factor[0] : _factor;
+      const atrPeriod = Array.isArray(_atrPeriod) ? _atrPeriod[0] : _atrPeriod;
+      if (!this.context.taState) this.context.taState = {};
+      const stateKey = `supertrend_${factor}_${atrPeriod}`;
+      if (!this.context.taState[stateKey]) {
+        this.context.taState[stateKey] = {
+          prevUpperBand: null,
+          prevLowerBand: null,
+          prevSupertrend: null,
+          prevDirection: null
+        };
+      }
+      const state = this.context.taState[stateKey];
+      const high = this.context.data.high[0];
+      const low = this.context.data.low[0];
+      const close = this.context.data.close[0];
+      const atrValue = this.atr(atrPeriod, _callId ? `${_callId}_atr` : void 0);
+      if (isNaN(atrValue)) {
+        return [[NaN, 0]];
+      }
+      const hl2 = (high + low) / 2;
+      let upperBand = hl2 + factor * atrValue;
+      let lowerBand = hl2 - factor * atrValue;
+      if (state.prevUpperBand !== null) {
+        if (upperBand < state.prevUpperBand || this.context.data.close[1] > state.prevUpperBand) {
+          upperBand = upperBand;
+        } else {
+          upperBand = state.prevUpperBand;
+        }
+        if (lowerBand > state.prevLowerBand || this.context.data.close[1] < state.prevLowerBand) {
+          lowerBand = lowerBand;
+        } else {
+          lowerBand = state.prevLowerBand;
+        }
+      }
+      let direction;
+      let supertrend;
+      if (state.prevSupertrend === null) {
+        direction = close <= upperBand ? -1 : 1;
+        supertrend = direction === -1 ? upperBand : lowerBand;
+      } else {
+        if (state.prevSupertrend === state.prevUpperBand) {
+          if (close > upperBand) {
+            direction = 1;
+            supertrend = lowerBand;
+          } else {
+            direction = -1;
+            supertrend = upperBand;
+          }
+        } else {
+          if (close < lowerBand) {
+            direction = -1;
+            supertrend = upperBand;
+          } else {
+            direction = 1;
+            supertrend = lowerBand;
+          }
+        }
+      }
+      state.prevUpperBand = upperBand;
+      state.prevLowerBand = lowerBand;
+      state.prevSupertrend = supertrend;
+      state.prevDirection = direction;
+      return [[this.context.precision(supertrend), direction]];
+    }
+    crossover(source1, source2) {
+      const current1 = Array.isArray(source1) ? source1[0] : source1;
+      const current2 = Array.isArray(source2) ? source2[0] : source2;
+      const prev1 = Array.isArray(source1) ? source1[1] : this.context.data.series[source1][1];
+      const prev2 = Array.isArray(source2) ? source2[1] : this.context.data.series[source2][1];
+      return prev1 < prev2 && current1 > current2;
+    }
+    crossunder(source1, source2) {
+      const current1 = Array.isArray(source1) ? source1[0] : source1;
+      const current2 = Array.isArray(source2) ? source2[0] : source2;
+      const prev1 = Array.isArray(source1) ? source1[1] : this.context.data.series[source1][1];
+      const prev2 = Array.isArray(source2) ? source2[1] : this.context.data.series[source2][1];
+      return prev1 > prev2 && current1 < current2;
+    }
+    pivothigh(source, _leftbars, _rightbars) {
+      if (_rightbars == void 0) {
+        _rightbars = _leftbars;
+        _leftbars = source;
+        source = this.context.data.high;
+      }
+      const leftbars = Array.isArray(_leftbars) ? _leftbars[0] : _leftbars;
+      const rightbars = Array.isArray(_rightbars) ? _rightbars[0] : _rightbars;
+      const result = pivothigh(source.slice(0).reverse(), leftbars, rightbars);
+      const idx = this.context.idx;
+      return this.context.precision(result[idx]);
+    }
+    pivotlow(source, _leftbars, _rightbars) {
+      if (_rightbars == void 0) {
+        _rightbars = _leftbars;
+        _leftbars = source;
+        source = this.context.data.low;
+      }
+      const leftbars = Array.isArray(_leftbars) ? _leftbars[0] : _leftbars;
+      const rightbars = Array.isArray(_rightbars) ? _rightbars[0] : _rightbars;
+      const result = pivotlow(source.slice(0).reverse(), leftbars, rightbars);
+      const idx = this.context.idx;
+      return this.context.precision(result[idx]);
+    }
   }
-  function calculateSupertrend(high, low, close, factor, atrPeriod) {
-    const length = high.length;
-    const supertrend = new Array(length).fill(NaN);
-    const direction = new Array(length).fill(0);
-    const atrValues = atr(high, low, close, atrPeriod);
-    const upperBand = new Array(length).fill(NaN);
-    const lowerBand = new Array(length).fill(NaN);
-    for (let i = 0; i < length; i++) {
-      const hl2 = (high[i] + low[i]) / 2;
-      const atrValue = atrValues[i];
-      if (!isNaN(atrValue)) {
-        upperBand[i] = hl2 + factor * atrValue;
-        lowerBand[i] = hl2 - factor * atrValue;
-      }
-    }
-    let prevUpperBand = upperBand[atrPeriod];
-    let prevLowerBand = lowerBand[atrPeriod];
-    let prevSupertrend = close[atrPeriod] <= prevUpperBand ? prevUpperBand : prevLowerBand;
-    let prevDirection = close[atrPeriod] <= prevUpperBand ? -1 : 1;
-    supertrend[atrPeriod] = prevSupertrend;
-    direction[atrPeriod] = prevDirection;
-    for (let i = atrPeriod + 1; i < length; i++) {
-      let currentUpperBand = upperBand[i];
-      if (currentUpperBand < prevUpperBand || close[i - 1] > prevUpperBand) {
-        upperBand[i] = currentUpperBand;
-      } else {
-        upperBand[i] = prevUpperBand;
-      }
-      let currentLowerBand = lowerBand[i];
-      if (currentLowerBand > prevLowerBand || close[i - 1] < prevLowerBand) {
-        lowerBand[i] = currentLowerBand;
-      } else {
-        lowerBand[i] = prevLowerBand;
-      }
-      if (prevSupertrend === prevUpperBand) {
-        if (close[i] > upperBand[i]) {
-          direction[i] = 1;
-          supertrend[i] = lowerBand[i];
-        } else {
-          direction[i] = -1;
-          supertrend[i] = upperBand[i];
-        }
-      } else {
-        if (close[i] < lowerBand[i]) {
-          direction[i] = -1;
-          supertrend[i] = upperBand[i];
-        } else {
-          direction[i] = 1;
-          supertrend[i] = lowerBand[i];
+  function pivothigh(source, leftbars, rightbars) {
+    const result = new Array(source.length).fill(NaN);
+    for (let i = leftbars + rightbars; i < source.length; i++) {
+      const pivot = source[i - rightbars];
+      let isPivot = true;
+      for (let j = 1; j <= leftbars; j++) {
+        if (source[i - rightbars - j] >= pivot) {
+          isPivot = false;
+          break;
         }
       }
-      prevUpperBand = upperBand[i];
-      prevLowerBand = lowerBand[i];
-      prevSupertrend = supertrend[i];
+      if (isPivot) {
+        for (let j = 1; j <= rightbars; j++) {
+          if (source[i - rightbars + j] >= pivot) {
+            isPivot = false;
+            break;
+          }
+        }
+      }
+      if (isPivot) {
+        result[i] = pivot;
+      }
     }
-    return [supertrend, direction];
+    return result;
+  }
+  function pivotlow(source, leftbars, rightbars) {
+    const result = new Array(source.length).fill(NaN);
+    for (let i = leftbars + rightbars; i < source.length; i++) {
+      const pivot = source[i - rightbars];
+      let isPivot = true;
+      for (let j = 1; j <= leftbars; j++) {
+        if (source[i - rightbars - j] <= pivot) {
+          isPivot = false;
+          break;
+        }
+      }
+      if (isPivot) {
+        for (let j = 1; j <= rightbars; j++) {
+          if (source[i - rightbars + j] <= pivot) {
+            isPivot = false;
+            break;
+          }
+        }
+      }
+      if (isPivot) {
+        result[i] = pivot;
+      }
+    }
+    return result;
   }
 
   var __defProp$2 = Object.defineProperty;
@@ -10296,6 +10497,8 @@
         ohlc4: []
       });
       __publicField$1(this, "cache", {});
+      __publicField$1(this, "taState", {});
+      // State for incremental TA calculations
       __publicField$1(this, "useTACache", false);
       __publicField$1(this, "NA", NaN);
       __publicField$1(this, "math");
@@ -10531,7 +10734,6 @@
           if (data.length === 0) break;
           allData = allData.concat(data);
           currentStart = data[data.length - 1].closeTime + 1;
-          if (data.length < 1e3) break;
         }
         return allData;
       } catch (error) {
@@ -10539,8 +10741,6 @@
         return [];
       }
     }
-    //TODO : allow querying more than 1000 klines
-    //TODO : immplement cache
     async getMarketData(tickerId, timeframe, limit, sDate, eDate) {
       try {
         const cacheParams = { tickerId, timeframe, limit, sDate, eDate };
@@ -10554,12 +10754,16 @@
           console.error(`Unsupported timeframe: ${timeframe}`);
           return [];
         }
-        let url = `${BINANCE_API_URL}/klines?symbol=${tickerId}&interval=${interval}`;
-        if (!limit && sDate && eDate) {
-          return this.getMarketDataInterval(tickerId, timeframe, sDate, eDate);
+        const needsPagination = this.shouldPaginate(timeframe, limit, sDate, eDate);
+        if (needsPagination && sDate && eDate) {
+          const allData = await this.getMarketDataInterval(tickerId, timeframe, sDate, eDate);
+          const result2 = limit ? allData.slice(0, limit) : allData;
+          this.cacheManager.set(cacheParams, result2);
+          return result2;
         }
+        let url = `${BINANCE_API_URL}/klines?symbol=${tickerId}&interval=${interval}`;
         if (limit) {
-          url += `&limit=${limit}`;
+          url += `&limit=${Math.min(limit, 1e3)}`;
         }
         if (sDate) {
           url += `&startTime=${sDate}`;
@@ -10594,6 +10798,36 @@
         console.error("Error in binance.klines:", error);
         return [];
       }
+    }
+    /**
+     * Determines if pagination is needed based on the parameters
+     */
+    shouldPaginate(timeframe, limit, sDate, eDate) {
+      if (limit && limit > 1e3) {
+        return true;
+      }
+      if (sDate && eDate) {
+        const interval = timeframe_to_binance[timeframe.toUpperCase()];
+        const timeframeDurations = {
+          "1m": 60 * 1e3,
+          "3m": 3 * 60 * 1e3,
+          "5m": 5 * 60 * 1e3,
+          "15m": 15 * 60 * 1e3,
+          "30m": 30 * 60 * 1e3,
+          "1h": 60 * 60 * 1e3,
+          "2h": 2 * 60 * 60 * 1e3,
+          "4h": 4 * 60 * 60 * 1e3,
+          "1d": 24 * 60 * 60 * 1e3,
+          "1w": 7 * 24 * 60 * 60 * 1e3,
+          "1M": 30 * 24 * 60 * 60 * 1e3
+        };
+        const intervalDuration = timeframeDurations[interval];
+        if (intervalDuration) {
+          const requiredCandles = Math.ceil((eDate - sDate) / intervalDuration);
+          return requiredCandles > 1e3;
+        }
+      }
+      return false;
     }
   }
 

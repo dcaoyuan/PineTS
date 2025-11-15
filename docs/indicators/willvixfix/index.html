@@ -32,6 +32,7 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
             min-height: auto;
             transition: all 0.3s ease;
+            position: relative;
         }
 
         @media (min-width: 1200px) {
@@ -155,11 +156,28 @@
             font-size: 0.875rem;
             line-height: 1.5;
         }
+
+        nav.site-nav {
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 8px 32px;
+        }
+
+        nav.site-nav .site-header a {
+            font-family: system-ui, -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif, "Segoe UI Emoji";
+            font-size: 24px;
+            color: white;
+        }
     </style>
 </head>
 
 <body>
     <div id="container">
+        <nav class="site-nav">
+            <div class="site-header" role="banner"> <a href="/PineTS/" class="site-title lh-tight"> PineTS </a></button>
+            </div>
+        </nav>
         <h1>A Port of Williams Vix Fix Indicator</h1>
         [BTCUSDT 4H Timeframe]
         <div class="chart-container">

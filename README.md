@@ -110,8 +110,6 @@ _oo = math.abs(open[1] - close[2]);
 
 </td>
 </tr>
-<tr>
-<td>
 </table>
 
 ### Running PineTS Code

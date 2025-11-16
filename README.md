@@ -65,6 +65,11 @@ npm install pinets
 
 Original Pine Script:
 
+<table>
+<tr>
+<td>
+Original Pine Script
+
 ```javascript
 //@version=5
 indicator('My EMA Cross Strategy');
@@ -82,21 +87,32 @@ _oo = open;
 _oo = math.abs(open[1] - close[2]);
 ```
 
-Equivalent PineTS code:
+</td>
+<td>
+Equivalent PineTS
 
 ```javascript
-const ema9 = ta.ema(close, 9);
-const ema18 = ta.ema(close, 18);
+//
+//'My EMA Cross Strategy';
 
-const bull_bias = ema9 > ema18;
-const bear_bias = ema9 < ema18;
+let ema9 = ta.ema(close, 9);
+let ema18 = ta.ema(close, 18);
 
-const prev_close = close[1];
-const diff_close = close - prev_close;
+let bull_bias = ema9 > ema18;
+let bear_bias = ema9 < ema18;
+
+let prev_close = close[1];
+let diff_close = close - prev_close;
 
 let _oo = open;
 _oo = math.abs(open[1] - close[2]);
 ```
+
+</td>
+</tr>
+<tr>
+<td>
+</table>
 
 ### Running PineTS Code
 
@@ -111,14 +127,14 @@ const { result } = await pineTS.run((context) => {
     const { ta, math } = context;
     const { close, open } = context.data;
 
-    const ema9 = ta.ema(close, 9);
-    const ema18 = ta.ema(close, 18);
+    let ema9 = ta.ema(close, 9);
+    let ema18 = ta.ema(close, 18);
 
-    const bull_bias = ema9 > ema18;
-    const bear_bias = ema9 < ema18;
+    let bull_bias = ema9 > ema18;
+    let bear_bias = ema9 < ema18;
 
-    const prev_close = close[1];
-    const diff_close = close - prev_close;
+    let prev_close = close[1];
+    let diff_close = close - prev_close;
 
     let _oo = open;
     _oo = math.abs(open[1] - close[2]);

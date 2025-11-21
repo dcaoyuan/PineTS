@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { PineTS, Provider } from '@pinets/index';
+import { PineTS } from '../PineTS.class';
 //Pine Script Timeframes
 const TIMEFRAMES = ['1', '3', '5', '15', '30', '45', '60', '120', '180', '240', 'D', 'W', 'M'];
 

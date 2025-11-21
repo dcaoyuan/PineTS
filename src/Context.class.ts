@@ -22,7 +22,6 @@ export class Context {
     };
     public cache: any = {};
     public taState: any = {}; // State for incremental TA calculations
-    public useTACache = false;
 
     public NA: any = NaN;
 

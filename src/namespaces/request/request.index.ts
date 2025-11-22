@@ -12,6 +12,9 @@ const methods = {
 
 export class PineRequest {
   private _cache = {};
+  param: ReturnType<typeof methods.param>;
+  security: ReturnType<typeof methods.security>;
+
   constructor(private context: any) {
     // Install methods
     Object.entries(methods).forEach(([name, factory]) => {

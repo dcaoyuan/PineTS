@@ -52,6 +52,29 @@ const methods = {
 
 export class PineMath {
   private _cache = {};
+  abs: ReturnType<typeof methods.abs>;
+  acos: ReturnType<typeof methods.acos>;
+  asin: ReturnType<typeof methods.asin>;
+  atan: ReturnType<typeof methods.atan>;
+  avg: ReturnType<typeof methods.avg>;
+  ceil: ReturnType<typeof methods.ceil>;
+  cos: ReturnType<typeof methods.cos>;
+  exp: ReturnType<typeof methods.exp>;
+  floor: ReturnType<typeof methods.floor>;
+  ln: ReturnType<typeof methods.ln>;
+  log: ReturnType<typeof methods.log>;
+  max: ReturnType<typeof methods.max>;
+  min: ReturnType<typeof methods.min>;
+  param: ReturnType<typeof methods.param>;
+  pow: ReturnType<typeof methods.pow>;
+  random: ReturnType<typeof methods.random>;
+  round: ReturnType<typeof methods.round>;
+  sin: ReturnType<typeof methods.sin>;
+  sqrt: ReturnType<typeof methods.sqrt>;
+  sum: ReturnType<typeof methods.sum>;
+  tan: ReturnType<typeof methods.tan>;
+  __eq: ReturnType<typeof methods.__eq>;
+
   constructor(private context: any) {
     // Install methods
     Object.entries(methods).forEach(([name, factory]) => {

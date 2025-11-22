@@ -6,11 +6,22 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const arrayDir = join(__dirname, '../src/namespaces/array');
+const gettersDir = join(arrayDir, 'getters');
 const methodsDir = join(arrayDir, 'methods');
 const outputFile = join(arrayDir, 'array.index.ts');
 
 async function generateIndex() {
     try {
+        // Read getters directory (if it exists)
+        let getters = [];
+        try {
+            const getterFiles = await readdir(gettersDir);
+            getters = getterFiles.filter((f) => f.endsWith('.ts') && f !== 'array.index.ts' && f !== 'index.ts').map((f) => f.replace('.ts', ''));
+        } catch (error) {
+            // Getters directory doesn't exist, that's fine
+            getters = [];
+        }
+
         // Read methods directory
         const methodFiles = await readdir(methodsDir);
         const methods = methodFiles
@@ -22,12 +33,17 @@ async function generateIndex() {
             });
 
         // Generate imports
+        const getterImports = getters.length > 0 ? getters.map((name) => `import { ${name} } from './getters/${name}';`).join('\n') : '';
         const methodImports = methods.map((m) => {
             if (m.file === 'new') {
                 return `import { new_fn } from './methods/${m.file}';`;
             }
             return `import { ${m.export} } from './methods/${m.file}';`;
         }).join('\n');
+
+        // Generate getters object
+        const gettersObj = getters.map((name) => `  ${name}`).join(',\n');
+        const gettersObjStr = getters.length > 0 ? `const getters = {\n${gettersObj}\n};` : '';
 
         // Generate methods object - handle 'new' specially
         const methodsObj = methods.map((m) => {
@@ -38,6 +54,17 @@ async function generateIndex() {
         }).join(',\n');
         const methodsObjStr = `const methods = {\n${methodsObj}\n};`;
 
+        // Generate type declarations for getters (as readonly properties)
+        const getterTypes = getters.map((name) => `  readonly ${name}: ReturnType<ReturnType<typeof getters.${name}>>;`).join('\n');
+
+        // Generate type declarations for methods - handle 'new' specially
+        const methodTypes = methods.map((m) => {
+            if (m.file === 'new') {
+                return `  new: ReturnType<typeof methods.new>;`;
+            }
+            return `  ${m.classProp}: ReturnType<typeof methods.${m.classProp}>;`;
+        }).join('\n');
+
         // Generate the class
         const classCode = `// SPDX-License-Identifier: AGPL-3.0-only
 // This file is auto-generated. Do not edit manually.
@@ -45,14 +72,23 @@ async function generateIndex() {
 
 export { PineArrayObject } from './PineArrayObject';
 
-${methodImports}
+${getterImports ? getterImports + '\n' : ''}${methodImports}
 
-${methodsObjStr}
+${gettersObjStr ? gettersObjStr + '\n' : ''}${methodsObjStr}
 
 export class PineArray {
   private _cache = {};
+${getterTypes ? getterTypes + '\n' : ''}${methodTypes}
+
   constructor(private context: any) {
-    // Install methods
+${getters.length > 0 ? `    // Install getters
+    Object.entries(getters).forEach(([name, factory]) => {
+      Object.defineProperty(this, name, {
+        get: factory(context),
+        enumerable: true
+      });
+    });
+    ` : ''}    // Install methods
     Object.entries(methods).forEach(([name, factory]) => {
       this[name] = factory(context);
     });
@@ -64,6 +100,9 @@ export default PineArray;
 
         await writeFile(outputFile, classCode, 'utf-8');
         console.log(`✅ Generated ${outputFile}`);
+        if (getters.length > 0) {
+            console.log(`   - ${getters.length} getters: ${getters.join(', ')}`);
+        }
         console.log(`   - ${methods.length} methods: ${methods.map(m => m.classProp).join(', ')}`);
     } catch (error) {
         console.error('Error generating Array index:', error);

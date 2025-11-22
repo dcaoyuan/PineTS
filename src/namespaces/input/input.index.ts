@@ -41,6 +41,22 @@ const methods = {
 //in the current implementation we just declare the input interfaces for compatibility
 // in future versions this might be used for visualization
 export class Input {
+  any: ReturnType<typeof methods.any>;
+  bool: ReturnType<typeof methods.bool>;
+  color: ReturnType<typeof methods.color>;
+  enum: ReturnType<typeof methods.enum>;
+  float: ReturnType<typeof methods.float>;
+  int: ReturnType<typeof methods.int>;
+  param: ReturnType<typeof methods.param>;
+  price: ReturnType<typeof methods.price>;
+  session: ReturnType<typeof methods.session>;
+  source: ReturnType<typeof methods.source>;
+  string: ReturnType<typeof methods.string>;
+  symbol: ReturnType<typeof methods.symbol>;
+  text_area: ReturnType<typeof methods.text_area>;
+  time: ReturnType<typeof methods.time>;
+  timeframe: ReturnType<typeof methods.timeframe>;
+
   constructor(private context: any) {
     // Install methods
     Object.entries(methods).forEach(([name, factory]) => {

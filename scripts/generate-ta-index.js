@@ -33,6 +33,12 @@ async function generateIndex() {
         const methodsObj = methods.map((name) => `  ${name}`).join(',\n');
         const methodsObjStr = `const methods = {\n${methodsObj}\n};`;
 
+        // Generate type declarations for getters (as readonly properties)
+        const getterTypes = getters.map((name) => `  readonly ${name}: ReturnType<ReturnType<typeof getters.${name}>>;`).join('\n');
+
+        // Generate type declarations for methods
+        const methodTypes = methods.map((name) => `  ${name}: ReturnType<typeof methods.${name}>;`).join('\n');
+
         // Generate the class
         const classCode = `// SPDX-License-Identifier: AGPL-3.0-only
 // This file is auto-generated. Do not edit manually.
@@ -47,6 +53,10 @@ ${gettersObjStr}
 ${methodsObjStr}
 
 export class TechnicalAnalysis {
+${getterTypes}
+
+${methodTypes}
+
   constructor(private context: any) {
     // Install getters
     Object.entries(getters).forEach(([name, factory]) => {

@@ -14,4 +14,3 @@ export function crossover(context: any) {
         return prev1 < prev2 && current1 > current2;
     };
 }
-

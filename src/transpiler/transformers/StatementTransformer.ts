@@ -54,20 +54,28 @@ export function transformAssignmentExpression(node: any, scopeManager: ScopeMana
                 const isParamCall = node.parent && node.parent._isParamCall;
                 const isMemberExpression = node.parent && node.parent.type === 'MemberExpression';
                 const isReserved = node.name === 'NaN';
+                const isGetCall =
+                    node.parent &&
+                    node.parent.type === 'CallExpression' &&
+                    node.parent.callee &&
+                    node.parent.callee.object &&
+                    node.parent.callee.object.name === CONTEXT_NAME &&
+                    node.parent.callee.property.name === 'get';
 
                 if (isContextBound || isConditional || isBinaryOperation) {
                     if (node.type === 'MemberExpression') {
                         transformArrayIndex(node, scopeManager);
-                    } else if (node.type === 'Identifier' && !isMemberExpression && !hasArrayAccess && !isParamCall && !isReserved) {
+                    } else if (node.type === 'Identifier' && !isMemberExpression && !hasArrayAccess && !isParamCall && !isReserved && !isGetCall) {
                         addArrayAccess(node, scopeManager);
                     }
                 }
             },
             MemberExpression(node: any, state: any, c: any) {
-                // Transform array indices first
-                transformArrayIndex(node, scopeManager);
-                // Then continue with object transformation
-                if (node.object) {
+                transformMemberExpression(node, '', scopeManager);
+                // Then continue with object transformation or arguments if transformed to CallExpression
+                if (node.type === 'CallExpression') {
+                    node.arguments.forEach((arg: any) => c(arg, { parent: node, inNamespaceCall: state.inNamespaceCall }));
+                } else if (node.object) {
                     c(node.object, { parent: node, inNamespaceCall: state.inNamespaceCall });
                 }
             },
@@ -199,7 +207,15 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
 
                             const isBinaryOperation = node.parent && node.parent.type === 'BinaryExpression';
                             const isConditional = node.parent && node.parent.type === 'ConditionalExpression';
-                            if (node.type === 'Identifier' && (isBinaryOperation || isConditional)) {
+                            const isGetCall =
+                                node.parent &&
+                                node.parent.type === 'CallExpression' &&
+                                node.parent.callee &&
+                                node.parent.callee.object &&
+                                node.parent.callee.object.name === CONTEXT_NAME &&
+                                node.parent.callee.property.name === 'get';
+
+                            if (node.type === 'Identifier' && (isBinaryOperation || isConditional) && !isGetCall) {
                                 addArrayAccess(node, scopeManager);
                             }
                         },
@@ -232,16 +248,18 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
                         },
                         MemberExpression(node: any, state: any, c: any) {
                             // Set parent reference
-                            if (node.object.type === 'Identifier') {
+                            if (node.object && node.object.type === 'Identifier') {
                                 node.object.parent = node;
                             }
-                            if (node.property.type === 'Identifier') {
+                            if (node.property && node.property.type === 'Identifier') {
                                 node.property.parent = node;
                             }
                             // Transform array indices first
-                            transformArrayIndex(node, scopeManager);
+                            transformMemberExpression(node, '', scopeManager);
                             // Then continue with object transformation
-                            if (node.object) {
+                            if (node.type === 'CallExpression') {
+                                node.arguments.forEach((arg: any) => c(arg, { parent: node }));
+                            } else if (node.object) {
                                 c(node.object, { parent: node });
                             }
                         },

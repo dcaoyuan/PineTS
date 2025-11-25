@@ -167,6 +167,7 @@ export function transformMemberExpression(memberNode: any, originalParamName: st
     const isElseStatement = scopeManager.getCurrentScopeType() == 'els';
     const isForStatement = scopeManager.getCurrentScopeType() == 'for';
     // If the object is a context-bound variable (like a function parameter), skip transformation
+    // But if it's a computed access (array access), we must process it to use $.get()
     if (
         !isIfStatement &&
         !isElseStatement &&
@@ -174,7 +175,8 @@ export function transformMemberExpression(memberNode: any, originalParamName: st
         memberNode.object &&
         memberNode.object.type === 'Identifier' &&
         scopeManager.isContextBound(memberNode.object.name) &&
-        !scopeManager.isRootParam(memberNode.object.name)
+        !scopeManager.isRootParam(memberNode.object.name) &&
+        !memberNode.computed // Allow computed properties to proceed
     ) {
         return;
     }
@@ -186,15 +188,18 @@ export function transformMemberExpression(memberNode: any, originalParamName: st
     }
 
     // Convert to $.get(object, property) if it's a computed access on a context variable
-    if (
-        memberNode.computed &&
+    const isContextMemberAccess =
         memberNode.object &&
         memberNode.object.type === 'MemberExpression' &&
         memberNode.object.object &&
         memberNode.object.object.type === 'MemberExpression' &&
         memberNode.object.object.object &&
-        memberNode.object.object.object.name === CONTEXT_NAME
-    ) {
+        memberNode.object.object.object.name === CONTEXT_NAME;
+
+    const isContextBoundIdentifier =
+        memberNode.object && memberNode.object.type === 'Identifier' && scopeManager.isContextBound(memberNode.object.name);
+
+    if (memberNode.computed && (isContextMemberAccess || isContextBoundIdentifier)) {
         // Check if this is LHS of an assignment
         if (memberNode.parent && memberNode.parent.type === 'AssignmentExpression' && memberNode.parent.left === memberNode) {
             return;

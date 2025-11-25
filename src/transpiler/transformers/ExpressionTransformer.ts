@@ -38,7 +38,12 @@ export function transformArrayIndex(node: any, scopeManager: ScopeManager): void
             const [scopedName, kind] = scopeManager.getVariable(node.object.name);
 
             // Transform the object to scoped variable: $.kind.scopedName
-            node.object = ASTFactory.createContextVariableReference(kind, scopedName);
+            const varRef = ASTFactory.createContextVariableReference(kind, scopedName);
+
+            // Convert to $.get call
+            const getCall = ASTFactory.createGetCall(varRef, node.property);
+            Object.assign(node, getCall);
+            return;
         }
 
         if (node.property.type === 'MemberExpression') {
@@ -329,7 +334,18 @@ function getParamFromConditionalExpression(node: any, scopeManager: ScopeManager
                     if (node.type === 'MemberExpression') {
                         transformArrayIndex(node, scopeManager);
                     } else if (node.type === 'Identifier') {
-                        addArrayAccess(node, scopeManager);
+                        // Skip addArrayAccess if the identifier is already inside a $.get call
+                        const isGetCall =
+                            node.parent &&
+                            node.parent.type === 'CallExpression' &&
+                            node.parent.callee &&
+                            node.parent.callee.object &&
+                            node.parent.callee.object.name === CONTEXT_NAME &&
+                            node.parent.callee.property.name === 'get';
+
+                        if (!isGetCall) {
+                            addArrayAccess(node, scopeManager);
+                        }
                     }
                 }
             },
@@ -552,7 +568,18 @@ export function transformCallExpression(node: any, scopeManager: ScopeManager, n
                     if (node.type === 'MemberExpression') {
                         transformArrayIndex(node, scopeManager);
                     } else if (node.type === 'Identifier') {
-                        addArrayAccess(node, scopeManager);
+                        // Skip addArrayAccess if the identifier is already inside a $.get call
+                        const isGetCall =
+                            node.parent &&
+                            node.parent.type === 'CallExpression' &&
+                            node.parent.callee &&
+                            node.parent.callee.object &&
+                            node.parent.callee.object.name === CONTEXT_NAME &&
+                            node.parent.callee.property.name === 'get';
+
+                        if (!isGetCall) {
+                            addArrayAccess(node, scopeManager);
+                        }
                     }
                 }
             },

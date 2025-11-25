@@ -14,12 +14,10 @@ import {
 
 export function transformAssignmentExpression(node: any, scopeManager: ScopeManager): void {
     // Transform assignment expressions to use the context object
+    let targetVarRef = null;
     if (node.left.type === 'Identifier') {
         const [varName, kind] = scopeManager.getVariable(node.left.name);
-        const memberExpr = ASTFactory.createContextVariableReference(kind, varName);
-
-        // Add [0] array access for assignment target
-        node.left = ASTFactory.createArrayAccess(memberExpr, 0);
+        targetVarRef = ASTFactory.createContextVariableReference(kind, varName);
     }
 
     // Transform identifiers in the right side of the assignment
@@ -74,6 +72,17 @@ export function transformAssignmentExpression(node: any, scopeManager: ScopeMana
             },
         }
     );
+
+    if (targetVarRef) {
+        // Replace the whole assignment expression with $.set(targetVarRef, node.right)
+        const setCall = ASTFactory.createSetCall(targetVarRef, node.right);
+
+        // Preserve location
+        if (node.start) setCall.start = node.start;
+        if (node.end) setCall.end = node.end;
+
+        Object.assign(node, setCall);
+    }
 }
 
 export function transformVariableDeclaration(varNode: any, scopeManager: ScopeManager): void {
@@ -176,13 +185,7 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
                             const isBinaryOperation = node.parent && node.parent.type === 'BinaryExpression';
                             const isConditional = node.parent && node.parent.type === 'ConditionalExpression';
                             if (node.type === 'Identifier' && (isBinaryOperation || isConditional)) {
-                                // Use ASTFactory-like logic but modify in place
-                                const memberExpr = ASTFactory.createMemberExpression(
-                                    ASTFactory.createIdentifier(node.name),
-                                    ASTFactory.createLiteral(0),
-                                    true
-                                );
-                                Object.assign(node, memberExpr);
+                                addArrayAccess(node, scopeManager);
                             }
                         },
                         CallExpression(node: any, state: any, c: any) {

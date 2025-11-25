@@ -198,6 +198,19 @@ export class Context {
         // Scalar value - return as is, ignoring index
         return source;
     }
+
+    /**
+     * Set the current value of a series (assignment)
+     * @param target - The target series or array
+     * @param value - The value to set
+     */
+    set(target: any, value: any) {
+        if (Array.isArray(target)) {
+            target[target.length - 1] = value;
+            return value;
+        }
+        return value;
+    }
     //#endregion
 }
 export default Context;

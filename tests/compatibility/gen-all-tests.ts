@@ -15,7 +15,7 @@
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from 'fs';
-import { generateTest } from './gen-test.js';
+import { generateExpectedData } from './expect-gen.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,9 +25,10 @@ const namespaceFolders = ['namespace/ta', 'namespace/math', 'namespace/array', '
 
 interface IndicatorInfo {
     indicatorPath: string;
-    testPath: string;
     method: string;
     namespace: string;
+    expectJsonPath: string;
+    indicatorCode: string;
 }
 
 /**
@@ -82,19 +83,34 @@ function getIndicatorFiles(indicatorsFolder: string): IndicatorInfo[] {
             const method = file.replace('.pine.ts', '');
             const indicatorPath = path.join(indicatorsFolder, file);
 
-            // Determine test path (replace /indicators/ with /)
+            // Determine data folder path (replace /indicators/ with /data/)
             const testDir = indicatorsFolder.replace(/[\/\\]indicators$/, '');
-            const testPath = path.join(testDir, `${method}.test.ts`);
+            const dataDir = path.join(testDir, 'data');
+            const expectJsonPath = path.join(dataDir, `${method}.expect.json`);
 
             // Extract namespace from path
+            // Try namespace/xxx pattern first, then fallback to misc or use folder name
+            let namespace = 'unknown';
             const namespaceMatch = indicatorsFolder.match(/namespace[\/\\](\w+)/);
-            const namespace = namespaceMatch ? namespaceMatch[1] : 'unknown';
+            if (namespaceMatch) {
+                namespace = namespaceMatch[1];
+            } else if (indicatorsFolder.includes('misc')) {
+                namespace = 'misc';
+            } else {
+                // Use the parent folder name as namespace
+                const parts = indicatorsFolder.split(/[\/\\]/);
+                namespace = parts[parts.length - 2] || 'unknown';
+            }
+
+            // Read indicator code
+            const indicatorCode = fs.readFileSync(path.join(__dirname, indicatorPath), 'utf-8');
 
             indicators.push({
                 indicatorPath,
-                testPath,
                 method,
                 namespace,
+                expectJsonPath,
+                indicatorCode,
             });
         }
     }
@@ -137,38 +153,170 @@ if (allIndicators.length === 0) {
     process.exit(0);
 }
 
-// Group by namespace for better output
-const byNamespace: { [key: string]: IndicatorInfo[] } = {};
+// Group by test directory (where the consolidated test file will be generated)
+// This ensures indicators in the same directory are grouped together
+const byTestDir: { [key: string]: IndicatorInfo[] } = {};
 for (const indicator of allIndicators) {
-    if (!byNamespace[indicator.namespace]) {
-        byNamespace[indicator.namespace] = [];
+    // Determine test directory (replace /indicators/ with /)
+    const indicatorsFolder = path.dirname(indicator.indicatorPath);
+    const testDir = indicatorsFolder.replace(/[\/\\]indicators$/, '');
+
+    if (!byTestDir[testDir]) {
+        byTestDir[testDir] = [];
     }
-    byNamespace[indicator.namespace].push(indicator);
+    byTestDir[testDir].push(indicator);
 }
 
 let successCount = 0;
 let failCount = 0;
 
-// Process each namespace
-for (const [namespace, indicators] of Object.entries(byNamespace)) {
+// Process all indicators - generate expect.json files
+console.log();
+console.log('='.repeat(70));
+console.log('Generating Expected Data Files');
+console.log('='.repeat(70));
+
+for (const indicator of allIndicators) {
     console.log();
-    console.log('='.repeat(70));
-    console.log(`Processing ${namespace.toUpperCase()} Namespace (${indicators.length} methods)`);
-    console.log('='.repeat(70));
+    console.log(`[${successCount + failCount + 1}/${allIndicators.length}] ${indicator.method}`);
 
-    for (const indicator of indicators) {
-        console.log();
-        console.log(`[${successCount + failCount + 1}/${allIndicators.length}] ${indicator.method}`);
-
-        try {
-            await generateTest(indicator.indicatorPath, indicator.testPath);
-
-            console.log(`  ✓ Generated successfully`);
-            successCount++;
-        } catch (error: any) {
-            console.error(`  ✗ Failed:`, error.message);
-            failCount++;
+    try {
+        // Ensure data directory exists
+        const dataDir = path.dirname(path.join(__dirname, indicator.expectJsonPath));
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
         }
+
+        // Generate expect.json file
+        const expectJsonFullPath = path.join(__dirname, indicator.expectJsonPath);
+        await generateExpectedData(indicator.indicatorCode, expectJsonFullPath);
+
+        console.log(`  ✓ Generated expect.json: ${indicator.expectJsonPath}`);
+        successCount++;
+    } catch (error: any) {
+        console.error(`  ✗ Failed:`, error.message);
+        failCount++;
+    }
+}
+
+// Generate consolidated test files for each test directory
+console.log();
+console.log('='.repeat(70));
+console.log('Generating Consolidated Test Files');
+console.log('='.repeat(70));
+
+for (const [testDir, indicators] of Object.entries(byTestDir)) {
+    if (indicators.length === 0) continue;
+
+    // Determine namespace from first indicator for display
+    const namespace = indicators[0].namespace;
+    const namespaceUpper = namespace.toUpperCase();
+
+    console.log();
+    console.log(`Generating test file for ${testDir} (${indicators.length} methods)...`);
+
+    try {
+        // Determine test file path (e.g., namespace/ta/methods/ta.test.ts)
+        const testFilePath = path.join(testDir, `${namespace}.test.ts`);
+        const resolvedTestPath = path.join(__dirname, testFilePath);
+
+        // Ensure test directory exists
+        const testDirFull = path.dirname(resolvedTestPath);
+        if (!fs.existsSync(testDirFull)) {
+            fs.mkdirSync(testDirFull, { recursive: true });
+        }
+
+        // Calculate relative path from test file to serializer
+        const serializerPath = path.relative(testDirFull, path.join(__dirname, 'lib', 'serializer.js'));
+        const serializerImport = serializerPath.replace(/\\/g, '/');
+
+        // Generate consolidated test file
+        const testCases = indicators.map((indicator) => {
+            // Extract the indicator body (remove outer function wrapper and semicolon)
+            const indicatorBody = indicator.indicatorCode
+                .trim()
+                .replace(/^\(context\)\s*=>\s*\{/, '')
+                .replace(/\};?\s*$/, '')
+                .trim();
+
+            // Calculate relative path from test file to data folder
+            const expectJsonRelativePath = path.relative(testDirFull, path.join(__dirname, indicator.expectJsonPath));
+            const expectJsonImport = expectJsonRelativePath.replace(/\\/g, '/');
+
+            return {
+                method: indicator.method,
+                indicatorBody,
+                expectJsonPath: expectJsonImport,
+            };
+        });
+
+        const testTemplate = `import { PineTS } from 'index';
+import { describe, expect, it } from 'vitest';
+import * as fs from 'fs';
+import * as path from 'path';
+
+import { Provider } from '@pinets/marketData/Provider.class';
+import { deserialize, deepEqual } from '${serializerImport}';
+
+describe('${namespaceUpper} Namespace', () => {
+${testCases
+    .map(
+        (testCase) => `    it('${testCase.method.toUpperCase()} regression test', async () => {
+        const pineTS = new PineTS(Provider.Mock, 'BTCUSDC', 'D', null, new Date('2025-01-01').getTime(), new Date('2025-11-20').getTime());
+
+        const { result, plots } = await pineTS.run((context) => {
+${testCase.indicatorBody
+    .split('\n')
+    .map((line) => '            ' + line)
+    .join('\n')}
+        });
+
+        // Filter results for the date range 2025-10-01 to 2025-11-20
+        const sDate = new Date('2025-10-01').getTime();
+        const eDate = new Date('2025-11-20').getTime();
+
+        const plotchar_data = plots['_plotchar'].data;
+        const plot_data = plots['_plot'].data;
+
+        // Extract results for the date range (same logic as expect-gen.ts)
+        const filtered_results: any = {};
+        let plotchar_data_str = '';
+        let plot_data_str = '';
+
+        if (plotchar_data.length != plot_data.length) {
+            throw new Error('Plotchar and plot data lengths do not match');
+        }
+
+        for (let i = 0; i < plotchar_data.length; i++) {
+            if (plotchar_data[i].time >= sDate && plotchar_data[i].time <= eDate) {
+                plotchar_data_str += \`[\${plotchar_data[i].time}]: \${plotchar_data[i].value}\\n\`;
+                plot_data_str += \`[\${plot_data[i].time}]: \${plot_data[i].value}\\n\`;
+                for (let key in result) {
+                    if (!filtered_results[key]) filtered_results[key] = [];
+                    filtered_results[key].push(result[key][i]);
+                }
+            }
+        }
+
+        // Load expected data from JSON file using custom deserializer
+        const expectFilePath = path.join(__dirname, '${testCase.expectJsonPath}');
+        const expectedData = deserialize(fs.readFileSync(expectFilePath, 'utf-8'));
+
+        // Assert results using custom deep equality (handles NaN correctly)
+        expect(deepEqual(filtered_results, expectedData.results)).toBe(true);
+        expect(plotchar_data_str.trim()).toEqual(expectedData.plotchar_data);
+        expect(plot_data_str.trim()).toEqual(expectedData.plot_data);
+    });`
+    )
+    .join('\n\n')}
+});
+`;
+
+        fs.writeFileSync(resolvedTestPath, testTemplate, 'utf-8');
+        console.log(`  ✓ Generated: ${testFilePath}`);
+    } catch (error: any) {
+        console.error(`  ✗ Failed to generate test file:`, error.message);
+        failCount++;
     }
 }
 
@@ -188,6 +336,10 @@ if (failCount > 0) {
 } else {
     console.log();
     console.log('🎉 All tests generated successfully!');
+    console.log();
+    console.log('Test files are organized as follows:');
+    console.log('  - expect.json files: namespace/*/methods/data/*.expect.json');
+    console.log('  - consolidated test files: namespace/*/methods/*.test.ts');
     console.log();
     console.log('Run all tests with:');
     console.log('  npm test -- tests/compatibility/namespace');

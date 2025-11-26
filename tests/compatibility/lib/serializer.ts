@@ -14,15 +14,19 @@ export const UNDEFINED_TOKEN = '__undefined__';
  * Serialize a value to JSON, preserving NaN, Infinity, -Infinity, and undefined
  */
 export function serialize(value: any): string {
-    return JSON.stringify(value, (key, val) => {
-        if (typeof val === 'number') {
-            if (isNaN(val)) return NaN_TOKEN;
-            if (val === Infinity) return INFINITY_TOKEN;
-            if (val === -Infinity) return NEG_INFINITY_TOKEN;
-        }
-        if (val === undefined) return UNDEFINED_TOKEN;
-        return val;
-    }, 2);
+    return JSON.stringify(
+        value,
+        (key, val) => {
+            if (typeof val === 'number') {
+                if (isNaN(val)) return NaN_TOKEN;
+                if (val === Infinity) return INFINITY_TOKEN;
+                if (val === -Infinity) return NEG_INFINITY_TOKEN;
+            }
+            if (val === undefined) return UNDEFINED_TOKEN;
+            return val;
+        },
+        2
+    );
 }
 
 /**
@@ -41,12 +45,12 @@ export function deserialize(json: string): any {
 /**
  * Check if two values are equal, handling NaN, Infinity, and -Infinity correctly
  */
-export function deepEqual(a: any, b: any): boolean {
+export function deepEqual(a: any, b: any, epsilon: number = 1e-8): boolean {
     // Handle NaN
     if (typeof a === 'number' && typeof b === 'number' && isNaN(a) && isNaN(b)) {
         return true;
     }
-    
+
     // Handle arrays
     if (Array.isArray(a) && Array.isArray(b)) {
         if (a.length !== b.length) return false;
@@ -55,7 +59,7 @@ export function deepEqual(a: any, b: any): boolean {
         }
         return true;
     }
-    
+
     // Handle objects
     if (a !== null && b !== null && typeof a === 'object' && typeof b === 'object') {
         const keysA = Object.keys(a);
@@ -66,8 +70,12 @@ export function deepEqual(a: any, b: any): boolean {
         }
         return true;
     }
-    
+
+    //handle floats
+    if (typeof a === 'number' && typeof b === 'number' && (!Number.isInteger(a) || !Number.isInteger(b))) {
+        return Math.abs(a - b) <= epsilon;
+    }
+
     // Handle primitives
     return a === b;
 }
-

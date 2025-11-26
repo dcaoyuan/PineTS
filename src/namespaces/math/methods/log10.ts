@@ -2,9 +2,9 @@
 
 import { Series } from '../../../Series';
 
-export function cos(context: any) {
+export function log10(context: any) {
     return (source: any) => {
-        return Math.cos(Series.from(source).get(0));
+        return Math.log10(Series.from(source).get(0));
     };
 }
 

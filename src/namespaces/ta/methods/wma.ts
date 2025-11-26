@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { Series } from '../../../Series';
+
 export function wma(context: any) {
     return (source: any, _period: any, _callId?: string) => {
-        const period = Array.isArray(_period) ? _period[0] : _period;
+        const period = Series.from(_period).get(0);
 
         // Weighted Moving Average
         if (!context.taState) context.taState = {};
@@ -13,7 +15,7 @@ export function wma(context: any) {
         }
 
         const state = context.taState[stateKey];
-        const currentValue = source[0];
+        const currentValue = Series.from(source).get(0);
 
         state.window.unshift(currentValue);
 

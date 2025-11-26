@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { pivotlow as pivotlowUtil } from '../utils/pivotlow';
+import { Series } from '../../../Series';
 
 export function pivotlow(context: any) {
     return (source: any, _leftbars: any, _rightbars: any) => {
@@ -13,10 +14,11 @@ export function pivotlow(context: any) {
             source = context.data.low;
         }
 
-        const leftbars = Array.isArray(_leftbars) ? _leftbars[0] : _leftbars;
-        const rightbars = Array.isArray(_rightbars) ? _rightbars[0] : _rightbars;
+        const leftbars = Series.from(_leftbars).get(0);
+        const rightbars = Series.from(_rightbars).get(0);
 
-        const result = pivotlowUtil(source.slice(0).reverse(), leftbars, rightbars);
+        const sourceArray = Series.from(source).toArray();
+        const result = pivotlowUtil(sourceArray, leftbars, rightbars);
         const idx = context.idx;
         return context.precision(result[idx]);
     };

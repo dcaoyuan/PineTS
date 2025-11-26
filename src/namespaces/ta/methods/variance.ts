@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { Series } from '../../../Series';
+
 export function variance(context: any) {
     return (source: any, _length: any, _callId?: string) => {
-        const length = Array.isArray(_length) ? _length[0] : _length;
+        const length = Series.from(_length).get(0);
 
         // Variance calculation
         if (!context.taState) context.taState = {};
@@ -13,7 +15,7 @@ export function variance(context: any) {
         }
 
         const state = context.taState[stateKey];
-        const currentValue = source[0];
+        const currentValue = Series.from(source).get(0);
 
         state.window.unshift(currentValue);
 

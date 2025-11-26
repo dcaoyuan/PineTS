@@ -24,8 +24,8 @@ export function transformArrayIndex(node: any, scopeManager: ScopeManager): void
             // Transform property to $.kind.scopedName
             node.property = ASTFactory.createContextVariableReference(kind, scopedName);
 
-            // Add [0] to the index: $.kind.scopedName[0]
-            node.property = ASTFactory.createArrayAccess(node.property, 0);
+            // Add [0] to the index: $.get($.kind.scopedName, 0)
+            node.property = ASTFactory.createGetCall(node.property, 0);
         }
     }
 
@@ -52,13 +52,10 @@ export function transformArrayIndex(node: any, scopeManager: ScopeManager): void
 }
 
 export function addArrayAccess(node: any, scopeManager: ScopeManager): void {
-    const memberExpr = ASTFactory.createArrayAccess(
-        ASTFactory.createIdentifier(node.name), // We need to preserve start/end? ASTFactory doesn't currently.
-        0
-    );
+    const memberExpr = ASTFactory.createGetCall(ASTFactory.createIdentifier(node.name), 0);
     // Preserve location info if available
-    if (node.start !== undefined) memberExpr.object.start = node.start;
-    if (node.end !== undefined) memberExpr.object.end = node.end;
+    if (node.start !== undefined) memberExpr.start = node.start;
+    if (node.end !== undefined) memberExpr.end = node.end;
 
     memberExpr._indexTransformed = true;
     Object.assign(node, memberExpr);
@@ -149,8 +146,8 @@ export function transformIdentifier(node: any, scopeManager: ScopeManager): void
         const hasArrayAccess = node.parent && node.parent.type === 'MemberExpression' && node.parent.computed && node.parent.object === node;
 
         if (!hasArrayAccess && !isArrayAccess) {
-            // Add [0] array access if not already present and not part of array access
-            const accessExpr = ASTFactory.createArrayAccess(memberExpr, 0);
+            // Add [0] array access via $.get() if not already present and not part of array access
+            const accessExpr = ASTFactory.createGetCall(memberExpr, 0);
             Object.assign(node, accessExpr);
         } else {
             // Just replace with the member expression without adding array access
@@ -170,6 +167,7 @@ export function transformMemberExpression(memberNode: any, originalParamName: st
     const isElseStatement = scopeManager.getCurrentScopeType() == 'els';
     const isForStatement = scopeManager.getCurrentScopeType() == 'for';
     // If the object is a context-bound variable (like a function parameter), skip transformation
+    // But if it's a computed access (array access), we must process it to use $.get()
     if (
         !isIfStatement &&
         !isElseStatement &&
@@ -177,7 +175,8 @@ export function transformMemberExpression(memberNode: any, originalParamName: st
         memberNode.object &&
         memberNode.object.type === 'Identifier' &&
         scopeManager.isContextBound(memberNode.object.name) &&
-        !scopeManager.isRootParam(memberNode.object.name)
+        !scopeManager.isRootParam(memberNode.object.name) &&
+        !memberNode.computed // Allow computed properties to proceed
     ) {
         return;
     }
@@ -186,6 +185,33 @@ export function transformMemberExpression(memberNode: any, originalParamName: st
     if (!memberNode._indexTransformed) {
         transformArrayIndex(memberNode, scopeManager);
         memberNode._indexTransformed = true;
+    }
+
+    // Convert to $.get(object, property) if it's a computed access on a context variable
+    const isContextMemberAccess =
+        memberNode.object &&
+        memberNode.object.type === 'MemberExpression' &&
+        memberNode.object.object &&
+        memberNode.object.object.type === 'MemberExpression' &&
+        memberNode.object.object.object &&
+        memberNode.object.object.object.name === CONTEXT_NAME;
+
+    const isContextBoundIdentifier =
+        memberNode.object && memberNode.object.type === 'Identifier' && scopeManager.isContextBound(memberNode.object.name);
+
+    if (memberNode.computed && (isContextMemberAccess || isContextBoundIdentifier)) {
+        // Check if this is LHS of an assignment
+        if (memberNode.parent && memberNode.parent.type === 'AssignmentExpression' && memberNode.parent.left === memberNode) {
+            return;
+        }
+
+        const getCall = ASTFactory.createGetCall(memberNode.object, memberNode.property);
+
+        // Preserve location
+        if (memberNode.start) getCall.start = memberNode.start;
+        if (memberNode.end) getCall.end = memberNode.end;
+
+        Object.assign(memberNode, getCall);
     }
 }
 
@@ -245,7 +271,7 @@ function transformOperand(node: any, scopeManager: ScopeManager, namespace: stri
             }
             const transformedObject = transformIdentifierForParam(node, scopeManager);
 
-            return ASTFactory.createArrayAccess(transformedObject, 0);
+            return ASTFactory.createGetCall(transformedObject, 0);
         }
         case 'UnaryExpression': {
             return getParamFromUnaryExpression(node, scopeManager, namespace);
@@ -332,7 +358,18 @@ function getParamFromConditionalExpression(node: any, scopeManager: ScopeManager
                     if (node.type === 'MemberExpression') {
                         transformArrayIndex(node, scopeManager);
                     } else if (node.type === 'Identifier') {
-                        addArrayAccess(node, scopeManager);
+                        // Skip addArrayAccess if the identifier is already inside a $.get call
+                        const isGetCall =
+                            node.parent &&
+                            node.parent.type === 'CallExpression' &&
+                            node.parent.callee &&
+                            node.parent.callee.object &&
+                            node.parent.callee.object.name === CONTEXT_NAME &&
+                            node.parent.callee.property.name === 'get';
+
+                        if (!isGetCall) {
+                            addArrayAccess(node, scopeManager);
+                        }
                     }
                 }
             },
@@ -507,6 +544,11 @@ export function transformCallExpression(node: any, scopeManager: ScopeManager, n
         (scopeManager.isContextBound(node.callee.object.name) || node.callee.object.name === 'math' || node.callee.object.name === 'ta');
 
     if (isNamespaceCall) {
+        // Exclude internal context methods from parameter wrapping
+        if (node.callee.object.name === CONTEXT_NAME && ['get', 'init', 'param'].includes(node.callee.property.name)) {
+            return;
+        }
+
         const namespace = node.callee.object.name;
         // Transform arguments using the namespace's param
         node.arguments = node.arguments.map((arg: any) => {
@@ -550,7 +592,18 @@ export function transformCallExpression(node: any, scopeManager: ScopeManager, n
                     if (node.type === 'MemberExpression') {
                         transformArrayIndex(node, scopeManager);
                     } else if (node.type === 'Identifier') {
-                        addArrayAccess(node, scopeManager);
+                        // Skip addArrayAccess if the identifier is already inside a $.get call
+                        const isGetCall =
+                            node.parent &&
+                            node.parent.type === 'CallExpression' &&
+                            node.parent.callee &&
+                            node.parent.callee.object &&
+                            node.parent.callee.object.name === CONTEXT_NAME &&
+                            node.parent.callee.property.name === 'get';
+
+                        if (!isGetCall) {
+                            addArrayAccess(node, scopeManager);
+                        }
                     }
                 }
             },

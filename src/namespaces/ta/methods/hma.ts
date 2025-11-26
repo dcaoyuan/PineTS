@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { Series } from '../../../Series';
+
 export function hma(context: any) {
     return (source: any, _period: any, _callId?: string) => {
-        const period = Array.isArray(_period) ? _period[0] : _period;
+        const period = Series.from(_period).get(0);
 
         // Hull Moving Average: HMA = WMA(2*WMA(n/2) - WMA(n), sqrt(n))
         const halfPeriod = Math.floor(period / 2);
@@ -30,7 +32,7 @@ export function hma(context: any) {
         }
 
         const rawHma = 2 * wma1 - wma2;
-        context.taState[stateKey].unshift(rawHma);
+        context.taState[stateKey].unshift(rawHma); // Native array used for state
 
         // Apply WMA to the raw HMA values
         const hmaStateKey = _callId ? `${_callId}_hma_final` : `hma_final_${period}`;
@@ -39,7 +41,7 @@ export function hma(context: any) {
         }
 
         const state = context.taState[hmaStateKey];
-        state.window.unshift(rawHma);
+        state.window.unshift(rawHma); // Native array used for state
 
         if (state.window.length < sqrtPeriod) {
             return NaN;

@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-export function avg(context: any) {
-    return (...sources: number[][]) => {
-        const args = sources.map((e) => (Array.isArray(e) ? e[0] : e));
+import { Series } from '../../../Series';
 
-        return (
-            args.reduce((a, b) => {
-                const aVal = Array.isArray(a) ? a[0] : a;
-                const bVal = Array.isArray(b) ? b[0] : b;
-                return aVal + bVal;
-            }, 0) / args.length
-        );
+export function avg(context: any) {
+    return (...sources: any[]) => {
+        const values = sources.map((source) => {
+            // Each source is wrapped by param(), so it should be a Series
+            // but check for scalar fallback
+            return Series.from(source).get(0);
+        });
+
+        // Filter out NaN? No, avg propagates NaN
+        // Calculate sum
+        const sum = values.reduce((acc, val) => acc + val, 0);
+        return sum / values.length;
     };
 }
 

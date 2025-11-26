@@ -1,19 +1,27 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { Series } from '../../../Series';
+
 export function param(context: any) {
     return (source: any, index: any, name?: string) => {
-        if (!context.params[name]) context.params[name] = [];
-        if (Array.isArray(source)) {
+        if (source instanceof Series) {
             if (index) {
-                context.params[name] = source.slice(index);
-                context.params[name].length = source.length; //ensure length is correct
-                return context.params[name];
+                return new Series(source.data, source.offset + index);
             }
-            context.params[name] = source.slice(0);
-            return context.params[name];
+            return source;
+        }
+
+        if (!context.params[name]) context.params[name] = [];
+
+        if (Array.isArray(source)) {
+            return new Series(source, index || 0);
         } else {
-            context.params[name][0] = source;
-            return context.params[name];
+            if (context.params[name].length === 0) {
+                context.params[name].push(source);
+            } else {
+                context.params[name][context.params[name].length - 1] = source;
+            }
+            return new Series(context.params[name], 0);
         }
     };
 }

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { Series } from '../../../Series';
+
 export function supertrend(context: any) {
     return (_factor: any, _atrPeriod: any, _callId?: string) => {
-        const factor = Array.isArray(_factor) ? _factor[0] : _factor;
-        const atrPeriod = Array.isArray(_atrPeriod) ? _atrPeriod[0] : _atrPeriod;
+        const factor = Series.from(_factor).get(0);
+        const atrPeriod = Series.from(_atrPeriod).get(0);
 
         // Incremental Supertrend calculation
         if (!context.taState) context.taState = {};
@@ -19,9 +21,10 @@ export function supertrend(context: any) {
         }
 
         const state = context.taState[stateKey];
-        const high = context.data.high[0];
-        const low = context.data.low[0];
-        const close = context.data.close[0];
+        const high = context.get(context.data.high, 0);
+        const low = context.get(context.data.low, 0);
+        const close = context.get(context.data.close, 0);
+        const prevClose = context.get(context.data.close, 1);
 
         // Get ATR value (already optimized) - use derived call ID
         const atrValue = context.ta.atr(atrPeriod, _callId ? `${_callId}_atr` : undefined);
@@ -36,13 +39,13 @@ export function supertrend(context: any) {
 
         // Adjust bands based on previous values
         if (state.prevUpperBand !== null) {
-            if (upperBand < state.prevUpperBand || context.data.close[1] > state.prevUpperBand) {
+            if (upperBand < state.prevUpperBand || prevClose > state.prevUpperBand) {
                 upperBand = upperBand;
             } else {
                 upperBand = state.prevUpperBand;
             }
 
-            if (lowerBand > state.prevLowerBand || context.data.close[1] < state.prevLowerBand) {
+            if (lowerBand > state.prevLowerBand || prevClose < state.prevLowerBand) {
                 lowerBand = lowerBand;
             } else {
                 lowerBand = state.prevLowerBand;

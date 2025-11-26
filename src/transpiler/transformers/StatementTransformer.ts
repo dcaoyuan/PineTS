@@ -13,13 +13,26 @@ import {
 } from './ExpressionTransformer';
 
 export function transformAssignmentExpression(node: any, scopeManager: ScopeManager): void {
+    let targetVarRef = null;
     // Transform assignment expressions to use the context object
     if (node.left.type === 'Identifier') {
         const [varName, kind] = scopeManager.getVariable(node.left.name);
-        const memberExpr = ASTFactory.createContextVariableReference(kind, varName);
+        targetVarRef = ASTFactory.createContextVariableReference(kind, varName);
+    } else if (node.left.type === 'MemberExpression' && node.left.computed) {
+        // Assignment to array element: series[0] = val
+        if (node.left.object.type === 'Identifier') {
+            const name = node.left.object.name;
+            const [varName, kind] = scopeManager.getVariable(name);
+            const isRenamed = varName !== name;
+            const isContextBound = scopeManager.isContextBound(name);
 
-        // Add [0] array access for assignment target
-        node.left = ASTFactory.createArrayAccess(memberExpr, 0);
+            if ((isRenamed || isContextBound) && !scopeManager.isLoopVariable(name)) {
+                // If index is 0 (literal), transform to $.set(target, value)
+                if (node.left.property.type === 'Literal' && node.left.property.value === 0) {
+                    targetVarRef = ASTFactory.createContextVariableReference(kind, varName);
+                }
+            }
+        }
     }
 
     // Transform identifiers in the right side of the assignment
@@ -41,20 +54,28 @@ export function transformAssignmentExpression(node: any, scopeManager: ScopeMana
                 const isParamCall = node.parent && node.parent._isParamCall;
                 const isMemberExpression = node.parent && node.parent.type === 'MemberExpression';
                 const isReserved = node.name === 'NaN';
+                const isGetCall =
+                    node.parent &&
+                    node.parent.type === 'CallExpression' &&
+                    node.parent.callee &&
+                    node.parent.callee.object &&
+                    node.parent.callee.object.name === CONTEXT_NAME &&
+                    node.parent.callee.property.name === 'get';
 
                 if (isContextBound || isConditional || isBinaryOperation) {
                     if (node.type === 'MemberExpression') {
                         transformArrayIndex(node, scopeManager);
-                    } else if (node.type === 'Identifier' && !isMemberExpression && !hasArrayAccess && !isParamCall && !isReserved) {
+                    } else if (node.type === 'Identifier' && !isMemberExpression && !hasArrayAccess && !isParamCall && !isReserved && !isGetCall) {
                         addArrayAccess(node, scopeManager);
                     }
                 }
             },
             MemberExpression(node: any, state: any, c: any) {
-                // Transform array indices first
-                transformArrayIndex(node, scopeManager);
-                // Then continue with object transformation
-                if (node.object) {
+                transformMemberExpression(node, '', scopeManager);
+                // Then continue with object transformation or arguments if transformed to CallExpression
+                if (node.type === 'CallExpression') {
+                    node.arguments.forEach((arg: any) => c(arg, { parent: node, inNamespaceCall: state.inNamespaceCall }));
+                } else if (node.object) {
                     c(node.object, { parent: node, inNamespaceCall: state.inNamespaceCall });
                 }
             },
@@ -74,6 +95,38 @@ export function transformAssignmentExpression(node: any, scopeManager: ScopeMana
             },
         }
     );
+
+    if (targetVarRef) {
+        let rightSide = node.right;
+
+        // Handle compound assignment operators (+=, -=, *=, etc.)
+        if (node.operator !== '=') {
+            const operator = node.operator.replace('=', '');
+
+            // Create a read access for the target variable: $.get(targetVarRef, 0)
+            const readAccess = ASTFactory.createGetCall(targetVarRef, 0);
+
+            // Create a binary expression: readAccess [op] node.right
+            // Example: a += 10  ->  $.set(a, $.get(a, 0) + 10)
+            rightSide = {
+                type: 'BinaryExpression',
+                operator: operator,
+                left: readAccess,
+                right: node.right,
+                start: node.start,
+                end: node.end,
+            };
+        }
+
+        // Replace the whole assignment expression with $.set(targetVarRef, rightSide)
+        const setCall = ASTFactory.createSetCall(targetVarRef, rightSide);
+
+        // Preserve location
+        if (node.start) setCall.start = node.start;
+        if (node.end) setCall.end = node.end;
+
+        Object.assign(node, setCall);
+    }
 }
 
 export function transformVariableDeclaration(varNode: any, scopeManager: ScopeManager): void {
@@ -175,14 +228,16 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
 
                             const isBinaryOperation = node.parent && node.parent.type === 'BinaryExpression';
                             const isConditional = node.parent && node.parent.type === 'ConditionalExpression';
-                            if (node.type === 'Identifier' && (isBinaryOperation || isConditional)) {
-                                // Use ASTFactory-like logic but modify in place
-                                const memberExpr = ASTFactory.createMemberExpression(
-                                    ASTFactory.createIdentifier(node.name),
-                                    ASTFactory.createLiteral(0),
-                                    true
-                                );
-                                Object.assign(node, memberExpr);
+                            const isGetCall =
+                                node.parent &&
+                                node.parent.type === 'CallExpression' &&
+                                node.parent.callee &&
+                                node.parent.callee.object &&
+                                node.parent.callee.object.name === CONTEXT_NAME &&
+                                node.parent.callee.property.name === 'get';
+
+                            if (node.type === 'Identifier' && (isBinaryOperation || isConditional) && !isGetCall) {
+                                addArrayAccess(node, scopeManager);
                             }
                         },
                         CallExpression(node: any, state: any, c: any) {
@@ -214,16 +269,18 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
                         },
                         MemberExpression(node: any, state: any, c: any) {
                             // Set parent reference
-                            if (node.object.type === 'Identifier') {
+                            if (node.object && node.object.type === 'Identifier') {
                                 node.object.parent = node;
                             }
-                            if (node.property.type === 'Identifier') {
+                            if (node.property && node.property.type === 'Identifier') {
                                 node.property.parent = node;
                             }
                             // Transform array indices first
-                            transformArrayIndex(node, scopeManager);
+                            transformMemberExpression(node, '', scopeManager);
                             // Then continue with object transformation
-                            if (node.object) {
+                            if (node.type === 'CallExpression') {
+                                node.arguments.forEach((arg: any) => c(arg, { parent: node }));
+                            } else if (node.object) {
                                 c(node.object, { parent: node });
                             }
                         },

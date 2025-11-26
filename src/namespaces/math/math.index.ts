@@ -13,6 +13,7 @@ import { exp } from './methods/exp';
 import { floor } from './methods/floor';
 import { ln } from './methods/ln';
 import { log } from './methods/log';
+import { log10 } from './methods/log10';
 import { max } from './methods/max';
 import { min } from './methods/min';
 import { param } from './methods/param';
@@ -37,6 +38,7 @@ const methods = {
   floor,
   ln,
   log,
+  log10,
   max,
   min,
   param,
@@ -63,6 +65,7 @@ export class PineMath {
   floor: ReturnType<typeof methods.floor>;
   ln: ReturnType<typeof methods.ln>;
   log: ReturnType<typeof methods.log>;
+  log10: ReturnType<typeof methods.log10>;
   max: ReturnType<typeof methods.max>;
   min: ReturnType<typeof methods.min>;
   param: ReturnType<typeof methods.param>;

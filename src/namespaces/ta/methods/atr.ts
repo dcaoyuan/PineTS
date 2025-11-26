@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { Series } from '../../../Series';
+
 export function atr(context: any) {
     return (_period: any, _callId?: string) => {
-        const period = Array.isArray(_period) ? _period[0] : _period;
+        const period = Series.from(_period).get(0);
 
         // Incremental ATR calculation
         if (!context.taState) context.taState = {};
@@ -18,9 +20,9 @@ export function atr(context: any) {
         }
 
         const state = context.taState[stateKey];
-        const high = context.data.high[0];
-        const low = context.data.low[0];
-        const close = context.data.close[0];
+        const high = context.get(context.data.high, 0);
+        const low = context.get(context.data.low, 0);
+        const close = context.get(context.data.close, 0);
 
         // Calculate True Range
         let tr;

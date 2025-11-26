@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { Series } from '../../../Series';
+
 export function linreg(context: any) {
     return (source: any, _length: any, _offset: any, _callId?: string) => {
-        const length = Array.isArray(_length) ? _length[0] : _length;
-        const offset = Array.isArray(_offset) ? _offset[0] : _offset;
+        const length = Series.from(_length).get(0);
+        const offset = Series.from(_offset).get(0);
 
         // Linear Regression
         if (!context.taState) context.taState = {};
@@ -14,7 +16,7 @@ export function linreg(context: any) {
         }
 
         const state = context.taState[stateKey];
-        const currentValue = source[0];
+        const currentValue = Series.from(source).get(0);
 
         state.window.unshift(currentValue);
 

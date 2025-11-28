@@ -55,47 +55,51 @@ export function injectImplicitImports(ast: any): void {
     // Walk the main body to find declarations and usages
     // We only care about the top-level scope of the main function for injections
     // But usages can be nested.
-    
+
     // Note: We need to be careful not to count property access as usage (e.g. obj.prop)
     // unless it is computed.
-    
-    walk.recursive(ast, {}, {
-        VariableDeclarator(node: any, state: any, c: any) {
-            addDeclared(node.id);
-            if (node.init) c(node.init, state);
-        },
-        FunctionDeclaration(node: any, state: any, c: any) {
-            addDeclared(node.id);
-            // Params are declarations in the function scope, but here we care about top level?
-            // If user defines function foo(open) { ... }, 'open' is shadowed.
-            // We should still inject 'open' if it's used in the global scope.
-            // So we just track global declarations.
-            // But walk.recursive goes deep.
-            // Actually, we only need to know if the variable is declared in the TOP LEVEL scope.
-            // Nested declarations shadow global ones, so that's fine.
-            // If we inject `const open = ...` at top level, it might conflict if `open` is already declared at top level.
-            // So we scan top level statements for declarations.
-            c(node.body, state);
-        },
-        Identifier(node: any, state: any, c: any) {
-            // Check if this identifier is a reference (usage)
-            // We exclude property names in MemberExpressions (unless computed) and ObjectProperties
-            usedIdentifiers.add(node.name);
-        },
-        MemberExpression(node: any, state: any, c: any) {
-            c(node.object, state);
-            if (node.computed) {
-                c(node.property, state);
-            }
-            // If not computed, property is an Identifier but not a variable reference
-        },
-        Property(node: any, state: any, c: any) {
-            if (node.computed) {
-                c(node.key, state);
-            }
-            c(node.value, state);
+
+    walk.recursive(
+        ast,
+        {},
+        {
+            VariableDeclarator(node: any, state: any, c: any) {
+                addDeclared(node.id);
+                if (node.init) c(node.init, state);
+            },
+            FunctionDeclaration(node: any, state: any, c: any) {
+                addDeclared(node.id);
+                // Params are declarations in the function scope, but here we care about top level?
+                // If user defines function foo(open) { ... }, 'open' is shadowed.
+                // We should still inject 'open' if it's used in the global scope.
+                // So we just track global declarations.
+                // But walk.recursive goes deep.
+                // Actually, we only need to know if the variable is declared in the TOP LEVEL scope.
+                // Nested declarations shadow global ones, so that's fine.
+                // If we inject `const open = ...` at top level, it might conflict if `open` is already declared at top level.
+                // So we scan top level statements for declarations.
+                c(node.body, state);
+            },
+            Identifier(node: any, state: any, c: any) {
+                // Check if this identifier is a reference (usage)
+                // We exclude property names in MemberExpressions (unless computed) and ObjectProperties
+                usedIdentifiers.add(node.name);
+            },
+            MemberExpression(node: any, state: any, c: any) {
+                c(node.object, state);
+                if (node.computed) {
+                    c(node.property, state);
+                }
+                // If not computed, property is an Identifier but not a variable reference
+            },
+            Property(node: any, state: any, c: any) {
+                if (node.computed) {
+                    c(node.key, state);
+                }
+                c(node.value, state);
+            },
         }
-    });
+    );
 
     // Correct approach: Scan top-level body for declarations
     mainBody.forEach((stmt: any) => {
@@ -107,23 +111,36 @@ export function injectImplicitImports(ast: any): void {
     });
 
     // 3. Define implicit variables
-    const contextDataVars = [
-        'open', 'high', 'low', 'close', 'volume', 
-        'hl2', 'hlc3', 'ohlc4', 'openTime', 'closeTime'
-    ];
+    const contextDataVars = ['open', 'high', 'low', 'close', 'volume', 'hl2', 'hlc3', 'ohlc4', 'openTime', 'closeTime'];
 
     const contextPineVars = [
-        'input', 'ta', 'math', 'request', 'array', 
-        'na', 'plotchar', 'color', 'plot', 'nz',
-        'strategy', 'library', 'str', 'box', 'line', 'label', 'table', 'map', 'matrix'
+        'input',
+        'ta',
+        'math',
+        'request',
+        'array',
+        'na',
+        'plotchar',
+        'color',
+        'plot',
+        'nz',
+        'strategy',
+        'library',
+        'str',
+        'box',
+        'line',
+        'label',
+        'table',
+        'map',
+        'matrix',
     ];
 
     // 4. Identify missing variables
-    const missingDataVars = contextDataVars.filter(v => !declaredVars.has(v));
-    const missingPineVars = contextPineVars.filter(v => !declaredVars.has(v));
+    const missingDataVars = contextDataVars.filter((v) => !declaredVars.has(v));
+    const missingPineVars = contextPineVars.filter((v) => !declaredVars.has(v));
 
     // We could filter by usage (usedIdentifiers.has(v)), but implicit injection usually makes them available regardless.
-    // However, to avoid clutter and potential conflicts (though we checked declarations), 
+    // However, to avoid clutter and potential conflicts (though we checked declarations),
     // checking usage is safer and cleaner.
     // User requested: "if anything is missing ... inject it".
     // If I inject unused vars, typescript/linter might complain, but this is transpiled code.
@@ -131,9 +148,9 @@ export function injectImplicitImports(ast: any): void {
     // No.
     // But if the user meant "inject if I use it but forgot to import", that's safer.
     // Let's check usages.
-    
-    const neededDataVars = missingDataVars.filter(v => usedIdentifiers.has(v));
-    const neededPineVars = missingPineVars.filter(v => usedIdentifiers.has(v));
+
+    const neededDataVars = missingDataVars.filter((v) => usedIdentifiers.has(v));
+    const neededPineVars = missingPineVars.filter((v) => usedIdentifiers.has(v));
 
     // 5. Create Injection Nodes
     const injections: any[] = [];
@@ -143,25 +160,27 @@ export function injectImplicitImports(ast: any): void {
         injections.push({
             type: 'VariableDeclaration',
             kind: 'const',
-            declarations: [{
-                type: 'VariableDeclarator',
-                id: {
-                    type: 'ObjectPattern',
-                    properties: neededDataVars.map(name => ({
-                        type: 'Property',
-                        key: { type: 'Identifier', name },
-                        value: { type: 'Identifier', name },
-                        kind: 'init',
-                        shorthand: true
-                    }))
+            declarations: [
+                {
+                    type: 'VariableDeclarator',
+                    id: {
+                        type: 'ObjectPattern',
+                        properties: neededDataVars.map((name) => ({
+                            type: 'Property',
+                            key: { type: 'Identifier', name },
+                            value: { type: 'Identifier', name },
+                            kind: 'init',
+                            shorthand: true,
+                        })),
+                    },
+                    init: {
+                        type: 'MemberExpression',
+                        object: { type: 'Identifier', name: contextParamName },
+                        property: { type: 'Identifier', name: 'data' },
+                        computed: false,
+                    },
                 },
-                init: {
-                    type: 'MemberExpression',
-                    object: { type: 'Identifier', name: contextParamName },
-                    property: { type: 'Identifier', name: 'data' },
-                    computed: false
-                }
-            }]
+            ],
         });
     }
 
@@ -170,25 +189,27 @@ export function injectImplicitImports(ast: any): void {
         injections.push({
             type: 'VariableDeclaration',
             kind: 'const',
-            declarations: [{
-                type: 'VariableDeclarator',
-                id: {
-                    type: 'ObjectPattern',
-                    properties: neededPineVars.map(name => ({
-                        type: 'Property',
-                        key: { type: 'Identifier', name },
-                        value: { type: 'Identifier', name },
-                        kind: 'init',
-                        shorthand: true
-                    }))
+            declarations: [
+                {
+                    type: 'VariableDeclarator',
+                    id: {
+                        type: 'ObjectPattern',
+                        properties: neededPineVars.map((name) => ({
+                            type: 'Property',
+                            key: { type: 'Identifier', name },
+                            value: { type: 'Identifier', name },
+                            kind: 'init',
+                            shorthand: true,
+                        })),
+                    },
+                    init: {
+                        type: 'MemberExpression',
+                        object: { type: 'Identifier', name: contextParamName },
+                        property: { type: 'Identifier', name: 'pine' },
+                        computed: false,
+                    },
                 },
-                init: {
-                    type: 'MemberExpression',
-                    object: { type: 'Identifier', name: contextParamName },
-                    property: { type: 'Identifier', name: 'pine' },
-                    computed: false
-                }
-            }]
+            ],
         });
     }
 
@@ -197,4 +218,3 @@ export function injectImplicitImports(ast: any): void {
         mainBody.unshift(...injections);
     }
 }
-

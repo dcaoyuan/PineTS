@@ -13,6 +13,7 @@
 9. [Execution Flow](#execution-flow)
 10. [Critical Implementation Details](#critical-implementation-details)
 11. [Common Pitfalls and Best Practices](#common-pitfalls-and-best-practices)
+12. [Syntax Evolution and Deprecation](#syntax-evolution-and-deprecation)
 
 ---
 
@@ -78,6 +79,16 @@ The transpiler is the heart of PineTS. It transforms user code to handle Pine Sc
 Input Code String/Function
         ↓
 ┌───────────────────────┐
+│  0. Wrapper Check     │
+│  • Detect if code is  │
+│    already wrapped in │
+│    a function         │
+│  • Auto-wrap unwrapped│
+│    code in (context)  │
+│    => { ... }         │
+└───────┬───────────────┘
+        ↓
+┌───────────────────────┐
 │  1. Parse to AST      │ (using acorn)
 │     (ECMAScript AST)  │
 └───────┬───────────────┘
@@ -86,6 +97,10 @@ Input Code String/Function
 │  2. Pre-Processing    │
 │  • Transform nested   │
 │    arrow functions    │
+│  • Normalize native   │
+│    imports (aliasing) │
+│  • Inject implicit    │
+│    imports (context.*)│
 │  • Identify context-  │
 │    bound variables    │
 └───────┬───────────────┘
@@ -102,6 +117,7 @@ Input Code String/Function
 │  4. Transformation    │
 │  • Variable scoping   │
 │  • Series wrapping    │
+│  • Expression Unwrapping│ (Hoisting)
 │  • param() injection  │
 │  • ID generation      │
 └───────┬───────────────┘
@@ -128,10 +144,13 @@ One of the most critical transformations is converting all user variables to use
 let ema9 = ta.ema(close, 9);
 ```
 
-**Transpiled Code:**
+**Transpiled Code (Simplified):**
 
 ```javascript
-$.let.glb1_ema9 = $.init($.let.glb1_ema9, ta.ema(ta.param(close, undefined, 'p0'), ta.param(9, undefined, 'p1'), '_ta0'));
+const p0 = ta.param(close, undefined, 'p0');
+const p1 = ta.param(9, undefined, 'p1');
+const temp_1 = ta.ema(p0, p1, '_ta0');
+$.let.glb1_ema9 = $.init($.let.glb1_ema9, temp_1);
 ```
 
 #### Why This Transformation?
@@ -140,6 +159,7 @@ $.let.glb1_ema9 = $.init($.let.glb1_ema9, ta.ema(ta.param(close, undefined, 'p0'
 2. **Series Behavior**: Every variable becomes a time-series array
 3. **Scope Isolation**: Prevents naming conflicts across different scopes
 4. **Lookback Support**: Enables `variable[1]` to access previous values
+5. **Hoisting & Unwrapping**: Complex expressions are "unwrapped" into temporary variables to ensure proper execution order and simplified debugging.
 
 ### Scope Management
 
@@ -207,7 +227,7 @@ The `Series` class is a wrapper around standard JavaScript arrays that provides 
 ```typescript
 class Series {
     constructor(public data: any[], public offset: number = 0) {}
-    
+
     // Get value at Pine Script index (0 = current, 1 = previous, etc.)
     get(index: number): any {
         const realIndex = this.data.length - 1 - (this.offset + index);
@@ -216,7 +236,7 @@ class Series {
         }
         return this.data[realIndex];
     }
-    
+
     // Set value at Pine Script index
     set(index: number, value: any): void {
         const realIndex = this.data.length - 1 - (this.offset + index);
@@ -228,16 +248,17 @@ class Series {
 ```
 
 **Key Features:**
-- **Offset Support**: Enables lookback operations like `close[1]` by creating a new Series with `offset = 1`
-- **Automatic NaN**: Returns NaN for out-of-bounds access (Pine Script behavior)
-- **Forward Array**: Wraps a standard forward-ordered array
+
+-   **Offset Support**: Enables lookback operations like `close[1]` by creating a new Series with `offset = 1`
+-   **Automatic NaN**: Returns NaN for out-of-bounds access (Pine Script behavior)
+-   **Forward Array**: Wraps a standard forward-ordered array
 
 ### Series Initialization with $.init()
 
 Every variable assignment goes through the `$.init()` function:
 
 ```javascript
-$.init(target, source, index = 0)
+$.init(target, source, (index = 0));
 ```
 
 **Purpose:**
@@ -255,7 +276,7 @@ init(trg, src: any, idx: number = 0) {
     if (src instanceof Series) {
         src = src.get(0);
     }
-    
+
     if (!trg) {
         // Initialize new array
         if (Array.isArray(src)) {
@@ -272,7 +293,7 @@ init(trg, src: any, idx: number = 0) {
             trg[trg.length - 1] = this.precision(src[src.length - 1 + idx]);
         }
     }
-    
+
     return trg;
 }
 ```
@@ -284,10 +305,7 @@ init(trg, src: any, idx: number = 0) {
 let sma20 = ta.sma(close, 20);
 
 // Transpiler generates:
-$.let.glb1_sma20 = $.init(
-    $.let.glb1_sma20, 
-    ta.sma(ta.param(close, undefined, 'p0'), ta.param(20, undefined, 'p1'), '_ta0')
-);
+$.let.glb1_sma20 = $.init($.let.glb1_sma20, ta.sma(ta.param(close, undefined, 'p0'), ta.param(20, undefined, 'p1'), '_ta0'));
 ```
 
 ### Context $.get() and $.set() Methods
@@ -300,7 +318,7 @@ get(source: any, index: number) {
     if (source instanceof Series) {
         return source.get(index);
     }
-    
+
     if (Array.isArray(source)) {
         // Forward array access: index 0 -> last element
         const realIndex = source.length - 1 - index;
@@ -309,7 +327,7 @@ get(source: any, index: number) {
         }
         return source[realIndex];
     }
-    
+
     // Scalar value - return as is
     return source;
 }
@@ -320,7 +338,7 @@ set(target: any, value: any) {
         target.set(0, value);
         return;
     }
-    
+
     if (Array.isArray(target)) {
         if (target.length > 0) {
             target[target.length - 1] = value;  // Update current (last element)
@@ -353,8 +371,8 @@ for (let ctxVarName of contextVarNames) {
     for (let key in context[ctxVarName]) {
         if (Array.isArray(context[ctxVarName][key])) {
             const arr = context[ctxVarName][key];
-            const val = arr[arr.length - 1];  // Current value (last element)
-            arr.push(val);  // Append to create history
+            const val = arr[arr.length - 1]; // Current value (last element)
+            arr.push(val); // Append to create history
         }
     }
 }
@@ -365,7 +383,7 @@ This creates the time-series behavior where `variable[1]` accesses the previous 
 ```
 Before iteration N+1: [val0, val1, ..., valN]
                                           ↑ current
-                                          
+
 After processing N+1:  [val0, val1, ..., valN, valN+1]
                                           ↑            ↑
                                           [1]          [0] current
@@ -384,9 +402,10 @@ static from(source: any): Series {
 ```
 
 This allows functions to accept:
-- Series objects (pass through)
-- Arrays (wrap in Series)
-- Scalar values (wrap in single-element array, then Series)
+
+-   Series objects (pass through)
+-   Arrays (wrap in Series)
+-   Scalar values (wrap in single-element array, then Series)
 
 ---
 
@@ -438,7 +457,7 @@ The param() function now returns **Series objects** instead of raw arrays:
 // Context.param() implementation
 param(source, index, name?: string) {
     if (typeof source === 'string') return source;
-    
+
     // Handle Series objects
     if (source instanceof Series) {
         if (index) {
@@ -452,7 +471,7 @@ param(source, index, name?: string) {
 
     // Initialize params array if needed
     if (!this.params[name]) this.params[name] = [];
-    
+
     if (Array.isArray(source)) {
         // Wrap array in Series with optional offset
         return new Series(source, index || 0);
@@ -471,7 +490,7 @@ param(source, index, name?: string) {
 **Namespace-Specific param() implementations (ta, math) are similar:**
 
 ```typescript
-// ta.param() and math.param() 
+// ta.param() and math.param()
 export function param(context: any) {
     return (source: any, index: any, name?: string) => {
         if (source instanceof Series) {
@@ -480,9 +499,9 @@ export function param(context: any) {
             }
             return source;
         }
-        
+
         if (!context.params[name]) context.params[name] = [];
-        
+
         if (Array.isArray(source)) {
             return new Series(source, index || 0);
         } else {
@@ -502,7 +521,7 @@ export function param(context: any) {
 When you write `close[1]`, the transpiler transforms it to:
 
 ```javascript
-ta.param(close, 1, 'p0')
+ta.param(close, 1, 'p0');
 ```
 
 Inside param():
@@ -511,7 +530,7 @@ Inside param():
 // close is [oldestValue, ..., newestValue] (forward array)
 // index is 1
 // Result: new Series(close, 1)
-// 
+//
 // When Series.get(0) is called:
 // realIndex = close.length - 1 - (offset + 0)
 // realIndex = close.length - 1 - 1 = close.length - 2
@@ -609,22 +628,22 @@ The **Context** class is the runtime execution environment. It holds all state d
 class Context {
     // Market data (forward chronological order - oldest to newest)
     data: {
-        open: [],      // Opening prices (forward array)
-        high: [],      // High prices (forward array)
-        low: [],       // Low prices (forward array)
-        close: [],     // Closing prices (forward array)
-        volume: [],    // Volume data (forward array)
-        hl2: [],       // (high + low) / 2
-        hlc3: [],      // (high + low + close) / 3
-        ohlc4: [],     // (open + high + low + close) / 4
-        openTime: [],  // Bar open timestamps
-        closeTime: [], // Bar close timestamps
+        open: []; // Opening prices (forward array)
+        high: []; // High prices (forward array)
+        low: []; // Low prices (forward array)
+        close: []; // Closing prices (forward array)
+        volume: []; // Volume data (forward array)
+        hl2: []; // (high + low) / 2
+        hlc3: []; // (high + low + close) / 3
+        ohlc4: []; // (open + high + low + close) / 4
+        openTime: []; // Bar open timestamps
+        closeTime: []; // Bar close timestamps
     };
 
     // User variables by declaration type
-    const: {};  // Variables declared with const
-    let: {};    // Variables declared with let
-    var: {};    // Variables declared with var
+    const: {}; // Variables declared with const
+    let: {}; // Variables declared with let
+    var: {}; // Variables declared with var
     params: {}; // Parameter-wrapped series
 
     // Namespace instances
@@ -641,13 +660,13 @@ class Context {
 
     // State management
     taState: {}; // TA function states (for incremental calculations)
-    cache: {};   // General caching
+    cache: {}; // General caching
 
     // Execution state
-    idx: number;        // Current iteration index
-    result: any;        // Accumulated results
-    plots: {};          // Plot metadata
-    
+    idx: number; // Current iteration index
+    result: any; // Accumulated results
+    plots: {}; // Plot metadata
+
     // Market data references
     marketData: any;
     source: IProvider | any[];
@@ -659,11 +678,11 @@ class Context {
     pineTSCode: Function | String;
 
     // Runtime methods
-    init(target, source, index): any;     // Initialize/update series
-    param(source, index, name): Series;    // Wrap values in Series
-    get(source, index): any;              // Get value from series
-    set(target, value): void;             // Set current value in series
-    precision(value, decimals): number;   // Round to N decimals (default 10)
+    init(target, source, index): any; // Initialize/update series
+    param(source, index, name): Series; // Wrap values in Series
+    get(source, index): any; // Get value from series
+    set(target, value): void; // Set current value in series
+    precision(value, decimals): number; // Round to N decimals (default 10)
 }
 ```
 
@@ -807,9 +826,10 @@ export function ema(context: any) {
 ```
 
 **Key Points:**
-- Data arrays grow with `.push()` (forward append)
-- Variables accessed via `$.get(var, index)` use Pine Script semantics
-- Each iteration processes one bar, growing all series by one element
+
+-   Data arrays grow with `.push()` (forward append)
+-   Variables accessed via `$.get(var, index)` use Pine Script semantics
+-   Each iteration processes one bar, growing all series by one element
 
 ### Data Flow During Iteration
 
@@ -870,6 +890,7 @@ for await (const pageContext of generator) {
 
 **Live Streaming Behavior:**
 When live streaming is enabled (`eDate` undefined + provider source):
+
 1. Fetches new candles from provider starting at last candle's openTime
 2. Updates last candle if still open (same openTime)
 3. Recalculates last bar's results to reflect updated data
@@ -880,19 +901,68 @@ When live streaming is enabled (`eDate` undefined + provider source):
 
 ## Critical Implementation Details
 
-### 1. The Forward Array Growth Pattern
+### 1. Auto-Wrapping Unwrapped Code
+
+The transpiler automatically detects if the provided code is wrapped in a function. If not, it wraps it in a context arrow function before processing.
+
+**Why This Matters:**
+
+Pine Script indicators can be written in two ways:
+
+1. **Wrapped (explicit context parameter)**:
+
+```javascript
+(context) => {
+    const { close } = context.data;
+    const { ta } = context.pine;
+    let sma = ta.sma(close, 20);
+};
+```
+
+2. **Unwrapped (implicit context)**:
+
+```javascript
+const { close } = context.data;
+const { ta } = context.pine;
+let sma = ta.sma(close, 20);
+```
+
+Or even simpler (with implicit imports):
+
+```javascript
+let sma = ta.sma(close, 20);
+```
+
+**Auto-Wrapping Process:**
+
+1. The transpiler checks if the code is already a function expression/declaration
+2. If not wrapped, it automatically wraps it: `(context) => { ... }`
+3. This happens **before** AST parsing, ensuring consistent processing
+4. Combined with implicit imports, users can write minimal Pine Script-like code
+
+**Implementation:**
+
+The `wrapInContextFunction()` transformer:
+
+-   Parses the code to detect if it's already a function
+-   Returns code as-is if already wrapped
+-   Wraps in `(context) => { ... }` if not
+
+This enables a more natural Pine Script writing experience where users don't need to worry about the JavaScript function wrapper.
+
+### 2. The Forward Array Growth Pattern
 
 Variables maintain history through appending (pushing):
 
 ```javascript
 // After calculation (updates last element)
-$.set($.let.var, newValue);  // Updates last element
+$.set($.let.var, newValue); // Updates last element
 // Or during init: $.let.var[$.let.var.length - 1] = newValue
 
 // At end of iteration
 const arr = $.let.var;
-const val = arr[arr.length - 1];  // Get current value (last element)
-arr.push(val);  // Append to create history
+const val = arr[arr.length - 1]; // Get current value (last element)
+arr.push(val); // Append to create history
 ```
 
 Result:
@@ -912,7 +982,7 @@ Access via $.get():
   $.get(arr, 1) → arr[N-1]   (previous)
 ```
 
-### 2. Equality Check Transformation
+### 3. Equality Check Transformation
 
 JavaScript's `==` and `===` don't properly handle NaN comparisons (critical in financial data).
 
@@ -932,35 +1002,39 @@ The `__eq()` function properly handles:
 -   Series comparisons
 -   Type coercion edge cases
 
-### 3. Array Pattern Destructuring
+### 4. Expression Hoisting & Unwrapping
 
-Destructuring requires special handling for tuple-returning functions:
+To ensure predictable execution order and easier debugging, the transpiler "unwraps" nested function calls and expressions into temporary variables.
+
+**Array Pattern Destructuring Example:**
 
 ```javascript
 // User writes:
 let [a, b] = ta.supertrend(close, 10, 3);
 
-// Transpiler analyzes and converts to:
-// Step 1: Create temp variable for the tuple result
-let temp_1 = ta.supertrend(
-    ta.param(close, undefined, 'p0'), 
-    ta.param(10, undefined, 'p1'), 
-    ta.param(3, undefined, 'p2'), 
-    '_ta0'
-);
+// Transpiler converts to:
+const p0 = ta.param(close, undefined, 'p0');
+const p1 = ta.param(10, undefined, 'p1');
+const p2 = ta.param(3, undefined, 'p2');
+const temp_1 = ta.supertrend(p0, p1, p2, '_ta0');
 
-// Step 2: Extract elements (functions return 2D arrays: [[val1, val2]])
-let a = $.init($.let.glb1_a, temp_1?.[0][0]); // First element of tuple
-let b = $.init($.let.glb1_b, temp_1?.[0][1]); // Second element of tuple
+let a = $.init($.let.glb1_a, temp_1?.[0][0]);
+let b = $.init($.let.glb1_b, temp_1?.[0][1]);
 ```
 
-**Why `?.[0][0]`?**
-- TA functions return arrays where each element can be a tuple: `[[supertrend, direction]]`
-- `[0]` gets the current bar's tuple
-- `[0]` again gets the first element of the tuple
-- Optional chaining `?.` handles undefined gracefully
+### 5. Native Symbol Normalization & na Handling
 
-### 4. Nested Function Parameters
+**Normalization:**
+The transpiler ensures that standard Pine Script symbols (like `close`, `open`, `ta`, `math`) cannot be renamed by the user via aliasing in imports.
+`const { close: c } = context.data;` becomes `const { close } = context.data;` and all usages of `c` are replaced with `close`.
+
+**na Handling:**
+The symbol `na` is treated specially:
+
+-   When used as a value: Replaced with `NaN` (e.g., `x = na` -> `x = NaN`).
+-   When used as a function: Remains as a function call (e.g., `na(x)`).
+
+### 6. Nested Function Parameters
 
 Function parameters are marked as "context-bound" to prevent transformation:
 
@@ -972,7 +1046,7 @@ const myFunc = (value) => value * 2;
 // It remains as 'value' for proper function behavior
 ```
 
-### 5. Loop Variable Handling
+### 7. Loop Variable Handling
 
 Loop variables receive special treatment:
 
@@ -986,7 +1060,7 @@ for (let i = 0; i < 10; i++) {
 // But 'sum' and 'values' ARE transformed
 ```
 
-### 6. Precision Management
+### 8. Precision Management
 
 All numeric values are rounded to 10 decimal places (Pine Script standard):
 
@@ -1010,14 +1084,12 @@ These examples show actual transpiler output from the test suite:
 let sma = ta.sma(close, 20);
 
 // Transpiled Output:
-$.let.glb1_sma = $.init(
-    $.let.glb1_sma, 
-    ta.sma(
-        ta.param(close, undefined, 'p0'), 
-        ta.param(20, undefined, 'p1'), 
-        "_ta0"
-    )
-);
+const { close } = $.data;
+const ta = $.ta;
+const p0 = ta.param(close, undefined, 'p0');
+const p1 = ta.param(20, undefined, 'p1');
+const temp_1 = ta.sma(p0, p1, '_ta0');
+$.let.glb1_sma = $.init($.let.glb1_sma, temp_1);
 ```
 
 ### Example 2: Array Access and Assignment
@@ -1028,6 +1100,7 @@ let prev_close = close[1];
 cc = close[2];
 
 // Transpiled Output:
+const { close } = $.data;
 $.let.glb1_prev_close = $.init($.let.glb1_prev_close, $.get(close, 1));
 $.set($.let.glb1_cc, $.get(close, 2));
 ```
@@ -1040,14 +1113,10 @@ const green_candle = close > open;
 const bull_bias = ema9 > ema18;
 
 // Transpiled Output:
-$.const.glb1_green_candle = $.init(
-    $.const.glb1_green_candle, 
-    $.get(close, 0) > $.get(open, 0)
-);
-$.const.glb1_bull_bias = $.init(
-    $.const.glb1_bull_bias, 
-    $.get($.const.glb1_ema9, 0) > $.get($.const.glb1_ema18, 0)
-);
+const { close, open } = $.data;
+// Note: Simple binary ops might inline $.get(), but param() wrappers are still hoisted if used
+$.const.glb1_green_candle = $.init($.const.glb1_green_candle, $.get(close, 0) > $.get(open, 0));
+$.const.glb1_bull_bias = $.init($.const.glb1_bull_bias, $.get($.const.glb1_ema9, 0) > $.get($.const.glb1_ema18, 0));
 ```
 
 ### Example 4: Nested Function Calls
@@ -1057,24 +1126,15 @@ $.const.glb1_bull_bias = $.init(
 let d = ta.ema(math.abs(ap - 99), 10);
 
 // Transpiled Output:
-$.let.glb1_d = $.init(
-    $.let.glb1_d, 
-    ta.ema(
-        ta.param(
-            math.abs(
-                math.param(
-                    $.get($.let.glb1_ap, 0) - 99, 
-                    undefined, 
-                    'p12'
-                )
-            ), 
-            undefined, 
-            'p13'
-        ), 
-        ta.param(10, undefined, 'p14'), 
-        "_ta6"
-    )
-);
+const ta = $.ta;
+const math = $.math;
+const p0 = math.param($.get($.let.glb1_ap, 0) - 99, undefined, 'p0');
+const temp_1 = math.abs(p0, '_ta_math_0'); // (Internal ID may vary)
+const p1 = ta.param(temp_1, undefined, 'p1');
+const p2 = ta.param(10, undefined, 'p2');
+const temp_2 = ta.ema(p1, p2, '_ta0');
+
+$.let.glb1_d = $.init($.let.glb1_d, temp_2);
 ```
 
 ### Example 5: Scoped Variables (If Statement)
@@ -1090,8 +1150,8 @@ if (_cc > 1) {
 // Transpiled Output:
 $.let.glb1_aa = $.init($.let.glb1_aa, 0);
 if ($.get($.const.glb1__cc, 0) > 1) {
-    $.let.if2_bb = $.init($.let.if2_bb, 1);  // Scoped to 'if2'
-    $.set($.let.glb1_aa, 1);                 // Updates global scope
+    $.let.if2_bb = $.init($.let.if2_bb, 1); // Scoped to 'if2'
+    $.set($.let.glb1_aa, 1); // Updates global scope
 }
 ```
 
@@ -1127,10 +1187,11 @@ let currentValue = context.data.close[context.data.close.length - 1]; // Current
 
 **Solution:**
 Remember the distinction:
-- **Storage**: Forward order (oldest at [0], newest at [length-1])
-- **Access via $.get() or Series**: Pine Script semantics (0 = current, 1 = previous)
-- Always use `$.get(close, index)` or `Series.get(index)` for Pine Script semantics
-- Direct array access `close[i]` gives forward chronological order
+
+-   **Storage**: Forward order (oldest at [0], newest at [length-1])
+-   **Access via $.get() or Series**: Pine Script semantics (0 = current, 1 = previous)
+-   Always use `$.get(close, index)` or `Series.get(index)` for Pine Script semantics
+-   Direct array access `close[i]` gives forward chronological order
 
 ### ⚠️ Pitfall 2: Modifying Transpiler Without Understanding Scope
 
@@ -1229,37 +1290,36 @@ export function sma(context: any) {
     return (source: any, _period: any, _callId?: string) => {
         const period = Series.from(_period).get(0); // Extract period value
         const stateKey = _callId || `sma_${period}`;
-        
+
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = { window: [], sum: 0 };
         }
-        
+
         const state = context.taState[stateKey];
         const current = Series.from(source).get(0); // Get current value
-        
+
         // Add new value
         state.window.push(current);
         state.sum += current;
-        
+
         // Remove old value if window is full
         if (state.window.length > period) {
             state.sum -= state.window.shift();
         }
-        
+
         // Return average or NaN if not enough data
-        return state.window.length >= period 
-            ? context.precision(state.sum / period) 
-            : NaN;
+        return state.window.length >= period ? context.precision(state.sum / period) : NaN;
     };
 }
 ```
 
 **Key Points:**
-- Use `callId` for unique state per function call
-- Extract values from Series using `.get(0)` or `Series.from()`
-- Maintain internal state (window, sum) for efficiency
-- Return NaN during initialization period (Pine Script behavior)
-- Use `context.precision()` for consistent decimal precision
+
+-   Use `callId` for unique state per function call
+-   Extract values from Series using `.get(0)` or `Series.from()`
+-   Maintain internal state (window, sum) for efficiency
+-   Return NaN during initialization period (Pine Script behavior)
+-   Use `context.precision()` for consistent decimal precision
 
 ---
 
@@ -1367,19 +1427,131 @@ Executable JS
 
 ## Summary of Key Concepts
 
-| Concept            | Purpose                   | Critical Detail                                   |
-| ------------------ | ------------------------- | ------------------------------------------------- |
-| **Series Class**   | Pine Script indexing      | Wraps forward arrays, provides reverse indexing   |
-| **Forward Storage**| Data storage order        | Arrays stored oldest→newest, accessed via Series  |
-| **$.get()**        | Array access              | Translates Pine index to forward array index      |
-| **$.set()**        | Value assignment          | Sets current value (last element in forward array)|
-| **$.init()**       | Variable initialization   | Creates/updates time-series arrays                |
-| **param()**        | Argument wrapping         | Returns Series objects, handles lookback          |
-| **Unique IDs**     | State isolation           | Separate state for each function call             |
-| **Scope Manager**  | Variable renaming         | Prevents collisions, tracks context               |
-| **Context ($)**    | Runtime environment       | Holds all state, data, and methods                |
-| **Array Growth**   | Series history            | Current value pushed to maintain history          |
-| **Transpiler**     | Code transformation       | AST-based, multi-pass transformation              |
+| Concept             | Purpose                 | Critical Detail                                    |
+| ------------------- | ----------------------- | -------------------------------------------------- |
+| **Series Class**    | Pine Script indexing    | Wraps forward arrays, provides reverse indexing    |
+| **Forward Storage** | Data storage order      | Arrays stored oldest→newest, accessed via Series   |
+| **$.get()**         | Array access            | Translates Pine index to forward array index       |
+| **$.set()**         | Value assignment        | Sets current value (last element in forward array) |
+| **$.init()**        | Variable initialization | Creates/updates time-series arrays                 |
+| **param()**         | Argument wrapping       | Returns Series objects, handles lookback           |
+| **Unique IDs**      | State isolation         | Separate state for each function call              |
+| **Scope Manager**   | Variable renaming       | Prevents collisions, tracks context                |
+| **Context ($)**     | Runtime environment     | Holds all state, data, and methods                 |
+| **Array Growth**    | Series history          | Current value pushed to maintain history           |
+| **Transpiler**      | Code transformation     | AST-based, multi-pass transformation               |
+
+---
+
+## Syntax Evolution and Deprecation
+
+PineTS is evolving to provide a more unified and cleaner API surface. While older syntax patterns remain supported for backward compatibility, they may trigger runtime warnings.
+
+### The Unified Namespace Pattern
+
+**✅ Recommended (New Syntax):**
+
+Destructure all Pine Script namespaces and built-in functions from `context.pine`. This creates a cleaner import section that mirrors Pine Script's unified environment.
+
+```javascript
+(context) => {
+    const { close, open, high, low, hlc3, volume } = context.data;
+    // Import everything from context.pine - unified namespace
+    const { plotchar, color, plot, na, nz, ta, math } = context.pine;
+
+    const sma = ta.sma(close, 20);
+    const abs = math.abs(sma - close);
+};
+```
+
+**Transpiled Output:**
+
+```javascript
+($) => {
+    const { close, open, high, low, hlc3, volume } = $.data;
+    const { plotchar, color, plot, na, nz, ta, math } = $.pine;
+    // ... rest of transpiled code
+};
+```
+
+**⚠️ Deprecated (Old Syntax):**
+
+Accessing namespaces directly from the context root or splitting imports between `context.core` and direct assignments is considered legacy behavior and may trigger warnings.
+
+```javascript
+(context) => {
+    const { close, open, high, low, hlc3, volume } = context.data;
+    const { plotchar, color, plot, na, nz } = context.core; // ⚠️ Legacy: context.core
+    const ta = context.ta; // ⚠️ Legacy: Direct access
+    const math = context.math; // ⚠️ Legacy: Direct access
+
+    const sma = ta.sma(close, 20);
+    const abs = math.abs(sma - close);
+};
+```
+
+**Transpiled Output:**
+
+```javascript
+($) => {
+    const { close, open, high, low, hlc3, volume } = $.data;
+    const { plotchar, color, plot, na, nz } = $.core; // ⚠️ Deprecated
+    const ta = $.ta; // ⚠️ Deprecated
+    const math = $.math; // ⚠️ Deprecated
+    // ... rest of transpiled code
+};
+```
+
+### Key Differences
+
+1. **`context.pine` vs `context.core`**: Use `context.pine` as the single source of truth for Pine Script functions and variables. The `context.core` namespace is deprecated.
+
+2. **Namespace Access**: Prefer destructuring `ta`, `math`, `array`, etc., from `context.pine` rather than accessing them directly from `context.ta`, `context.math`, etc.
+
+3. **Consistency**: The new syntax provides a single, consistent pattern that's easier to understand and maintain.
+
+### Migration Guide
+
+To migrate from old syntax to new syntax:
+
+**Before (Old Syntax):**
+
+```javascript
+(context) => {
+    const { close, open } = context.data;
+    const { plot, color } = context.core;
+    const ta = context.ta;
+    const math = context.math;
+    const array = context.array;
+
+    // Your indicator logic
+};
+```
+
+**After (New Syntax):**
+
+```javascript
+(context) => {
+    const { close, open } = context.data;
+    const { plot, color, ta, math, array } = context.pine;
+
+    // Your indicator logic (unchanged)
+};
+```
+
+### Backward Compatibility
+
+-   **Old syntax still works**: Existing indicators using the old syntax will continue to function correctly.
+-   **Runtime warnings**: Indicators using deprecated syntax may log warnings to help developers migrate.
+-   **No breaking changes**: The transpiler handles both syntaxes identically after normalization.
+-   **Gradual migration**: You can migrate indicators at your own pace.
+
+### Why the Change?
+
+1. **Simplification**: One unified namespace (`context.pine`) instead of multiple access patterns.
+2. **Clarity**: Clear distinction between market data (`context.data`) and Pine Script functions (`context.pine`).
+3. **Maintainability**: Easier to document and understand for new users.
+4. **Future-proofing**: Provides a cleaner foundation for future API enhancements.
 
 ---
 

@@ -51,6 +51,7 @@ import * as astring from 'astring';
 import ScopeManager from './analysis/ScopeManager';
 import { injectImplicitImports } from './transformers/InjectionTransformer';
 import { normalizeNativeImports } from './transformers/NormalizationTransformer';
+import { wrapInContextFunction } from './transformers/WrapperTransformer';
 import { transformNestedArrowFunctions, preProcessContextBoundVars, runAnalysisPass } from './analysis/AnalysisPass';
 import { runTransformationPass, transformEqualityChecks } from './transformers/MainTransformer';
 
@@ -64,6 +65,9 @@ export function transpile(fn: string | Function, options: { debug: boolean; ln?:
 
     let code = typeof fn === 'function' ? fn.toString() : fn;
     code = code.trim();
+
+    // Pre-process: Wrap in context function if not already wrapped
+    code = wrapInContextFunction(code);
 
     const sourceLines = debug ? code.split('\n') : [];
 

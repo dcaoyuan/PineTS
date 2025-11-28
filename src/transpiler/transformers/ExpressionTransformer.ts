@@ -704,44 +704,44 @@ export function transformCallExpression(node: any, scopeManager: ScopeManager, n
             arg,
             { parent: node },
             {
-                Identifier(node: any, state: any, c: any) {
-                    node.parent = state.parent;
-                    transformIdentifier(node, scopeManager);
-                    const isBinaryOperation = node.parent && node.parent.type === 'BinaryExpression';
-                    const isConditional = node.parent && node.parent.type === 'ConditionalExpression';
+            Identifier(node: any, state: any, c: any) {
+                node.parent = state.parent;
+                transformIdentifier(node, scopeManager);
+                const isBinaryOperation = node.parent && node.parent.type === 'BinaryExpression';
+                const isConditional = node.parent && node.parent.type === 'ConditionalExpression';
 
-                    if (isConditional || isBinaryOperation) {
-                        if (node.type === 'MemberExpression') {
-                            transformArrayIndex(node, scopeManager);
-                        } else if (node.type === 'Identifier') {
-                            // Skip addArrayAccess if the identifier is already inside a $.get call
-                            const isGetCall =
-                                node.parent &&
-                                node.parent.type === 'CallExpression' &&
-                                node.parent.callee &&
-                                node.parent.callee.object &&
-                                node.parent.callee.object.name === CONTEXT_NAME &&
-                                node.parent.callee.property.name === 'get';
+                if (isConditional || isBinaryOperation) {
+                    if (node.type === 'MemberExpression') {
+                        transformArrayIndex(node, scopeManager);
+                    } else if (node.type === 'Identifier') {
+                        // Skip addArrayAccess if the identifier is already inside a $.get call
+                        const isGetCall =
+                            node.parent &&
+                            node.parent.type === 'CallExpression' &&
+                            node.parent.callee &&
+                            node.parent.callee.object &&
+                            node.parent.callee.object.name === CONTEXT_NAME &&
+                            node.parent.callee.property.name === 'get';
 
-                            if (!isGetCall) {
-                                addArrayAccess(node, scopeManager);
-                            }
+                        if (!isGetCall) {
+                            addArrayAccess(node, scopeManager);
                         }
                     }
-                },
-                CallExpression(node: any, state: any, c: any) {
-                    if (!node._transformed) {
-                        // First transform the call expression itself
+                }
+            },
+            CallExpression(node: any, state: any, c: any) {
+                if (!node._transformed) {
+                    // First transform the call expression itself
                         transformCallExpression(node, scopeManager);
-                    }
-                },
-                MemberExpression(node: any, state: any, c: any) {
-                    transformMemberExpression(node, '', scopeManager);
-                    // Then continue with object transformation
-                    if (node.object) {
+                }
+            },
+            MemberExpression(node: any, state: any, c: any) {
+                transformMemberExpression(node, '', scopeManager);
+                // Then continue with object transformation
+                if (node.object) {
                         c(node.object, { parent: node });
-                    }
-                },
+                }
+            },
             }
         );
     });

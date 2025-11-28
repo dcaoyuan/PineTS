@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2025 Alaa-eddine KADDOURI
 import { transpile } from '@pinets/transpiler/index';
+import { IProvider } from './marketData/IProvider';
 import { Context } from './Context.class';
-
-import { IProvider } from '@pinets/marketData/IProvider';
 
 /**
  * This class is a wrapper for the Pine Script language, it allows to run Pine Script code in a JavaScript environment

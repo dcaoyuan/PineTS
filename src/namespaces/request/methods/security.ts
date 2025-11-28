@@ -21,8 +21,8 @@ export function security(context: any) {
         const _timeframe = timeframe[0];
         const _expression = expression[0];
         const _expression_name = expression[1];
-        const _barmerge = gaps[0];
-        const _lookahead = lookahead[0];
+        const _gaps = Array.isArray(gaps) ? gaps[0] : gaps;
+        const _lookahead = Array.isArray(lookahead) ? lookahead[0] : lookahead;
 
         const ctxTimeframeIdx = TIMEFRAMES.indexOf(context.timeframe);
         const reqTimeframeIdx = TIMEFRAMES.indexOf(_timeframe);
@@ -40,26 +40,51 @@ export function security(context: any) {
         const myOpenTime = Series.from(context.data.openTime).get(0);
         const myCloseTime = Series.from(context.data.closeTime).get(0);
 
+        // Cache key for tracking previous bar index (for gaps detection)
+        const gapCacheKey = `${_expression_name}_prevIdx`;
+
         if (context.cache[_expression_name]) {
             const secContext = context.cache[_expression_name];
             const secContextIdx = isLTF
-                ? findLTFContextIdx(myOpenTime, myCloseTime, secContext.data.openTime, secContext.data.closeTime, _lookahead, context.eDate)
+                ? findLTFContextIdx(myOpenTime, myCloseTime, secContext.data.openTime, secContext.data.closeTime, _lookahead, context.eDate, _gaps)
                 : findSecContextIdx(myOpenTime, myCloseTime, secContext.data.openTime, secContext.data.closeTime, _lookahead);
-            return secContextIdx == -1 ? NaN : secContext.params[_expression_name][secContextIdx];
+
+            if (secContextIdx == -1) {
+                return NaN;
+            }
+
+            const value = secContext.params[_expression_name][secContextIdx];
+
+            // Handle gaps for HTF (Higher Timeframe)
+            if (!isLTF && _gaps) {
+                const prevIdx = context.cache[gapCacheKey];
+
+                // gaps=true: Only show value when the HTF bar index changes
+                // - lookahead=false: Show on transition (first bar with new index)
+                // - lookahead=true: Show on transition (first bar with new index)
+                // Both behave the same: show only when index changes, otherwise NaN
+
+                if (prevIdx !== undefined && prevIdx === secContextIdx) {
+                    // Same index as previous call = no change = NaN
+                    return NaN;
+                }
+
+                // Index changed (or first call) - update and return value
+                context.cache[gapCacheKey] = secContextIdx;
+                return value;
+            }
+
+            return value;
         }
 
         // Add buffer to sDate to ensure bar start is covered
-        // For HTF: ensure HTF bar start is covered
-        // For LTF: ensure LTF bars covering the start of the Chart bar are covered
         const buffer = 1000 * 60 * 60 * 24 * 30; // 30 days buffer (generous)
         const adjustedSDate = context.sDate ? context.sDate - buffer : undefined;
 
         // If we have a date range, we shouldn't artificially limit the bars to 1000
-        // unless the user explicitly requested a limit.
         const limit = context.sDate && context.eDate ? undefined : context.limit || 1000;
 
         // We pass undefined for eDate to allow loading full history for the security context
-        // This ensures we can correctly resolve historical bars even if the main context is limited
         const pineTS = new PineTS(context.source, _symbol, _timeframe, limit, adjustedSDate, undefined);
 
         const secContext = await pineTS.run(context.pineTSCode);
@@ -67,9 +92,22 @@ export function security(context: any) {
         context.cache[_expression_name] = secContext;
 
         const secContextIdx = isLTF
-            ? findLTFContextIdx(myOpenTime, myCloseTime, secContext.data.openTime, secContext.data.closeTime, _lookahead, context.eDate)
+            ? findLTFContextIdx(myOpenTime, myCloseTime, secContext.data.openTime, secContext.data.closeTime, _lookahead, context.eDate, _gaps)
             : findSecContextIdx(myOpenTime, myCloseTime, secContext.data.openTime, secContext.data.closeTime, _lookahead);
 
-        return secContextIdx == -1 ? NaN : secContext.params[_expression_name][secContextIdx];
+        if (secContextIdx == -1) {
+            return NaN;
+        }
+
+        const value = secContext.params[_expression_name][secContextIdx];
+
+        // Handle gaps for HTF (Higher Timeframe) - First call
+        if (!isLTF && _gaps) {
+            // First call: Store index and return NaN (no previous state to compare)
+            context.cache[gapCacheKey] = secContextIdx;
+            return NaN;
+        }
+
+        return value;
     };
 }

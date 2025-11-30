@@ -15,22 +15,22 @@ type TProvider = {
 // We check if we're in Node.js by checking for process or trying to access fs module
 const isNodeEnvironment = typeof process !== 'undefined' && process.versions && process.versions.node;
 
-let MockProviderInstance: IProvider | null = null;
-if (isNodeEnvironment) {
-    try {
-        // Only instantiate MockProvider in Node.js environments
-        // In browser builds, this will use the stub which is safe
-        MockProviderInstance = new MockProvider();
-    } catch (e) {
-        // If instantiation fails, don't include Mock provider
-        MockProviderInstance = null;
-    }
-}
+// let MockProviderInstance: IProvider | null = null;
+// if (isNodeEnvironment) {
+//     try {
+//         // Only instantiate MockProvider in Node.js environments
+//         // In browser builds, this will use the stub which is safe
+//         MockProviderInstance = new MockProvider();
+//     } catch (e) {
+//         // If instantiation fails, don't include Mock provider
+//         MockProviderInstance = null;
+//     }
+// }
 
 export const Provider: TProvider = {
     Binance: new BinanceProvider(),
     // Only include Mock provider in Node.js environments (excluded from browser builds)
-    ...(MockProviderInstance ? { Mock: MockProviderInstance } : {}),
+    // ...(MockProviderInstance ? { Mock: MockProviderInstance } : {}),
     //TODO : add other providers (polygon, etc.)
 };
 

@@ -7379,6 +7379,44 @@
   var __defProp$9 = Object.defineProperty;
   var __defNormalProp$9 = (obj, key, value) => key in obj ? __defProp$9(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __publicField$9 = (obj, key, value) => __defNormalProp$9(obj, typeof key !== "symbol" ? key + "" : key, value);
+  const JS_GLOBAL_LITERALS = /* @__PURE__ */ new Set([
+    "Infinity",
+    "NaN",
+    "undefined",
+    "null",
+    "true",
+    "false"
+  ]);
+  const JS_GLOBAL_OBJECTS = /* @__PURE__ */ new Set([
+    "Math",
+    "Array",
+    "Object",
+    "String",
+    "Number",
+    "Boolean",
+    "Date",
+    "RegExp",
+    "Error",
+    "JSON",
+    "Promise",
+    "Set",
+    "Map",
+    "WeakSet",
+    "WeakMap",
+    "Symbol",
+    "BigInt",
+    "Proxy",
+    "Reflect",
+    "console",
+    "isNaN",
+    "isFinite",
+    "parseInt",
+    "parseFloat",
+    "encodeURI",
+    "decodeURI",
+    "encodeURIComponent",
+    "decodeURIComponent"
+  ]);
   class ScopeManager {
     constructor() {
       __publicField$9(this, "scopes", []);
@@ -7457,6 +7495,9 @@
       this.arrayPatternElements.add(name);
     }
     isContextBound(name) {
+      if (JS_GLOBAL_LITERALS.has(name) || JS_GLOBAL_OBJECTS.has(name)) {
+        return false;
+      }
       return this.contextBoundVars.has(name);
     }
     isArrayPatternElement(name) {
@@ -8555,6 +8596,9 @@ ${code}
         return node;
       }
       const [scopedName, kind] = scopeManager.getVariable(node.name);
+      if (scopedName === node.name && !scopeManager.isContextBound(node.name)) {
+        return node;
+      }
       return ASTFactory.createContextVariableReference(kind, scopedName);
     }
     return node;
@@ -9315,6 +9359,14 @@ ${code}
               computed: false
             };
           }
+          if (prop.value && prop.value.type === "Identifier") {
+            if (scopeManager.isContextBound(prop.value.name) && !scopeManager.isRootParam(prop.value.name)) {
+              prop.value = ASTFactory.createGetCall(prop.value, 0);
+            } else if (!scopeManager.isContextBound(prop.value.name)) {
+              const [scopedName, kind] = scopeManager.getVariable(prop.value.name);
+              prop.value = ASTFactory.createContextVariableReference(kind, scopedName);
+            }
+          }
           return prop;
         });
       } else if (node.argument.type === "Identifier") {
@@ -9572,8 +9624,8 @@ ${code}
   }
 
   function from(context) {
-    return (source) => {
-      return new PineArrayObject([...source]);
+    return (...values) => {
+      return new PineArrayObject([...values]);
     };
   }
 
@@ -10452,6 +10504,9 @@ ${code}
       const _expression_name = expression[1];
       const _gaps = Array.isArray(gaps) ? gaps[0] : gaps;
       const _lookahead = Array.isArray(lookahead) ? lookahead[0] : lookahead;
+      if (context.isSecondaryContext) {
+        return _expression;
+      }
       const ctxTimeframeIdx = TIMEFRAMES.indexOf(context.timeframe);
       const reqTimeframeIdx = TIMEFRAMES.indexOf(_timeframe);
       if (ctxTimeframeIdx == -1 || reqTimeframeIdx == -1) {
@@ -10463,9 +10518,10 @@ ${code}
       const isLTF = ctxTimeframeIdx > reqTimeframeIdx;
       const myOpenTime = Series.from(context.data.openTime).get(0);
       const myCloseTime = Series.from(context.data.closeTime).get(0);
-      const gapCacheKey = `${_expression_name}_prevIdx`;
-      if (context.cache[_expression_name]) {
-        const secContext2 = context.cache[_expression_name];
+      const cacheKey = `${_symbol}_${_timeframe}_${_expression_name}`;
+      const gapCacheKey = `${cacheKey}_prevIdx`;
+      if (context.cache[cacheKey]) {
+        const secContext2 = context.cache[cacheKey];
         const secContextIdx2 = isLTF ? findLTFContextIdx(
           myOpenTime,
           myCloseTime,
@@ -10493,8 +10549,9 @@ ${code}
       const adjustedSDate = context.sDate ? context.sDate - buffer : void 0;
       const limit = context.sDate && context.eDate ? void 0 : context.limit || 1e3;
       const pineTS = new PineTS(context.source, _symbol, _timeframe, limit, adjustedSDate, void 0);
+      pineTS.markAsSecondary();
       const secContext = await pineTS.run(context.pineTSCode);
-      context.cache[_expression_name] = secContext;
+      context.cache[cacheKey] = secContext;
       const secContextIdx = isLTF ? findLTFContextIdx(
         myOpenTime,
         myCloseTime,
@@ -10535,6 +10592,36 @@ ${code}
     }
   }
 
+  function obv(context) {
+    return () => {
+      if (!context.taState) context.taState = {};
+      const stateKey = "obv";
+      if (!context.taState[stateKey]) {
+        context.taState[stateKey] = {
+          prevOBV: 0
+        };
+      }
+      const state = context.taState[stateKey];
+      const close0 = context.get(context.data.close, 0);
+      const volume0 = context.get(context.data.volume, 0);
+      const close1 = context.get(context.data.close, 1);
+      if (isNaN(close1)) {
+        state.prevOBV = 0;
+        return context.precision(0);
+      }
+      let currentOBV;
+      if (close0 > close1) {
+        currentOBV = state.prevOBV + volume0;
+      } else if (close0 < close1) {
+        currentOBV = state.prevOBV - volume0;
+      } else {
+        currentOBV = state.prevOBV;
+      }
+      state.prevOBV = currentOBV;
+      return context.precision(currentOBV);
+    };
+  }
+
   function tr(context) {
     return () => {
       const high0 = context.get(context.data.high, 0);
@@ -10545,6 +10632,48 @@ ${code}
       }
       const val = Math.max(high0 - low0, Math.abs(high0 - close1), Math.abs(low0 - close1));
       return val;
+    };
+  }
+
+  function alma(context) {
+    return (source, _period, _offset, _sigma, _callId) => {
+      const period = Series.from(_period).get(0);
+      const offset = Series.from(_offset).get(0);
+      const sigma = Series.from(_sigma).get(0);
+      if (!context.taState) context.taState = {};
+      const stateKey = _callId || `alma_${period}_${offset}_${sigma}`;
+      if (!context.taState[stateKey]) {
+        const m = offset * (period - 1);
+        const s = period / sigma;
+        const weights = [];
+        let weightSum = 0;
+        for (let i = 0; i < period; i++) {
+          const weight = Math.exp(-Math.pow(i - m, 2) / (2 * s * s));
+          weights.push(weight);
+          weightSum += weight;
+        }
+        for (let i = 0; i < weights.length; i++) {
+          weights[i] /= weightSum;
+        }
+        context.taState[stateKey] = {
+          window: [],
+          weights
+        };
+      }
+      const state = context.taState[stateKey];
+      const currentValue = Series.from(source).get(0);
+      state.window.unshift(currentValue);
+      if (state.window.length < period) {
+        return NaN;
+      }
+      if (state.window.length > period) {
+        state.window.pop();
+      }
+      let alma2 = 0;
+      for (let i = 0; i < period; i++) {
+        alma2 += state.weights[i] * state.window[period - 1 - i];
+      }
+      return context.precision(alma2);
     };
   }
 
@@ -10817,6 +10946,33 @@ ${code}
       const validValues = state.window.filter((v) => !isNaN(v) && v !== void 0);
       const min = validValues.length > 0 ? Math.min(...validValues) : NaN;
       return context.precision(min);
+    };
+  }
+
+  function macd(context) {
+    return (source, _fastLength, _slowLength, _signalLength, _callId) => {
+      const fastLength = Series.from(_fastLength).get(0);
+      const slowLength = Series.from(_slowLength).get(0);
+      const signalLength = Series.from(_signalLength).get(0);
+      const baseId = _callId || `macd_${fastLength}_${slowLength}_${signalLength}`;
+      const fastEmaId = `${baseId}_fast`;
+      const slowEmaId = `${baseId}_slow`;
+      const signalEmaId = `${baseId}_signal`;
+      const fastMA = context.ta.ema(source, fastLength, fastEmaId);
+      const slowMA = context.ta.ema(source, slowLength, slowEmaId);
+      let macdLine = NaN;
+      if (!isNaN(fastMA) && !isNaN(slowMA)) {
+        macdLine = fastMA - slowMA;
+      }
+      let signalLine = NaN;
+      if (!isNaN(macdLine)) {
+        signalLine = context.ta.ema(macdLine, signalLength, signalEmaId);
+      }
+      let histLine = NaN;
+      if (!isNaN(macdLine) && !isNaN(signalLine)) {
+        histLine = macdLine - signalLine;
+      }
+      return [[context.precision(macdLine), context.precision(signalLine), context.precision(histLine)]];
     };
   }
 
@@ -11175,6 +11331,36 @@ ${code}
     };
   }
 
+  function swma(context) {
+    return (source, _callId) => {
+      const period = 4;
+      const weights = [1, 2, 2, 1];
+      const weightSum = 6;
+      if (!context.taState) context.taState = {};
+      const stateKey = _callId || `swma`;
+      if (!context.taState[stateKey]) {
+        context.taState[stateKey] = {
+          window: []
+        };
+      }
+      const state = context.taState[stateKey];
+      const currentValue = Series.from(source).get(0);
+      state.window.unshift(currentValue);
+      if (state.window.length < period) {
+        return NaN;
+      }
+      if (state.window.length > period) {
+        state.window.pop();
+      }
+      let swma2 = 0;
+      for (let i = 0; i < period; i++) {
+        swma2 += weights[i] * state.window[period - 1 - i];
+      }
+      swma2 /= weightSum;
+      return context.precision(swma2);
+    };
+  }
+
   function variance(context) {
     return (source, _length, _callId) => {
       const length = Series.from(_length).get(0);
@@ -11201,6 +11387,41 @@ ${code}
       const mean = sum / length;
       const variance2 = sumSquares / length - mean * mean;
       return context.precision(variance2);
+    };
+  }
+
+  function vwap(context) {
+    return (source, _callId) => {
+      if (!context.taState) context.taState = {};
+      const stateKey = _callId || `vwap`;
+      if (!context.taState[stateKey]) {
+        context.taState[stateKey] = {
+          cumulativePV: 0,
+          // Cumulative price * volume
+          cumulativeVolume: 0,
+          // Cumulative volume
+          lastSessionDate: null
+          // Track last session date
+        };
+      }
+      const state = context.taState[stateKey];
+      const currentPrice = Series.from(source).get(0);
+      const currentVolume = Series.from(context.data.volume).get(0);
+      const currentOpenTime = Series.from(context.data.openTime).get(0);
+      const currentDate = new Date(currentOpenTime);
+      const currentSessionDate = currentDate.toISOString().slice(0, 10);
+      if (state.lastSessionDate !== currentSessionDate) {
+        state.cumulativePV = 0;
+        state.cumulativeVolume = 0;
+        state.lastSessionDate = currentSessionDate;
+      }
+      state.cumulativePV += currentPrice * currentVolume;
+      state.cumulativeVolume += currentVolume;
+      if (state.cumulativeVolume === 0) {
+        return NaN;
+      }
+      const vwap2 = state.cumulativePV / state.cumulativeVolume;
+      return context.precision(vwap2);
     };
   }
 
@@ -11268,9 +11489,11 @@ ${code}
   var __defNormalProp$3 = (obj, key, value) => key in obj ? __defProp$3(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __publicField$3 = (obj, key, value) => __defNormalProp$3(obj, typeof key !== "symbol" ? key + "" : key, value);
   const getters = {
+    obv,
     tr
   };
   const methods = {
+    alma,
     atr,
     change,
     crossover,
@@ -11281,6 +11504,7 @@ ${code}
     hma,
     linreg,
     lowest,
+    macd,
     median,
     mom,
     param,
@@ -11292,14 +11516,18 @@ ${code}
     sma,
     stdev,
     supertrend,
+    swma,
     variance,
+    vwap,
     vwma,
     wma
   };
   class TechnicalAnalysis {
     constructor(context) {
       this.context = context;
+      __publicField$3(this, "obv");
       __publicField$3(this, "tr");
+      __publicField$3(this, "alma");
       __publicField$3(this, "atr");
       __publicField$3(this, "change");
       __publicField$3(this, "crossover");
@@ -11310,6 +11538,7 @@ ${code}
       __publicField$3(this, "hma");
       __publicField$3(this, "linreg");
       __publicField$3(this, "lowest");
+      __publicField$3(this, "macd");
       __publicField$3(this, "median");
       __publicField$3(this, "mom");
       __publicField$3(this, "param");
@@ -11321,7 +11550,9 @@ ${code}
       __publicField$3(this, "sma");
       __publicField$3(this, "stdev");
       __publicField$3(this, "supertrend");
+      __publicField$3(this, "swma");
       __publicField$3(this, "variance");
+      __publicField$3(this, "vwap");
       __publicField$3(this, "vwma");
       __publicField$3(this, "wma");
       Object.entries(getters).forEach(([name, factory]) => {
@@ -11362,6 +11593,8 @@ ${code}
       __publicField$2(this, "cache", {});
       __publicField$2(this, "taState", {});
       // State for incremental TA calculations
+      __publicField$2(this, "isSecondaryContext", false);
+      // Flag to prevent infinite recursion in request.security
       __publicField$2(this, "NA", NaN);
       __publicField$2(this, "lang");
       // Combined namespace and core functions - the default way to access everything
@@ -11636,6 +11869,7 @@ ${code}
         debug: false
       });
       __publicField$1(this, "_transpiledCode", null);
+      __publicField$1(this, "_isSecondaryContext", false);
       this._readyPromise = new Promise((resolve) => {
         this.loadMarketData(source, tickerId, timeframe, limit, sDate, eDate).then((data) => {
           const marketData = data;
@@ -11667,6 +11901,9 @@ ${code}
     }
     get transpiledCode() {
       return this._transpiledCode;
+    }
+    markAsSecondary() {
+      this._isSecondaryContext = true;
     }
     setDebugSettings({ ln, debug }) {
       this._debugSettings.ln = ln;
@@ -11708,7 +11945,7 @@ ${code}
     async _runComplete(pineTSCode, periods) {
       await this.ready();
       if (!periods) periods = this.data.length;
-      const context = this._initializeContext(pineTSCode);
+      const context = this._initializeContext(pineTSCode, this._isSecondaryContext);
       this._transpiledCode = this._transpileCode(pineTSCode);
       await this._executeIterations(context, this._transpiledCode, this.data.length - periods, this.data.length);
       return context;
@@ -11722,7 +11959,7 @@ ${code}
     async *_runPaginated(pineTSCode, periods, pageSize, enableLiveStream = false) {
       await this.ready();
       if (!periods) periods = this.data.length;
-      const context = this._initializeContext(pineTSCode);
+      const context = this._initializeContext(pineTSCode, this._isSecondaryContext);
       this._transpiledCode = this._transpileCode(pineTSCode);
       const startIdx = this.data.length - periods;
       let processedUpToIdx = startIdx;
@@ -11901,7 +12138,7 @@ ${code}
      * Initialize a new context for running Pine Script code
      * @private
      */
-    _initializeContext(pineTSCode) {
+    _initializeContext(pineTSCode, isSecondary = false) {
       const context = new Context({
         marketData: this.data,
         source: this.source,
@@ -11912,6 +12149,7 @@ ${code}
         eDate: this.eDate
       });
       context.pineTSCode = pineTSCode;
+      context.isSecondaryContext = isSecondary;
       context.data.close = new Series([]);
       context.data.open = new Series([]);
       context.data.high = new Series([]);

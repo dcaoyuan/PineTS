@@ -87,6 +87,13 @@ export const ASTFactory = {
         return this.createCallExpression(initMethod, args);
     },
 
+    createInitVarCall(targetVarRef: any, value: any): any {
+        // $.initVar(target, value)
+        const initMethod = this.createMemberExpression(this.createContextIdentifier(), this.createIdentifier('initVar'), false);
+        const args = [targetVarRef, value];
+        return this.createCallExpression(initMethod, args);
+    },
+
     // Create $.get(source, index)
     createGetCall(source: any, index: any): any {
         const getMethod = this.createMemberExpression(this.createContextIdentifier(), this.createIdentifier('get'), false);

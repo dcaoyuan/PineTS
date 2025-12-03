@@ -41,6 +41,7 @@ export class Context {
         color: any;
         plot: (...args: any[]) => any;
         nz: (...args: any[]) => any;
+        bar_index: number;
     };
 
     // Track deprecation warnings to avoid spam
@@ -102,6 +103,7 @@ export class Context {
         };
 
         // Initialize everything directly in pine - the default way to access everything
+        const _this = this;
         this.pine = {
             input: new Input(this),
             ta: new TechnicalAnalysis(this),
@@ -113,6 +115,9 @@ export class Context {
             color: coreFunctions.color,
             plot: coreFunctions.plot,
             nz: coreFunctions.nz,
+            get bar_index() {
+                return _this.idx;
+            },
         };
     }
 
@@ -167,11 +172,43 @@ export class Context {
     }
 
     /**
+     * Initializes a 'var' variable.
+     * - First bar: uses the initial value.
+     * - Subsequent bars: maintains the previous value (state).
+     * @param trg - The target variable
+     * @param src - The source initializer value
+     * @returns Series object
+     */
+    initVar(trg, src: any): Series {
+        // If target exists (subsequent bars), return it as is.
+        // PineTS automatically shifts context variables by copying the last value,
+        // so the previous value is already carried over to the current slot.
+        if (trg) {
+            return trg;
+        }
+
+        // First bar: Initialize with source value
+        let value;
+        if (src instanceof Series) {
+            value = src.get(0);
+        } else if (Array.isArray(src)) {
+            if (Array.isArray(src[0])) {
+                value = src[0];
+            } else {
+                value = this.precision(src[src.length - 1]);
+            }
+        } else {
+            value = this.precision(src);
+        }
+
+        return new Series([value]);
+    }
+
+    /**
      * this function is used to set the floating point precision of a number
      * by default it is set to 10 decimals which is the same as pine script
      * @param n - the number to be precision
      * @param decimals - the number of decimals to precision to
-
      * @returns the precision number
      */
     precision(n: number, decimals: number = 10) {

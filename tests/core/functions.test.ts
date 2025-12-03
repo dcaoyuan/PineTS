@@ -173,4 +173,205 @@ describe('Functions', () => {
         console.log('plotdata_str', plotdata_str);
         expect(plotdata_str.trim()).toEqual(expected_plot.trim());
     });
+
+    it('SUPERTREND Function', async () => {
+        const pineTS = new PineTS(Provider.Mock, 'BTCUSDC', 'W', null, new Date('2018-12-10').getTime(), new Date('2020-01-27').getTime());
+
+        const sourceCode = (context) => {
+            const { close, high, low, volume } = context.data;
+            const { ta, plotchar, math, nz, na } = context.pine;
+
+            function pine_supertrend(factor, atrPeriod) {
+                const src = (high + low) / 2;
+                const atr = ta.atr(atrPeriod);
+                let upperBand = src + factor * atr;
+                let lowerBand = src - factor * atr;
+                const prevLowerBand = nz(lowerBand[1]);
+                const prevUpperBand = nz(upperBand[1]);
+
+                lowerBand = lowerBand > prevLowerBand || close[1] < prevLowerBand ? lowerBand : prevLowerBand;
+                upperBand = upperBand < prevUpperBand || close[1] > prevUpperBand ? upperBand : prevUpperBand;
+                let _direction = na;
+                let superTrend = na;
+                const prevSuperTrend = superTrend[1];
+                if (na(atr[1])) {
+                    _direction = 1;
+                } else if (prevSuperTrend == prevUpperBand) {
+                    _direction = close > upperBand ? -1 : 1;
+                } else {
+                    _direction = close < lowerBand ? 1 : -1;
+                }
+                superTrend = _direction == -1 ? lowerBand : upperBand;
+                return [superTrend, _direction];
+            }
+            //const res = ta.wpr(14);
+            const [supertrend, direction] = pine_supertrend(3, 10);
+            plotchar(supertrend, '_plot');
+
+            return { supertrend, direction };
+        };
+
+        const { result, plots } = await pineTS.run(sourceCode);
+
+        let _plotdata = plots['_plot']?.data;
+        const startDate = new Date('2019-07-20').getTime();
+        const endDate = new Date('2019-11-16').getTime();
+
+        let plotdata_str = '';
+        for (let i = 0; i < _plotdata.length; i++) {
+            const time = _plotdata[i].time;
+            if (time < startDate || time > endDate) {
+                continue;
+            }
+
+            const str_time = new Date(time).toISOString().slice(0, -1) + '-00:00';
+            const res = _plotdata[i].value;
+            const direction = result.direction[i];
+            plotdata_str += `[${str_time}]: ${res} ${direction}\n`;
+        }
+
+        const expected_plot = `[2019-07-22T00:00:00.000-00:00]: 7963.3152640294 -1
+[2019-07-29T00:00:00.000-00:00]: 7963.3152640294 -1
+[2019-08-05T00:00:00.000-00:00]: 7963.3152640294 -1
+[2019-08-12T00:00:00.000-00:00]: 7963.3152640294 -1
+[2019-08-19T00:00:00.000-00:00]: 7963.3152640294 -1
+[2019-08-26T00:00:00.000-00:00]: 7963.3152640294 -1
+[2019-09-02T00:00:00.000-00:00]: 7963.3152640294 -1
+[2019-09-09T00:00:00.000-00:00]: 7963.3152640294 -1
+[2019-09-16T00:00:00.000-00:00]: 7963.3152640294 -1
+[2019-09-23T00:00:00.000-00:00]: 7963.3152640294 -1
+[2019-09-30T00:00:00.000-00:00]: 12355.5963415975 1
+[2019-10-07T00:00:00.000-00:00]: 12355.5963415975 1
+[2019-10-14T00:00:00.000-00:00]: 12015.3009366939 1
+[2019-10-21T00:00:00.000-00:00]: 12015.3009366939 1
+[2019-10-28T00:00:00.000-00:00]: 12015.3009366939 1
+[2019-11-04T00:00:00.000-00:00]: 12015.3009366939 1
+[2019-11-11T00:00:00.000-00:00]: 12015.3009366939 1`;
+
+        console.log('expected_plot', expected_plot);
+        console.log('plotdata_str', plotdata_str);
+        expect(plotdata_str.trim()).toEqual(expected_plot.trim());
+    });
+    it('SAR Function', async () => {
+        const pineTS = new PineTS(Provider.Mock, 'BTCUSDC', 'W', null, new Date('2018-12-10').getTime(), new Date('2020-01-27').getTime());
+
+        const sourceCode = (context) => {
+            const { close, open } = context.data;
+            const { ta, plotchar, math, bar_index } = context.pine;
+
+            function pine_sar(start, inc, max) {
+                var result = na;
+                var maxMin = na;
+                var acceleration = na;
+                var isBelow = false;
+                let isFirstTrendBar = false;
+
+                if (bar_index == 1) {
+                    if (close > close[1]) {
+                        isBelow = true;
+                        maxMin = high;
+                        result = low[1];
+                    } else {
+                        isBelow = false;
+                        maxMin = low;
+                        result = high[1];
+                    }
+                    isFirstTrendBar = true;
+                    acceleration = start;
+                }
+                result = result + acceleration * (maxMin - result);
+
+                if (isBelow) {
+                    if (result > low) {
+                        isFirstTrendBar = true;
+                        isBelow = false;
+                        result = math.max(high, maxMin);
+                        maxMin = low;
+                        acceleration = start;
+                    }
+                } else {
+                    if (result < high) {
+                        isFirstTrendBar = true;
+                        isBelow = true;
+                        result = math.min(low, maxMin);
+                        maxMin = high;
+                        acceleration = start;
+                    }
+                }
+
+                if (!isFirstTrendBar) {
+                    if (isBelow) {
+                        if (high > maxMin) {
+                            maxMin = high;
+                            acceleration = math.min(acceleration + inc, max);
+                        }
+                    } else {
+                        if (low < maxMin) {
+                            maxMin = low;
+                            acceleration = math.min(acceleration + inc, max);
+                        }
+                    }
+                }
+                if (isBelow) {
+                    result = math.min(result, low[1]);
+                    if (bar_index > 1) {
+                        result = math.min(result, low[2]);
+                    }
+                } else {
+                    result = math.max(result, high[1]);
+                    if (bar_index > 1) {
+                        result = math.max(result, high[2]);
+                    }
+                }
+
+                return result;
+            }
+            const res = pine_sar(0.02, 0.02, 0.2);
+
+            plotchar(res, '_plot');
+
+            return { res };
+        };
+
+        const { result, plots } = await pineTS.run(sourceCode);
+
+        let _plotdata = plots['_plot']?.data;
+        const startDate = new Date('2019-07-29').getTime();
+        const endDate = new Date('2019-11-20').getTime();
+
+        let plotdata_str = '';
+        for (let i = 0; i < _plotdata.length; i++) {
+            const time = _plotdata[i].time;
+            if (time < startDate || time > endDate) {
+                continue;
+            }
+
+            const str_time = new Date(time).toISOString().slice(0, -1) + '-00:00';
+            const res = _plotdata[i].value;
+
+            plotdata_str += `[${str_time}]: ${res}\n`;
+        }
+
+        const expected_plot = `[2019-07-29T00:00:00.000-00:00]: 13674.838168
+[2019-08-05T00:00:00.000-00:00]: 13582.88140464
+[2019-08-12T00:00:00.000-00:00]: 13492.7637765472
+[2019-08-19T00:00:00.000-00:00]: 13404.4485010163
+[2019-08-26T00:00:00.000-00:00]: 13317.8995309959
+[2019-09-02T00:00:00.000-00:00]: 13233.081540376
+[2019-09-09T00:00:00.000-00:00]: 13149.9599095685
+[2019-09-16T00:00:00.000-00:00]: 13068.5007113771
+[2019-09-23T00:00:00.000-00:00]: 12988.6706971496
+[2019-09-30T00:00:00.000-00:00]: 12778.1238692636
+[2019-10-07T00:00:00.000-00:00]: 12473.5000371078
+[2019-10-14T00:00:00.000-00:00]: 12187.1536348813
+[2019-10-21T00:00:00.000-00:00]: 11917.9880167884
+[2019-10-28T00:00:00.000-00:00]: 11547.7489754454
+[2019-11-04T00:00:00.000-00:00]: 11207.1290574097
+[2019-11-11T00:00:00.000-00:00]: 10893.758732817
+[2019-11-18T00:00:00.000-00:00]: 10605.4580341916`;
+
+        console.log('expected_plot', expected_plot);
+        console.log('plotdata_str', plotdata_str);
+        expect(plotdata_str.trim()).toEqual(expected_plot.trim());
+    });
 });

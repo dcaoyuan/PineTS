@@ -60,14 +60,14 @@ All functions listed below are verified to exist in Pine Script v5.
 
 | Function          | Status | Description                        |
 | ----------------- | ------ | ---------------------------------- |
-| `ta.crossover()`  | ✔️     | Crossover Detection                |
-| `ta.crossunder()` | ✔️     | Crossunder Detection               |
-| `ta.cross()`      | ⬜     | Cross Detection (either direction) |
-| `ta.rising()`     | ⬜     | Rising Trend Detection             |
-| `ta.falling()`    | ⬜     | Falling Trend Detection            |
-| `ta.dmi()`        | ⬜     | Directional Movement Index         |
-| `ta.supertrend()` | ✔️     | SuperTrend Indicator               |
-| `ta.sar()`        | ⬜     | Parabolic SAR                      |
+| `ta.crossover()`  | ✅     | Crossover Detection                |
+| `ta.crossunder()` | ✅     | Crossunder Detection               |
+| `ta.cross()`      | ✅     | Cross Detection (either direction) |
+| `ta.rising()`     | ✅     | Rising Trend Detection             |
+| `ta.falling()`    | ✅     | Falling Trend Detection            |
+| `ta.dmi()`        | ✅     | Directional Movement Index         |
+| `ta.supertrend()` | ✅     | SuperTrend Indicator               |
+| `ta.sar()`        | ✅     | Parabolic SAR                      |
 
 ### Volume Indicators
 

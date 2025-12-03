@@ -320,6 +320,11 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
         if (decl.init) {
             if (isArrowFunction || isArrayPatternVar) {
                 rightSide = decl.init;
+            } else if (kind === 'var') {
+                rightSide = ASTFactory.createInitVarCall(
+                    targetVarRef,
+                    decl.init
+                );
             } else {
                 rightSide = ASTFactory.createInitCall(
                     targetVarRef,

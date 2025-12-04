@@ -28,6 +28,7 @@ PineTS is used to generate plot data, and tradingview light weight chart is used
 ## Key Features
 
 -   **Pine Script Compatibility**: Supports Pine Script v5+ syntax and functionality
+-   **High Precision**: Aims for the same precision as Pine Script (up to the 8th digit)
 -   **Time-Series Processing**: Handles historical data and series operations
 -   **Technical Analysis Functions**: Comprehensive set of TA indicators and calculations
 -   **Mathematical Operations**: Advanced mathematical functions and precision handling
@@ -155,6 +156,8 @@ const { result } = await pineTS.run((context) => {
 5. **Return syntax**: PineTS can returns an object with the results of the indicator, allowing you to get the results of the indicator in a single call.
 
 ## Project Goals
+
+PineTS aims for **full coverage** of Pine Script functions and capabilities. The ultimate goal is to enable running **original Pine Script code directly** without manual conversion to PineTS syntax.
 
 -   Runtime Transpiler
 -   Core Pine Script functions and variables

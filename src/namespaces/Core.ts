@@ -74,6 +74,10 @@ export class Core {
         });
     }
 
+    get bar_index() {
+        return this.context.idx;
+    }
+
     na(series: any) {
         return isNaN(Series.from(series).get(0));
     }

@@ -15,30 +15,90 @@ import {
 } from './StatementTransformer';
 
 export function transformEqualityChecks(ast: any): void {
-    walk.simple(ast, {
-        BinaryExpression(node: any) {
-            // Check if this is an equality operator
-            if (node.operator === '==' || node.operator === '===') {
-                // Store the original operands
-                const leftOperand = node.left;
-                const rightOperand = node.right;
+    const baseVisitor = { ...walk.base, LineComment: () => {} };
+    walk.simple(
+        ast,
+        {
+            BinaryExpression(node: any) {
+                // Check if this is an equality operator
+                if (node.operator === '==' || node.operator === '===') {
+                    // Store the original operands
+                    const leftOperand = node.left;
+                    const rightOperand = node.right;
 
-                // Transform the BinaryExpression into a CallExpression
-                const callExpr = ASTFactory.createMathEqCall(leftOperand, rightOperand);
-                callExpr._transformed = true;
+                    // Transform the BinaryExpression into a CallExpression
+                    const callExpr = ASTFactory.createMathEqCall(leftOperand, rightOperand);
+                    callExpr._transformed = true;
 
-                Object.assign(node, callExpr);
-            }
+                    Object.assign(node, callExpr);
+                }
+            },
         },
-    });
+        baseVisitor
+    );
 }
 
-export function runTransformationPass(ast: any, scopeManager: ScopeManager, originalParamName: string): void {
+export function runTransformationPass(
+    ast: any,
+    scopeManager: ScopeManager,
+    originalParamName: string,
+    options: { debug: boolean; ln?: boolean } = { debug: false, ln: false },
+    sourceLines: string[] = []
+): void {
+    const createDebugComment = (originalNode: any): any => {
+        if (!options.debug || !originalNode.loc || !sourceLines.length) return null;
+        const lineIndex = originalNode.loc.start.line - 1;
+        if (lineIndex >= 0 && lineIndex < sourceLines.length) {
+            const lineText = sourceLines[lineIndex].trim();
+            if (lineText) {
+                const prefix = options.ln ? ` [Line ${originalNode.loc.start.line}]` : '';
+                return {
+                    type: 'LineComment',
+                    value: `${prefix} ${lineText}`,
+                };
+            }
+        }
+        return null;
+    };
+
     walk.recursive(ast, scopeManager, {
+        Program(node: any, state: ScopeManager, c: any) {
+            // state.pushScope('glb');
+            const newBody: any[] = [];
+
+            node.body.forEach((stmt: any) => {
+                state.enterHoistingScope();
+                c(stmt, state);
+                const hoistedStmts = state.exitHoistingScope();
+
+                const commentNode = createDebugComment(stmt);
+                if (commentNode) newBody.push(commentNode);
+
+                newBody.push(...hoistedStmts);
+                newBody.push(stmt);
+            });
+
+            node.body = newBody;
+            // state.popScope();
+        },
         BlockStatement(node: any, state: ScopeManager, c: any) {
-            //state.pushScope('block');
-            node.body.forEach((stmt: any) => c(stmt, state));
-            //state.popScope();
+            // state.pushScope('block');
+            const newBody: any[] = [];
+
+            node.body.forEach((stmt: any) => {
+                state.enterHoistingScope();
+                c(stmt, state);
+                const hoistedStmts = state.exitHoistingScope();
+
+                const commentNode = createDebugComment(stmt);
+                if (commentNode) newBody.push(commentNode);
+
+                newBody.push(...hoistedStmts);
+                newBody.push(stmt);
+            });
+
+            node.body = newBody;
+            // state.popScope();
         },
         ReturnStatement(node: any, state: ScopeManager) {
             transformReturnStatement(node, state);

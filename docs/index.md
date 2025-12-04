@@ -51,6 +51,10 @@ Learn the basics of converting Pine Script to PineTS and understand key differen
 
 Complete guide on how to initialize PineTS and run indicators with detailed API documentation, including all constructor parameters, run method options, and return value formats.
 
+### [Syntax Guide](syntax-guide.md)
+
+Detailed guide on PineTS syntax and how to write code equivalent to Pine Script, including variable declarations (`var` vs `let`), series access, and control structures.
+
 ### [Language Coverage](lang-coverage.md)
 
 Click here to [explore](lang-coverage.md) the [Pine Script language](lang-coverage.md) features implemented in PineTS, including execution model, time series, and more.

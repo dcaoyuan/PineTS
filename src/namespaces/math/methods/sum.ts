@@ -10,11 +10,8 @@ export function sum(context: any) {
         let total = 0;
         for (let i = 0; i < len; i++) {
             const val = series.get(i);
-            if (!isNaN(val)) {
-                total += val;
-            }
+            total += val;
         }
         return total;
     };
 }
-

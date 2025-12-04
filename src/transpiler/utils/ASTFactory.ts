@@ -40,10 +40,10 @@ export const ASTFactory = {
         return this.createMemberExpression(this.createMemberExpression(context, kindId, false), nameId, false);
     },
 
-    // Create $.kind.name[0]
+    // Create $.get($.kind.name, 0)
     createContextVariableAccess0(kind: string, name: string): any {
         const varRef = this.createContextVariableReference(kind, name);
-        return this.createArrayAccess(varRef, 0);
+        return this.createGetCall(varRef, 0);
     },
 
     createArrayAccess(object: any, index: any): any {
@@ -87,6 +87,13 @@ export const ASTFactory = {
         return this.createCallExpression(initMethod, args);
     },
 
+    createInitVarCall(targetVarRef: any, value: any): any {
+        // $.initVar(target, value)
+        const initMethod = this.createMemberExpression(this.createContextIdentifier(), this.createIdentifier('initVar'), false);
+        const args = [targetVarRef, value];
+        return this.createCallExpression(initMethod, args);
+    },
+
     // Create $.get(source, index)
     createGetCall(source: any, index: any): any {
         const getMethod = this.createMemberExpression(this.createContextIdentifier(), this.createIdentifier('get'), false);
@@ -121,6 +128,20 @@ export const ASTFactory = {
                     },
                 ],
             },
+        };
+    },
+
+    createVariableDeclaration(name: string, init: any): any {
+        return {
+            type: 'VariableDeclaration',
+            kind: 'const',
+            declarations: [
+                {
+                    type: 'VariableDeclarator',
+                    id: this.createIdentifier(name),
+                    init,
+                },
+            ],
         };
     },
 };

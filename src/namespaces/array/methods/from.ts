@@ -3,8 +3,8 @@
 import { PineArrayObject } from '../PineArrayObject';
 
 export function from(context: any) {
-    return (source: any[]): PineArrayObject => {
-        return new PineArrayObject([...source]);
+    return (...values: any[]): PineArrayObject => {
+        return new PineArrayObject([...values]);
     };
 }
 

@@ -34,36 +34,42 @@ async function generateIndex() {
 
         // Generate imports
         const getterImports = getters.length > 0 ? getters.map((name) => `import { ${name} } from './getters/${name}';`).join('\n') : '';
-        const methodImports = methods.map((m) => {
-            if (m.file === 'enum') {
-                return `import { enum_fn } from './methods/${m.file}';`;
-            }
-            return `import { ${m.export} } from './methods/${m.file}';`;
-        }).join('\n');
+        const methodImports = methods
+            .map((m) => {
+                if (m.file === 'enum') {
+                    return `import { enum_fn } from './methods/${m.file}';`;
+                }
+                return `import { ${m.export} } from './methods/${m.file}';`;
+            })
+            .join('\n');
 
         // Generate getters object
         const gettersObj = getters.map((name) => `  ${name}`).join(',\n');
         const gettersObjStr = getters.length > 0 ? `const getters = {\n${gettersObj}\n};` : '';
 
         // Generate methods object - handle 'enum' specially
-        const methodsObj = methods.map((m) => {
-            if (m.file === 'enum') {
-                return `  enum: enum_fn`;
-            }
-            return `  ${m.classProp}`;
-        }).join(',\n');
+        const methodsObj = methods
+            .map((m) => {
+                if (m.file === 'enum') {
+                    return `  enum: enum_fn`;
+                }
+                return `  ${m.classProp}`;
+            })
+            .join(',\n');
         const methodsObjStr = `const methods = {\n${methodsObj}\n};`;
 
         // Generate type declarations for getters (as readonly properties)
         const getterTypes = getters.map((name) => `  readonly ${name}: ReturnType<ReturnType<typeof getters.${name}>>;`).join('\n');
 
         // Generate type declarations for methods - handle 'enum' specially
-        const methodTypes = methods.map((m) => {
-            if (m.file === 'enum') {
-                return `  enum: ReturnType<typeof methods.enum>;`;
-            }
-            return `  ${m.classProp}: ReturnType<typeof methods.${m.classProp}>;`;
-        }).join('\n');
+        const methodTypes = methods
+            .map((m) => {
+                if (m.file === 'enum') {
+                    return `  enum: ReturnType<typeof methods.enum>;`;
+                }
+                return `  ${m.classProp}: ReturnType<typeof methods.${m.classProp}>;`;
+            })
+            .join('\n');
 
         // Generate the class
         const classCode = `// SPDX-License-Identifier: AGPL-3.0-only
@@ -82,14 +88,18 @@ export class Input {
 ${getterTypes ? getterTypes + '\n' : ''}${methodTypes}
 
   constructor(private context: any) {
-${getters.length > 0 ? `    // Install getters
+${
+    getters.length > 0
+        ? `    // Install getters
     Object.entries(getters).forEach(([name, factory]) => {
       Object.defineProperty(this, name, {
         get: factory(context),
         enumerable: true
       });
     });
-    ` : ''}    // Install methods
+    `
+        : ''
+}    // Install methods
     Object.entries(methods).forEach(([name, factory]) => {
       this[name] = factory(context);
     });
@@ -104,7 +114,7 @@ export default Input;
         if (getters.length > 0) {
             console.log(`   - ${getters.length} getters: ${getters.join(', ')}`);
         }
-        console.log(`   - ${methods.length} methods: ${methods.map(m => m.classProp).join(', ')}`);
+        console.log(`   - ${methods.length} methods: ${methods.map((m) => m.classProp).join(', ')}`);
     } catch (error) {
         console.error('Error generating Input index:', error);
         process.exit(1);
@@ -112,4 +122,3 @@ export default Input;
 }
 
 generateIndex();
-

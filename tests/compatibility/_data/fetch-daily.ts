@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 
 const BINANCE_API_URL = 'https://api.binance.com/api/v3';
 const SYMBOL = 'BTCUSDC';
-const INTERVAL = '1d'; // Daily candles
+const INTERVAL = '4h'; // Daily candles
 const MAX_LIMIT = 1000; // Binance API max limit per request
 
 // Date range: 01-01-2024 to 20-11-2025

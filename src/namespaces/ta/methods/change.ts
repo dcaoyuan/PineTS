@@ -4,6 +4,13 @@ import { Series } from '../../../Series';
 
 export function change(context: any) {
     return (source: any, _length: any = 1, _callId?: string) => {
+        //handle the case where ta.change is called with the source only,
+        // in that case the transpiler will inject the callId as a second parameter
+        // so we need to extract the callId and set the length to 1
+        if (typeof _length === 'string') {
+            _callId = _length;
+            _length = 1;
+        }
         const length = Series.from(_length).get(0);
 
         // Simple lookback - store window
@@ -31,4 +38,3 @@ export function change(context: any) {
         return context.precision(change);
     };
 }
-

@@ -13,8 +13,15 @@ const outputFile = join(taDir, 'ta.index.ts');
 async function generateIndex() {
     try {
         // Read getters directory
-        const getterFiles = await readdir(gettersDir);
-        const getters = getterFiles.filter((f) => f.endsWith('.ts') && f !== 'ta.index.ts' && f !== 'index.ts').map((f) => f.replace('.ts', ''));
+
+        let getters = [];
+        try {
+            const getterFiles = await readdir(gettersDir);
+            getters = getterFiles.filter((f) => f.endsWith('.ts') && f !== 'ta.index.ts' && f !== 'index.ts').map((f) => f.replace('.ts', ''));
+        } catch (error) {
+            // Getters directory doesn't exist, that's fine
+            getters = [];
+        }
 
         // Read methods directory
         const methodFiles = await readdir(methodsDir);
@@ -59,12 +66,17 @@ ${methodTypes}
 
   constructor(private context: any) {
     // Install getters
-    Object.entries(getters).forEach(([name, factory]) => {
+${
+    getters.length > 0
+        ? `    Object.entries(getters).forEach(([name, factory]) => {
       Object.defineProperty(this, name, {
         get: factory(context),
         enumerable: true
       });
     });
+    `
+        : ''
+}
     
     // Install methods
     Object.entries(methods).forEach(([name, factory]) => {

@@ -8,7 +8,7 @@ describe('Indicators', () => {
         const pineTS = new PineTS(Provider.Binance, 'BTCUSDT', '1d', 100, 0, new Date('Dec 25 2024').getTime() - 1);
 
         const { result } = await pineTS.run((context) => {
-            const ta = context.ta;
+            const { ta } = context.pine;
             const { close } = context.data;
 
             const ema9 = ta.ema(close, 9);

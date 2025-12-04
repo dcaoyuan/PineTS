@@ -25,4 +25,3 @@ export function param(context: any) {
         }
     };
 }
-

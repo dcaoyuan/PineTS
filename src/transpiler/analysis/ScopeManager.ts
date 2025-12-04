@@ -1,6 +1,52 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2025 Alaa-eddine KADDOURI
 
+/**
+ * JavaScript global literals and objects that should never be treated as user variables
+ */
+const JS_GLOBAL_LITERALS = new Set([
+    'Infinity',
+    'NaN',
+    'undefined',
+    'null',
+    'true',
+    'false',
+]);
+
+/**
+ * JavaScript global objects that should not be transformed
+ */
+const JS_GLOBAL_OBJECTS = new Set([
+    'Math',
+    'Array',
+    'Object',
+    'String',
+    'Number',
+    'Boolean',
+    'Date',
+    'RegExp',
+    'Error',
+    'JSON',
+    'Promise',
+    'Set',
+    'Map',
+    'WeakSet',
+    'WeakMap',
+    'Symbol',
+    'BigInt',
+    'Proxy',
+    'Reflect',
+    'console',
+    'isNaN',
+    'isFinite',
+    'parseInt',
+    'parseFloat',
+    'encodeURI',
+    'decodeURI',
+    'encodeURIComponent',
+    'decodeURIComponent',
+]);
+
 export class ScopeManager {
     private scopes: Map<string, string>[] = [];
     private scopeTypes: string[] = [];
@@ -8,6 +54,7 @@ export class ScopeManager {
     private contextBoundVars: Set<string> = new Set();
     private arrayPatternElements: Set<string> = new Set();
     private rootParams: Set<string> = new Set();
+    private localSeriesVars: Set<string> = new Set();
     private varKinds: Map<string, string> = new Map();
     private loopVars: Set<string> = new Set();
     private loopVarNames: Map<string, string> = new Map(); // Map original names to transformed names
@@ -15,6 +62,8 @@ export class ScopeManager {
     private cacheIdCounter: number = 0;
     private tempVarCounter: number = 0;
     private taCallIdCounter: number = 0;
+    private hoistingStack: any[][] = [];
+    private suppressHoisting: boolean = false;
 
     public get nextParamIdArg(): any {
         return {
@@ -62,6 +111,14 @@ export class ScopeManager {
         return this.scopeCounts.get(this.getCurrentScopeType()) || 1;
     }
 
+    addLocalSeriesVar(name: string): void {
+        this.localSeriesVars.add(name);
+    }
+
+    isLocalSeriesVar(name: string): boolean {
+        return this.localSeriesVars.has(name);
+    }
+
     addContextBoundVar(name: string, isRootParam: boolean = false): void {
         // Register a variable as context-bound, with optional root parameter flag
         this.contextBoundVars.add(name);
@@ -85,6 +142,10 @@ export class ScopeManager {
     }
 
     isContextBound(name: string): boolean {
+        // JavaScript global literals and objects should never be treated as context-bound
+        if (JS_GLOBAL_LITERALS.has(name) || JS_GLOBAL_OBJECTS.has(name)) {
+            return false;
+        }
         // Check if a variable is context-bound
         return this.contextBoundVars.has(name);
     }
@@ -151,6 +212,34 @@ export class ScopeManager {
 
     public generateTempVar(): string {
         return `temp_${++this.tempVarCounter}`;
+    }
+
+    // Hoisting Logic
+    enterHoistingScope(): void {
+        this.hoistingStack.push([]);
+    }
+
+    exitHoistingScope(): any[] {
+        return this.hoistingStack.pop() || [];
+    }
+
+    addHoistedStatement(stmt: any): void {
+        if (this.hoistingStack.length > 0 && !this.suppressHoisting) {
+            this.hoistingStack[this.hoistingStack.length - 1].push(stmt);
+        }
+    }
+
+    setSuppressHoisting(suppress: boolean): void {
+        this.suppressHoisting = suppress;
+    }
+
+    shouldSuppressHoisting(): boolean {
+        return this.suppressHoisting;
+    }
+
+    // Param ID Generator Helper (for hoisting)
+    public generateParamId(): string {
+        return `p${this.paramIdCounter++}`;
     }
 }
 

@@ -1,5 +1,54 @@
 # Change Log
 
+## [0.5.0] - 2025-12-04 - Extensive TA implementation & Transpiler enhancements
+
+### Added
+
+-   Comprehensive implementation of `ta` namespace methods:
+    -   **Trend**: `supertrend`, `dmi`, `sar`, `falling`, `rising`, `cross`
+    -   **Volatility/Range**: `bb` (Bollinger Bands), `bbw`, `kc` (Keltner Channels), `kcw`, `range`, `tr` (True Range as method)
+    -   **Volume**: `accdist`, `cum`, `iii`, `nvi`, `pvi`, `pvt`, `wad`, `wvad`
+    -   **Oscillators**: `cci`, `cmo`, `cog`, `mfi`, `stoch`, `tsi`, `wpr`
+    -   **Statistical/Rank**: `correlation`, `barssince`, `valuewhen`, `percentrank`, `percentile_linear_interpolation`, `percentile_nearest_rank`, `mode`, `highestbars`, `lowestbars`
+-   Core `bar_index` variable support
+
+### Changed
+
+-   **Unified Namespace Architecture**: All namespace members (e.g., `ta.tr`, `ta.obv`) are now implemented as methods. The transpiler automatically handles the conversion from property access to method call (e.g., `ta.tr` → `ta.tr()`)
+-   Updated `ta.tr` and `ta.obv` to align with the unified method pattern
+
+### Fixed
+
+-   **`var` keyword semantics**: Implemented correct Pine Script behavior for `var` variables (initialize once, persist state across bars) via `$.initVar`
+-   `math.sum` handling of `NaN` values
+-   Transpiler handling of tertiary conditions involving Series access
+-   `ta.supertrend` calculation logic
+
+## [0.4.0] - TBD - Request.security implementation and transpiler enhancements
+
+### Added
+
+-   Full implementation of `request.security()` function with lookahead and gaps support
+-   New TA methods: `obv`, `alma`, `macd`, `swma`, `vwap`
+-   Architecture documentation for transpiler, runtime, and namespaces
+-   Support for handling raw .pine.ts indicator code (without context function wrapper)
+-   Ability to show original code lines in transpiled code as comments for debugging
+-   Comprehensive unit tests for `request.security()` functionality
+-   harmonization of Series logic accross the codebase
+
+### Changed
+
+-   Restructured TA unit tests for better organization
+-   Improved Series handling for better performance and reliability
+-   Enhanced transpiler to handle implicit pine.ts imports and normalize native imports
+-   Namespaces import harmonization across the codebase
+
+### Fixed
+
+-   Critical recursion bug in `request.security()` implementation
+-   Tuple return handling in functions
+-   Property type check issues
+
 ## [0.3.1] - 2025-11-26 - Code coverage
 
 ### Added

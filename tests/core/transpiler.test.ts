@@ -38,10 +38,90 @@ describe('Transpiler', () => {
   const {plotchar, color, plot, na, nz} = $.core;
   const ta = $.ta;
   const math = $.math;
-  $.let.glb1_lowest_signaled_price = $.init($.let.glb1_lowest_signaled_price, nz($.param(open, undefined, 'p0'), NaN));
+  const p0 = $.param(open, undefined, 'p0');
+  $.let.glb1_lowest_signaled_price = $.init($.let.glb1_lowest_signaled_price, nz(p0, NaN));
   $.let.glb1_n_a = $.init($.let.glb1_n_a, NaN);
-  if (na($.param($.let.glb1_n_a, undefined, 'p1'))) {
+  const p1 = $.param($.let.glb1_n_a, undefined, 'p1');
+  if (na(p1)) {
     $.set($.let.glb1_n_a, $.get(close, 0));
+  }
+}`;
+
+        expect(result).toBe(expected_code);
+    });
+
+    it('Unwrapped PineTS Code', async () => {
+        const fakeContext = {};
+        const transformer = transpile.bind(fakeContext);
+
+        // we expect the transpiler to wrap the code in a context function and add missing namespaces
+        const source = `
+const ta = context.ta;
+const math = context.math;
+
+let lowest_signaled_price = nz(open, na);
+let n_a = na;
+if (na(n_a)) {
+    n_a = close;
+}
+        `;
+
+        let transpiled = transformer(source);
+
+        console.log(transpiled.toString());
+        const result = transpiled.toString().trim();
+
+        /* prettier-ignore */
+        const expected_code = `$ => {
+  const {open, close} = $.data;
+  const {na, nz} = $.pine;
+  const ta = $.ta;
+  const math = $.math;
+  const p0 = $.param(open, undefined, 'p0');
+  $.let.glb1_lowest_signaled_price = $.init($.let.glb1_lowest_signaled_price, nz(p0, NaN));
+  $.let.glb1_n_a = $.init($.let.glb1_n_a, NaN);
+  const p1 = $.param($.let.glb1_n_a, undefined, 'p1');
+  if (na(p1)) {
+    $.set($.let.glb1_n_a, $.get(close, 0));
+  }
+}`;
+
+        expect(result).toBe(expected_code);
+    });
+
+    it('Data and namespaces', async () => {
+        const fakeContext = {};
+        const transformer = transpile.bind(fakeContext);
+
+        const source = (context) => {
+            //here ta, low and na are missing, but we expect the transpiler to inject them
+            const { open } = context.data;
+            const { plotchar, color, plot, nz } = context.pine;
+
+            const sma = ta.sma(close, 14);
+
+            if (low[0] == na) {
+                const data3 = high[0];
+            }
+        };
+
+        let transpiled = transformer(source);
+
+        console.log(transpiled.toString());
+        const result = transpiled.toString().trim();
+
+        /* prettier-ignore */
+        const expected_code = `$ => {
+  const {high, low, close} = $.data;
+  const {ta, na} = $.pine;
+  const {open} = $.data;
+  const {plotchar, color, plot, nz} = $.pine;
+  const p0 = ta.param(close, undefined, 'p0');
+  const p1 = ta.param(14, undefined, 'p1');
+  const temp_1 = ta.sma(p0, p1, "_ta0");
+  $.const.glb1_sma = $.init($.const.glb1_sma, temp_1);
+  if ($.math.__eq($.get(low, 0), NaN)) {
+    $.const.if2_data3 = $.init($.const.if2_data3, $.get(high, 0));
   }
 }`;
 
@@ -100,7 +180,10 @@ describe('Transpiler', () => {
   $.const.glb1__close = $.init($.const.glb1__close, close);
   $.const.glb1__close1 = $.init($.const.glb1__close1, $.get(close, 1));
   $.const.glb1__myConst = $.init($.const.glb1__myConst, 10);
-  $.let.glb1_sma = $.init($.let.glb1_sma, ta.sma(ta.param(close, undefined, 'p0'), ta.param(20, undefined, 'p1'), "_ta0"));
+  const p0 = ta.param(close, undefined, 'p0');
+  const p1 = ta.param(20, undefined, 'p1');
+  const temp_1 = ta.sma(p0, p1, "_ta0");
+  $.let.glb1_sma = $.init($.let.glb1_sma, temp_1);
   $.let.glb1_aa = $.init($.let.glb1_aa, 10);
   $.let.glb1__cc = $.init($.let.glb1__cc, close);
   $.let.glb1_bb = $.init($.let.glb1_bb, 1);
@@ -115,13 +198,33 @@ describe('Transpiler', () => {
   $.let.glb1_cc1 = $.init($.let.glb1_cc1, $.get($.let.glb1__cc, 1));
   $.let.glb1_cc2 = $.init($.let.glb1_cc2, $.get($.let.glb1__cc, $.get($.let.glb1_aa, 0)));
   $.let.glb1_cc3 = $.init($.let.glb1_cc3, $.get($.let.glb1__cc, $.get($.let.glb1_aa, 99)));
-  $.const.glb1_tr1 = $.init($.const.glb1_tr1, ta.ema(ta.param(close, undefined, 'p2'), ta.param(14, undefined, 'p3'), "_ta1"));
-  $.const.glb1_tr2 = $.init($.const.glb1_tr2, ta.ema(ta.param(close, 199, 'p4'), ta.param(14, undefined, 'p5'), "_ta2"));
-  $.const.glb1_tr3 = $.init($.const.glb1_tr3, ta.ema(ta.param($.let.glb1__cc, undefined, 'p6'), ta.param(14, undefined, 'p7'), "_ta3"));
-  $.const.glb1_tr4 = $.init($.const.glb1_tr4, ta.ema(ta.param($.let.glb1__cc, 1, 'p8'), ta.param(14, undefined, 'p9'), "_ta4"));
-  $.const.glb1_tr5 = $.init($.const.glb1_tr5, ta.ema(ta.param($.let.glb1__cc, aa[99], 'p10'), ta.param(14, undefined, 'p11'), "_ta5"));
+  const p2 = ta.param(close, undefined, 'p2');
+  const p3 = ta.param(14, undefined, 'p3');
+  const temp_2 = ta.ema(p2, p3, "_ta1");
+  $.const.glb1_tr1 = $.init($.const.glb1_tr1, temp_2);
+  const p4 = ta.param(close, 199, 'p4');
+  const p5 = ta.param(14, undefined, 'p5');
+  const temp_3 = ta.ema(p4, p5, "_ta2");
+  $.const.glb1_tr2 = $.init($.const.glb1_tr2, temp_3);
+  const p6 = ta.param($.let.glb1__cc, undefined, 'p6');
+  const p7 = ta.param(14, undefined, 'p7');
+  const temp_4 = ta.ema(p6, p7, "_ta3");
+  $.const.glb1_tr3 = $.init($.const.glb1_tr3, temp_4);
+  const p8 = ta.param($.let.glb1__cc, 1, 'p8');
+  const p9 = ta.param(14, undefined, 'p9');
+  const temp_5 = ta.ema(p8, p9, "_ta4");
+  $.const.glb1_tr4 = $.init($.const.glb1_tr4, temp_5);
+  const p10 = ta.param($.let.glb1__cc, aa[99], 'p10');
+  const p11 = ta.param(14, undefined, 'p11');
+  const temp_6 = ta.ema(p10, p11, "_ta5");
+  $.const.glb1_tr5 = $.init($.const.glb1_tr5, temp_6);
   $.let.glb1_ap = $.init($.let.glb1_ap, close);
-  $.let.glb1_d = $.init($.let.glb1_d, ta.ema(ta.param(math.abs(math.param($.get($.let.glb1_ap, 0) - 99, undefined, 'p12')), undefined, 'p13'), ta.param(10, undefined, 'p14'), "_ta6"));
+  const p12 = math.param($.get($.let.glb1_ap, 0) - 99, undefined, 'p12');
+  const temp_7 = math.abs(p12);
+  const p13 = ta.param(temp_7, undefined, 'p13');
+  const p14 = ta.param(10, undefined, 'p14');
+  const temp_8 = ta.ema(p13, p14, "_ta6");
+  $.let.glb1_d = $.init($.let.glb1_d, temp_8);
 }`;
 
         expect(result).toBe(expected_code);
@@ -147,8 +250,14 @@ describe('Transpiler', () => {
         const expected_code = `$ => {
   const {close} = $.data;
   const ta = $.ta;
-  $.let.glb1_sma = $.init($.let.glb1_sma, ta.sma(ta.param(close, undefined, 'p0'), ta.param(20, undefined, 'p1'), "_ta0"));
-  $.set($.let.glb1_sma, ta.sma(ta.param(close, undefined, 'p2'), ta.param(22, undefined, 'p3'), "_ta1"));
+  const p0 = ta.param(close, undefined, 'p0');
+  const p1 = ta.param(20, undefined, 'p1');
+  const temp_1 = ta.sma(p0, p1, "_ta0");
+  $.let.glb1_sma = $.init($.let.glb1_sma, temp_1);
+  const p2 = ta.param(close, undefined, 'p2');
+  const p3 = ta.param(22, undefined, 'p3');
+  const temp_2 = ta.sma(p2, p3, "_ta1");
+  $.set($.let.glb1_sma, temp_2);
 }`;
 
         expect(result).toBe(expected_code);
@@ -177,10 +286,16 @@ describe('Transpiler', () => {
         const expected_code = `$ => {
   const {close} = $.data;
   const ta = $.ta;
-  $.let.glb1_sma = $.init($.let.glb1_sma, ta.sma(ta.param(close, undefined, 'p0'), ta.param(20, undefined, 'p1'), "_ta0"));
+  const p0 = ta.param(close, undefined, 'p0');
+  const p1 = ta.param(20, undefined, 'p1');
+  const temp_1 = ta.sma(p0, p1, "_ta0");
+  $.let.glb1_sma = $.init($.let.glb1_sma, temp_1);
   $.set($.let.glb1_sma, $.get($.let.glb1_sma, 1));
   $.const.glb1_period = $.init($.const.glb1_period, 14);
-  $.set($.let.glb1_sma, ta.sma(ta.param(close, undefined, 'p2'), ta.param($.const.glb1_period, undefined, 'p3'), "_ta1"));
+  const p2 = ta.param(close, undefined, 'p2');
+  const p3 = ta.param($.const.glb1_period, undefined, 'p3');
+  const temp_2 = ta.sma(p2, p3, "_ta1");
+  $.set($.let.glb1_sma, temp_2);
 }`;
 
         expect(result).toBe(expected_code);
@@ -217,8 +332,14 @@ describe('Transpiler', () => {
   $.const.glb1_green_candle = $.init($.const.glb1_green_candle, $.get(close, 0) > $.get(open, 0));
   $.const.glb1_red_candle = $.init($.const.glb1_red_candle, $.get(close, 0) < $.get(open, 0));
   $.const.glb1_previous_green_candle = $.init($.const.glb1_previous_green_candle, $.get($.const.glb1_green_candle, 1));
-  $.const.glb1_ema9 = $.init($.const.glb1_ema9, ta.ema(ta.param(close, 1, 'p0'), ta.param(9, undefined, 'p1'), "_ta0"));
-  $.const.glb1_ema18 = $.init($.const.glb1_ema18, ta.ema(ta.param(close, 1, 'p2'), ta.param(18, undefined, 'p3'), "_ta1"));
+  const p0 = ta.param(close, 1, 'p0');
+  const p1 = ta.param(9, undefined, 'p1');
+  const temp_1 = ta.ema(p0, p1, "_ta0");
+  $.const.glb1_ema9 = $.init($.const.glb1_ema9, temp_1);
+  const p2 = ta.param(close, 1, 'p2');
+  const p3 = ta.param(18, undefined, 'p3');
+  const temp_2 = ta.ema(p2, p3, "_ta1");
+  $.const.glb1_ema18 = $.init($.const.glb1_ema18, temp_2);
   $.const.glb1_bull_bias = $.init($.const.glb1_bull_bias, $.get($.const.glb1_ema9, 0) > $.get($.const.glb1_ema18, 0));
   $.const.glb1_bear_bias = $.init($.const.glb1_bear_bias, $.get($.const.glb1_ema9, 0) < $.get($.const.glb1_ema18, 0));
 }`;
@@ -248,7 +369,13 @@ describe('Transpiler', () => {
   const {close, open} = $.data;
   const ta = $.ta;
   $.const.glb1_green_candle = $.init($.const.glb1_green_candle, $.get(close, 0) > $.get(open, 0) ? 1 : 0);
-  $.const.glb1_bull_bias = $.init($.const.glb1_bull_bias, ta.ema(ta.param(close, undefined, 'p0'), ta.param(9, undefined, 'p1'), "_ta0") > ta.ema(ta.param(close, undefined, 'p2'), ta.param(18, undefined, 'p3'), "_ta1") ? 1 : 0);
+  const p0 = ta.param(close, undefined, 'p0');
+  const p1 = ta.param(9, undefined, 'p1');
+  const temp_1 = ta.ema(p0, p1, "_ta0");
+  const p2 = ta.param(close, undefined, 'p2');
+  const p3 = ta.param(18, undefined, 'p3');
+  const temp_2 = ta.ema(p2, p3, "_ta1");
+  $.const.glb1_bull_bias = $.init($.const.glb1_bull_bias, temp_1 > temp_2 ? 1 : 0);
 }`;
 
         expect(result).toBe(expected_code);
@@ -277,15 +404,24 @@ describe('Transpiler', () => {
   const {close, open} = $.data;
   const {plot} = $.core;
   $.const.glb1_res = $.init($.const.glb1_res, open);
-  plot($.param($.get(close, 0) && $.get(open, 0) ? 1 : $.get($.const.glb1_res, 0), undefined, 'p0'), $.param("plot1", undefined, 'p1'), $.param({
+  const p0 = $.param($.get(close, 0) && $.get(open, 0) ? 1 : $.get($.const.glb1_res, 0), undefined, 'p0');
+  const p1 = $.param("plot1", undefined, 'p1');
+  const p2 = $.param({
     color: "white"
-  }, undefined, 'p2'));
-  plot($.param($.get(close, 0) && $.get(open, 0), undefined, 'p3'), $.param("plot2", undefined, 'p4'), $.param({
+  }, undefined, 'p2');
+  plot(p0, p1, p2);
+  const p3 = $.param($.get(close, 0) && $.get(open, 0), undefined, 'p3');
+  const p4 = $.param("plot2", undefined, 'p4');
+  const p5 = $.param({
     color: "white"
-  }, undefined, 'p5'));
-  plot($.param(-$.get($.const.glb1_res, 0), undefined, 'p6'), $.param("plot3", undefined, 'p7'), $.param({
+  }, undefined, 'p5');
+  plot(p3, p4, p5);
+  const p6 = $.param(-$.get($.const.glb1_res, 0), undefined, 'p6');
+  const p7 = $.param("plot3", undefined, 'p7');
+  const p8 = $.param({
     color: "white"
-  }, undefined, 'p8'));
+  }, undefined, 'p8');
+  plot(p6, p7, p8);
 }`;
 
         expect(result).toBe(expected_code);
@@ -497,7 +633,7 @@ describe('Transpiler', () => {
     $.set($.let.glb1_aa, i);
   }
   for (let i = 0; i < $.get($.let.glb1_aa, 0); i++) {
-    $.set($.let.glb1__cc, $.let.glb1__cc[i]);
+    $.set($.let.glb1__cc, $.get($.let.glb1__cc, i));
   }
   for (let i = 0; i < $.get($.let.glb1__cc, 0); i++) {
     $.set($.let.glb1_aa, i);
@@ -592,7 +728,11 @@ describe('Transpiler', () => {
   $.const.glb1_aa = $.init($.const.glb1_aa, 1);
   function angle(src) {
     $.const.fn1_rad2degree = $.init($.const.fn1_rad2degree, 180 / Math.PI);
-    $.const.fn1_ang = $.init($.const.fn1_ang, $.get($.const.fn1_rad2degree, 0) * math.atan(math.param(($.get(src, 0) - $.get(src, 1)) / ta.atr(ta.param(14, undefined, 'p0'), "_ta0"), undefined, 'p1')));
+    const p0 = ta.param(14, undefined, 'p0');
+    const temp_1 = ta.atr(p0, "_ta0");
+    const p1 = math.param(($.get(src, 0) - $.get(src, 1)) / temp_1, undefined, 'p1');
+    const temp_2 = math.atan(p1);
+    $.const.fn1_ang = $.init($.const.fn1_ang, $.get($.const.fn1_rad2degree, 0) * temp_2);
     return $.precision($.get($.const.fn1_ang, 0));
   }
   function get_average(avg_src, avg_len) {
@@ -617,12 +757,22 @@ describe('Transpiler', () => {
     }
     return $.precision($.get($.let.fn2_ret_val, 0) / $.get(avg_len, 0));
   }
-  $.const.glb1_r1 = $.init($.const.glb1_r1, get_average($.param(close, undefined, 'p2'), $.param(14, undefined, 'p3')));
-  $.const.glb1_r2 = $.init($.const.glb1_r2, get_average($.param(close, 1, 'p4'), $.param(14, undefined, 'p5')));
-  $.const.glb1_r3 = $.init($.const.glb1_r3, get_average($.param($.const.glb1__cc, undefined, 'p6'), $.param(14, undefined, 'p7')));
-  $.const.glb1_r4 = $.init($.const.glb1_r4, get_average($.param($.const.glb1__cc, 1, 'p8'), $.param(14, undefined, 'p9')));
+  const p2 = $.param(close, undefined, 'p2');
+  const p3 = $.param(14, undefined, 'p3');
+  $.const.glb1_r1 = $.init($.const.glb1_r1, get_average(p2, p3));
+  const p4 = $.param(close, 1, 'p4');
+  const p5 = $.param(14, undefined, 'p5');
+  $.const.glb1_r2 = $.init($.const.glb1_r2, get_average(p4, p5));
+  const p6 = $.param($.const.glb1__cc, undefined, 'p6');
+  const p7 = $.param(14, undefined, 'p7');
+  $.const.glb1_r3 = $.init($.const.glb1_r3, get_average(p6, p7));
+  const p8 = $.param($.const.glb1__cc, 1, 'p8');
+  const p9 = $.param(14, undefined, 'p9');
+  $.const.glb1_r4 = $.init($.const.glb1_r4, get_average(p8, p9));
   $.let.glb1_ra = $.init($.let.glb1_ra, 0);
-  $.set($.let.glb1_ra, get_average($.param(close, undefined, 'p10'), $.param(14, undefined, 'p11')));
+  const p10 = $.param(close, undefined, 'p10');
+  const p11 = $.param(14, undefined, 'p11');
+  $.set($.let.glb1_ra, get_average(p10, p11));
 }`;
 
         expect(result).toBe(expected_code);
@@ -706,12 +856,22 @@ describe('Transpiler', () => {
     }
     return $.precision($.get($.let.fn1_ret_val, 0) / $.get(avg_len, 0));
   }
-  $.const.glb1_r1 = $.init($.const.glb1_r1, get_average($.param(close, undefined, 'p0'), $.param(14, undefined, 'p1')));
-  $.const.glb1_r2 = $.init($.const.glb1_r2, get_average($.param(close, 1, 'p2'), $.param(14, undefined, 'p3')));
-  $.const.glb1_r3 = $.init($.const.glb1_r3, get_average($.param($.const.glb1__cc, undefined, 'p4'), $.param(14, undefined, 'p5')));
-  $.const.glb1_r4 = $.init($.const.glb1_r4, get_average($.param($.const.glb1__cc, 1, 'p6'), $.param(14, undefined, 'p7')));
+  const p0 = $.param(close, undefined, 'p0');
+  const p1 = $.param(14, undefined, 'p1');
+  $.const.glb1_r1 = $.init($.const.glb1_r1, get_average(p0, p1));
+  const p2 = $.param(close, 1, 'p2');
+  const p3 = $.param(14, undefined, 'p3');
+  $.const.glb1_r2 = $.init($.const.glb1_r2, get_average(p2, p3));
+  const p4 = $.param($.const.glb1__cc, undefined, 'p4');
+  const p5 = $.param(14, undefined, 'p5');
+  $.const.glb1_r3 = $.init($.const.glb1_r3, get_average(p4, p5));
+  const p6 = $.param($.const.glb1__cc, 1, 'p6');
+  const p7 = $.param(14, undefined, 'p7');
+  $.const.glb1_r4 = $.init($.const.glb1_r4, get_average(p6, p7));
   $.let.glb1_ra = $.init($.let.glb1_ra, 0);
-  $.set($.let.glb1_ra, get_average($.param(close, undefined, 'p8'), $.param(14, undefined, 'p9')));
+  const p8 = $.param(close, undefined, 'p8');
+  const p9 = $.param(14, undefined, 'p9');
+  $.set($.let.glb1_ra, get_average(p8, p9));
 }`;
 
         expect(result).toBe(expected_code);

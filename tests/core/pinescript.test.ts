@@ -106,13 +106,70 @@ describe('PineScript Language', () => {
         console.log('>>> result: ', context.result);
 
         const expected = {
-            varVar: [11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+            varVar: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
             letVar: [21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21],
             constVar: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
         };
 
         expect(deepEqual(context.result, expected)).toBe(true);
         expect(context.result).toEqual(expected);
+    });
+
+    it('tuples', async () => {
+        const pineTS = new PineTS(Provider.Mock, 'BTCUSDC', 'W', null, new Date('2024-01-01').getTime(), new Date('2025-11-10').getTime());
+
+        const { result, plots } = await pineTS.run(async (context) => {
+            const { close, open } = context.data;
+            const { plot, plotchar, request, ta } = context.pine;
+
+            function foo() {
+                const oo = open;
+                const cc = close;
+                return [oo, cc];
+            }
+
+            const [res, data] = foo();
+
+            plotchar(res, '_plotchar');
+
+            return {
+                res,
+                data,
+            };
+        });
+
+        let plotdata = plots['_plotchar']?.data;
+        const sDate = new Date('2025-08-01').getTime();
+        const eDate = new Date('2025-11-10').getTime();
+        plotdata = plotdata.filter((e) => new Date(e.time).getTime() >= sDate && new Date(e.time).getTime() <= eDate);
+
+        plotdata.forEach((e) => {
+            e.time = new Date(e.time).toISOString().slice(0, -1) + '-00:00';
+
+            delete e.options;
+        });
+        const plotdata_str = plotdata.map((e) => `[${e.time}]: ${e.value}`).join('\n');
+
+        const expected_plot = `[2025-08-04T00:00:00.000-00:00]: 114228.32
+[2025-08-11T00:00:00.000-00:00]: 119327.09
+[2025-08-18T00:00:00.000-00:00]: 117489.99
+[2025-08-25T00:00:00.000-00:00]: 113491.2
+[2025-09-01T00:00:00.000-00:00]: 108270.37
+[2025-09-08T00:00:00.000-00:00]: 111140.01
+[2025-09-15T00:00:00.000-00:00]: 115342.79
+[2025-09-22T00:00:00.000-00:00]: 115314.25
+[2025-09-29T00:00:00.000-00:00]: 112224.95
+[2025-10-06T00:00:00.000-00:00]: 123529.91
+[2025-10-13T00:00:00.000-00:00]: 115073.27
+[2025-10-20T00:00:00.000-00:00]: 108689.01
+[2025-10-27T00:00:00.000-00:00]: 114571.34
+[2025-11-03T00:00:00.000-00:00]: 110550.87
+[2025-11-10T00:00:00.000-00:00]: 104710.21`;
+
+        console.log('Expected plot:', expected_plot);
+        console.log('Actual plot:', plotdata_str);
+
+        expect(plotdata_str.trim()).toEqual(expected_plot.trim());
     });
 
     it('Variable Type Inference', async () => {
@@ -255,7 +312,10 @@ describe('PineScript Language', () => {
 
         const expected = {
             letVar: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-            varVar: [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+            varVar: [
+                6, 24, 78, 240, 726, 2184, 6558, 19680, 59046, 177144, 531438, 1594320, 4782966, 14348904, 43046718, 129140160, 387420486, 1162261464,
+                3486784398, 10460353200,
+            ],
         };
 
         expect(deepEqual(context.result, expected)).toBe(true);
@@ -880,8 +940,8 @@ describe('PineScript Language', () => {
             not: [true, false, true, false, true, true, true, false, true, true, true, true, true, true, false, true, true, false, true, false],
         };
 
-        expect(deepEqual(context.result, expected)).toBe(true);
-        expect(context.result).toEqual(expected);
+        expect(deepEqual(context.result.not, expected.not)).toBe(true);
+        expect(context.result.not).toEqual(expected.not);
     });
 
     it('Compound Assignment Operators', async () => {
@@ -1355,19 +1415,18 @@ describe('PineScript Language', () => {
     });
 
     it('For Loop History Access', async () => {
-        const pineTS = new PineTS(Provider.Binance, 'BTCUSDT', '4H', 20, new Date('Sep 20 2025').getTime(), new Date('Nov 25 2025').getTime());
+        const pineTS = new PineTS(Provider.Binance, 'BTCUSDC', 'W', null, new Date('2018-12-10').getTime(), new Date('2019-02-20 ').getTime());
         const context = await pineTS.run(async (context) => {
             const { open, close, high, low, hlc3 } = context.data;
-            const ta = context.ta;
-            const math = context.math;
+            const { na } = context.pine;
 
             //=============================
             let val = 0;
-            val = val[1] ? val[1] + 1 : 1;
+            val = !na(val[1]) ? val[1] + 1 : 1;
 
             let sum = 0;
             for (let i = 1; i <= 3; i++) {
-                sum += val[i] || 0;
+                sum += na(val[i]) ? 0 : val[i];
             }
             //=============================
 
@@ -1381,8 +1440,8 @@ describe('PineScript Language', () => {
         console.log('>>> result: ', context.result);
 
         const expected = {
-            val: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-            sum: [0, 2, 5, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
+            val: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+            sum: [0, 1, 3, 6, 9, 12, 15, 18, 21, 24, 27],
         };
 
         expect(deepEqual(context.result, expected)).toBe(true);

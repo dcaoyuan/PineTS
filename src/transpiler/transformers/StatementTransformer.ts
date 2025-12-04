@@ -90,6 +90,8 @@ export function transformAssignmentExpression(node: any, scopeManager: ScopeMana
                 // First transform the call expression itself
                 transformCallExpression(node, scopeManager);
 
+                if (node.type !== 'CallExpression') return;
+
                 // Then transform its arguments with the correct context
                 node.arguments.forEach((arg: any) => c(arg, { parent: node, inNamespaceCall: isNamespaceCall || state.inNamespaceCall }));
             },
@@ -227,6 +229,7 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
                             transformIdentifier(node, scopeManager);
 
                             const isBinaryOperation = node.parent && node.parent.type === 'BinaryExpression';
+                            const isUnaryOperation = node.parent && node.parent.type === 'UnaryExpression';
                             const isConditional = node.parent && node.parent.type === 'ConditionalExpression';
                             const isGetCall =
                                 node.parent &&
@@ -236,7 +239,7 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
                                 node.parent.callee.object.name === CONTEXT_NAME &&
                                 node.parent.callee.property.name === 'get';
 
-                            if (node.type === 'Identifier' && (isBinaryOperation || isConditional) && !isGetCall) {
+                            if (node.type === 'Identifier' && (isBinaryOperation || isUnaryOperation || isConditional) && !isGetCall) {
                                 addArrayAccess(node, scopeManager);
                             }
                         },
@@ -252,6 +255,9 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
                                 }
                             });
                             transformCallExpression(node, scopeManager);
+
+                            if (node.type !== 'CallExpression') return;
+
                             // Continue walking the arguments
                             node.arguments.forEach((arg) => c(arg, { parent: node }));
                         },
@@ -314,6 +320,11 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
         if (decl.init) {
             if (isArrowFunction || isArrayPatternVar) {
                 rightSide = decl.init;
+            } else if (kind === 'var') {
+                rightSide = ASTFactory.createInitVarCall(
+                    targetVarRef,
+                    decl.init
+                );
             } else {
                 rightSide = ASTFactory.createInitCall(
                     targetVarRef,
@@ -329,14 +340,28 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
         const assignmentExpr = ASTFactory.createExpressionStatement(ASTFactory.createAssignmentExpression(targetVarRef, rightSide));
 
         if (isArrayPatternVar) {
-            // Complex logic for array pattern, keeping as is but using ASTFactory where obvious
-            assignmentExpr.expression.right.object.property.name += `?.[0][${decl.init.property.value}]`;
-            const obj = assignmentExpr.expression.right.object;
+            // For array pattern destructuring, we need to:
+            // 1. Use $.get(tempVar, 0) to get the current value from the Series
+            // 2. Then access the array element [index]
+            const tempVarRef = assignmentExpr.expression.right.object;
+            const arrayIndex = decl.init.property.value;
 
-            // Reconstruct the init call
+            // Create $.get(tempVar, 0)[index]
+            const getCall = ASTFactory.createGetCall(tempVarRef, 0);
+            const arrayAccess = {
+                type: 'MemberExpression',
+                object: getCall,
+                property: {
+                    type: 'Literal',
+                    value: arrayIndex,
+                },
+                computed: true,
+            };
+
+            // Wrap in $.init(targetVar, $.get(tempVar, 0)[index])
             assignmentExpr.expression.right = ASTFactory.createCallExpression(
                 ASTFactory.createMemberExpression(ASTFactory.createContextIdentifier(), ASTFactory.createIdentifier('init')),
-                [targetVarRef, obj]
+                [targetVarRef, arrayAccess]
             );
         }
 
@@ -378,6 +403,7 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
 }
 
 export function transformForStatement(node: any, scopeManager: ScopeManager, c: any): void {
+    scopeManager.setSuppressHoisting(true);
     // Handle initialization
     if (node.init && node.init.type === 'VariableDeclaration') {
         // Keep the original loop variable name
@@ -456,18 +482,21 @@ export function transformForStatement(node: any, scopeManager: ScopeManager, c: 
     }
 
     // Transform the loop body
+    scopeManager.setSuppressHoisting(false);
     scopeManager.pushScope('for');
     c(node.body, scopeManager);
     scopeManager.popScope();
 }
 
 export function transformWhileStatement(node: any, scopeManager: ScopeManager, c: any): void {
+    scopeManager.setSuppressHoisting(true);
     // Transform the test condition of the while loop
     walk.simple(node.test, {
         Identifier(idNode: any) {
             transformIdentifier(idNode, scopeManager);
         },
     });
+    scopeManager.setSuppressHoisting(false);
 
     // Process the body of the while loop
     scopeManager.pushScope('whl');
@@ -528,14 +557,29 @@ export function transformReturnStatement(node: any, scopeManager: ScopeManager):
                 if (element.type === 'Identifier') {
                     // Skip transformation if it's a context-bound variable
                     if (scopeManager.isContextBound(element.name) && !scopeManager.isRootParam(element.name)) {
-                        // Only add [0] if it's not already an array access
-                        return ASTFactory.createArrayAccess(element, 0);
+                        // Use $.get(element, 0) instead of element[0] for context-bound variables
+                        return ASTFactory.createGetCall(element, 0);
                     }
 
                     // Transform non-context-bound variables
                     const [scopedName, kind] = scopeManager.getVariable(element.name);
                     return ASTFactory.createContextVariableAccess0(kind, scopedName);
                 } else if (element.type === 'MemberExpression') {
+                    // Check if this is a context variable reference ($.const.xxx, $.let.xxx, etc.)
+                    const isContextVarRef =
+                        element.object &&
+                        element.object.type === 'MemberExpression' &&
+                        element.object.object &&
+                        element.object.object.type === 'Identifier' &&
+                        element.object.object.name === '$' &&
+                        element.object.property &&
+                        ['const', 'let', 'var', 'params'].includes(element.object.property.name);
+
+                    if (isContextVarRef) {
+                        // Use $.get($.const.xxx, 0) instead of $.const.xxx[0]
+                        return ASTFactory.createGetCall(element, 0);
+                    }
+
                     // If it's already a member expression (array access), leave it as is
                     if (
                         element.computed &&
@@ -570,7 +614,7 @@ export function transformReturnStatement(node: any, scopeManager: ScopeManager):
                 },
             });
         } else if (node.argument.type === 'ObjectExpression') {
-            // Handle object expressions (existing code)
+            // Handle object expressions
             node.argument.properties = node.argument.properties.map((prop: any) => {
                 // Check for shorthand properties
                 if (prop.shorthand) {
@@ -588,6 +632,20 @@ export function transformReturnStatement(node: any, scopeManager: ScopeManager):
                         computed: false,
                     };
                 }
+
+                // Handle regular properties with identifier values
+                if (prop.value && prop.value.type === 'Identifier') {
+                    // Check if it's a context-bound variable (like 'close', 'open', etc.)
+                    if (scopeManager.isContextBound(prop.value.name) && !scopeManager.isRootParam(prop.value.name)) {
+                        // It's a data variable - use $.get(variable, 0)
+                        prop.value = ASTFactory.createGetCall(prop.value, 0);
+                    } else if (!scopeManager.isContextBound(prop.value.name)) {
+                        // It's a user variable - transform to context reference
+                        const [scopedName, kind] = scopeManager.getVariable(prop.value.name);
+                        prop.value = ASTFactory.createContextVariableReference(kind, scopedName);
+                    }
+                }
+
                 return prop;
             });
         } else if (node.argument.type === 'Identifier') {

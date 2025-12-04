@@ -49,20 +49,43 @@
 import * as acorn from 'acorn';
 import * as astring from 'astring';
 import ScopeManager from './analysis/ScopeManager';
+import { injectImplicitImports } from './transformers/InjectionTransformer';
+import { normalizeNativeImports } from './transformers/NormalizationTransformer';
+import { wrapInContextFunction } from './transformers/WrapperTransformer';
 import { transformNestedArrowFunctions, preProcessContextBoundVars, runAnalysisPass } from './analysis/AnalysisPass';
 import { runTransformationPass, transformEqualityChecks } from './transformers/MainTransformer';
 
-export function transpile(fn: string | Function): Function {
+export function transpile(fn: string | Function, options: { debug: boolean; ln?: boolean } = { debug: false, ln: false }): Function {
+    // Handle backward compatibility if a boolean is passed (though signature changed)
+    if (typeof options === 'boolean') {
+        options = { debug: options, ln: true };
+    }
+
+    const { debug } = options;
+
     let code = typeof fn === 'function' ? fn.toString() : fn;
+    code = code.trim();
+
+    // Pre-process: Wrap in context function if not already wrapped
+    code = wrapInContextFunction(code);
+
+    const sourceLines = debug ? code.split('\n') : [];
 
     // Parse the code into an AST
-    const ast = acorn.parse(code.trim(), {
+    const ast = acorn.parse(code, {
         ecmaVersion: 'latest',
         sourceType: 'module',
+        locations: debug,
     });
 
     // Pre-process: Transform all nested arrow functions
     transformNestedArrowFunctions(ast);
+
+    // Pre-process: Normalize native imports (prevent renaming of standard symbols)
+    normalizeNativeImports(ast);
+
+    // Pre-process: Inject implicit imports for missing context variables
+    injectImplicitImports(ast);
 
     const scopeManager = new ScopeManager();
 
@@ -74,14 +97,26 @@ export function transpile(fn: string | Function): Function {
     const originalParamName = runAnalysisPass(ast, scopeManager) || '';
 
     // Second pass: transform the code
-    runTransformationPass(ast, scopeManager, originalParamName);
+    runTransformationPass(ast, scopeManager, originalParamName, options, sourceLines);
 
     // Post-process: transform equality checks to math.__eq calls
     transformEqualityChecks(ast);
 
     // Generate final code
-    const transformedCode = astring.generate(ast);
+    // astring exports baseGenerator (camelCase) in this version/build
+    const baseGenerator = astring.baseGenerator || astring.GENERATOR || ((astring as any).default && (astring as any).default.BASE_GENERATOR);
 
-    const _wraperFunction = new Function('', `return ${transformedCode}`);
+    const customGenerator = Object.assign({}, baseGenerator, {
+        LineComment(node: any, state: any) {
+            state.write('//' + node.value);
+        },
+    });
+
+    const transformedCode = astring.generate(ast, {
+        generator: customGenerator,
+        comments: debug,
+    });
+
+    const _wraperFunction = new Function('', `var _r = ${transformedCode}\n; return _r;`);
     return _wraperFunction(this);
 }

@@ -8,7 +8,7 @@ export function median(context: any) {
 
         // Filter out non-numeric values if necessary? Pine Script arrays are typed.
         // Assuming numeric array for median.
-        
+
         // Create a copy to sort
         const sorted = [...id.array].sort((a, b) => {
             if (typeof a === 'number' && typeof b === 'number') {
@@ -26,6 +26,3 @@ export function median(context: any) {
         return (sorted[mid - 1] + sorted[mid]) / 2;
     };
 }
-
-
-

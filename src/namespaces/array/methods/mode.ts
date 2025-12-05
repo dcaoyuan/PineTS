@@ -41,6 +41,3 @@ export function mode(context: any) {
         return modes[0];
     };
 }
-
-
-

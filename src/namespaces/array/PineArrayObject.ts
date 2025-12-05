@@ -46,8 +46,22 @@ import { sum as sum_factory } from './methods/sum';
 import { unshift as unshift_factory } from './methods/unshift';
 import { variance as variance_factory } from './methods/variance';
 
+export enum PineArrayType {
+    any = '',
+    box = 'box',
+    bool = 'bool',
+    color = 'color',
+    float = 'float',
+    int = 'int',
+    label = 'label',
+    line = 'line',
+    linefill = 'linefill',
+    string = 'string',
+    table = 'table',
+}
+
 export class PineArrayObject {
-    constructor(public array: any, public context: any) {}
+    constructor(public array: any, public type: PineArrayType, public context: any) {}
 
     toString(): string {
         return 'PineArrayObject:' + this.array.toString();

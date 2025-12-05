@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { PineArrayObject } from '../PineArrayObject';
+import { PineArrayObject, PineArrayType } from '../PineArrayObject';
 
 export function standardize(context: any) {
     return (id: PineArrayObject): PineArrayObject => {
@@ -10,6 +10,7 @@ export function standardize(context: any) {
         if (isNaN(stdev)) {
             return new PineArrayObject(
                 id.array.map(() => NaN),
+                PineArrayType.int,
                 context
             );
         }
@@ -19,12 +20,14 @@ export function standardize(context: any) {
             // This is an edge case behavior observed in testing.
             return new PineArrayObject(
                 id.array.map(() => 1),
+                PineArrayType.int,
                 context
             );
         }
 
         return new PineArrayObject(
             id.array.map((x) => (x - mean) / stdev),
+            PineArrayType.int,
             context
         );
     };

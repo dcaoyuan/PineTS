@@ -21,20 +21,20 @@ parent: API Coverage
 | `array.new_string()`   | ✔️     | Create string array          |
 | `array.new_table()`    |        | Create table array           |
 | `array.new<type>()`    | ✔️     | Create typed array (generic) |
-| `array.from()`         | ✔️     | Create array from arguments  |
-| `array.copy()`         | ✔️     | Create copy of array         |
+| `array.from()`         | ✅     | Create array from arguments  |
+| `array.copy()`         | ✅     | Create copy of array         |
 
 ### Stack & Queue Operations
 
 | Function          | Status | Description                  |
 | ----------------- | ------ | ---------------------------- |
-| `array.push()`    | ✔️     | Append element to end        |
-| `array.pop()`     | ✔️     | Remove last element          |
-| `array.unshift()` | ✔️     | Prepend element to beginning |
-| `array.shift()`   | ✔️     | Remove first element         |
-| `array.insert()`  | ✔️     | Insert element at index      |
-| `array.remove()`  | ✔️     | Remove element at index      |
-| `array.clear()`   | ✔️     | Remove all elements          |
+| `array.push()`    | ✅     | Append element to end        |
+| `array.pop()`     | ✅     | Remove last element          |
+| `array.unshift()` | ✅     | Prepend element to beginning |
+| `array.shift()`   | ✅     | Remove first element         |
+| `array.insert()`  | ✅     | Insert element at index      |
+| `array.remove()`  | ✅     | Remove element at index      |
+| `array.clear()`   | ✅     | Remove all elements          |
 
 ### Access & Information
 
@@ -44,19 +44,19 @@ parent: API Coverage
 | `array.set()`   | ✅     | Set value at index    |
 | `array.first()` | ✅     | Get first element     |
 | `array.last()`  | ✅     | Get last element      |
-| `array.fill()`  | ✔️     | Fill array with value |
+| `array.fill()`  | ✅     | Fill array with value |
 | `array.size()`  | ✅     | Get array size        |
 
 ### Search & Lookup
 
 | Function                          | Status | Description               |
 | --------------------------------- | ------ | ------------------------- |
-| `array.includes()`                | ✔️     | Check if value exists     |
-| `array.indexof()`                 | ✔️     | Find first index of value |
-| `array.lastindexof()`             | ✔️     | Find last index of value  |
-| `array.binary_search()`           |        | Binary search             |
-| `array.binary_search_leftmost()`  |        | Binary search (leftmost)  |
-| `array.binary_search_rightmost()` |        | Binary search (rightmost) |
+| `array.includes()`                | ✅     | Check if value exists     |
+| `array.indexof()`                 | ✅     | Find first index of value |
+| `array.lastindexof()`             | ✅     | Find last index of value  |
+| `array.binary_search()`           | ✅     | Binary search             |
+| `array.binary_search_leftmost()`  | ✅     | Binary search (leftmost)  |
+| `array.binary_search_rightmost()` | ✅     | Binary search (rightmost) |
 
 ### Calculations & Statistics
 

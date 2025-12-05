@@ -1929,11 +1929,13 @@ describe('PineScript Language', () => {
 
             let first = array.get(arr, 0);
             let second = array.get(arr, 1);
+            let seventh = array.get(arr, 6);
             //=============================
 
             return {
                 first,
                 second,
+                seventh,
             };
         });
 
@@ -1941,50 +1943,9 @@ describe('PineScript Language', () => {
         console.log('>>> result: ', context.result);
 
         const expected = {
-            first: [
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-            ],
-            second: [
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-            ],
+            first: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            second: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            seventh: [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20],
         };
 
         expect(deepEqual(context.result, expected)).toBe(true);

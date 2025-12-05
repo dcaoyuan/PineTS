@@ -4,6 +4,9 @@
 
 import { abs as abs_factory } from './methods/abs';
 import { avg as avg_factory } from './methods/avg';
+import { binary_search as binary_search_factory } from './methods/binary_search';
+import { binary_search_leftmost as binary_search_leftmost_factory } from './methods/binary_search_leftmost';
+import { binary_search_rightmost as binary_search_rightmost_factory } from './methods/binary_search_rightmost';
 import { clear as clear_factory } from './methods/clear';
 import { concat as concat_factory } from './methods/concat';
 import { copy as copy_factory } from './methods/copy';
@@ -56,6 +59,18 @@ export class PineArrayObject {
 
     avg(...args: any[]) {
         return (avg_factory(this.context) as any)(this, ...args);
+    }
+
+    binary_search(...args: any[]) {
+        return (binary_search_factory(this.context) as any)(this, ...args);
+    }
+
+    binary_search_leftmost(...args: any[]) {
+        return (binary_search_leftmost_factory(this.context) as any)(this, ...args);
+    }
+
+    binary_search_rightmost(...args: any[]) {
+        return (binary_search_rightmost_factory(this.context) as any)(this, ...args);
     }
 
     clear(...args: any[]) {

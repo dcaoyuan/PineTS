@@ -21,6 +21,9 @@ export class PineArray {
     // Install methods
     this.abs = (id: PineArrayObject, ...args: any[]) => id.abs(...args);
     this.avg = (id: PineArrayObject, ...args: any[]) => id.avg(...args);
+    this.binary_search = (id: PineArrayObject, ...args: any[]) => id.binary_search(...args);
+    this.binary_search_leftmost = (id: PineArrayObject, ...args: any[]) => id.binary_search_leftmost(...args);
+    this.binary_search_rightmost = (id: PineArrayObject, ...args: any[]) => id.binary_search_rightmost(...args);
     this.clear = (id: PineArrayObject, ...args: any[]) => id.clear(...args);
     this.concat = (id: PineArrayObject, ...args: any[]) => id.concat(...args);
     this.copy = (id: PineArrayObject, ...args: any[]) => id.copy(...args);

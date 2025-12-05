@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { PineArrayObject } from '../PineArrayObject';
+import { precision } from '../utils';
 
 export function fill(context: any) {
     return (id: PineArrayObject, value: any, start: number = 0, end?: number): void => {
@@ -8,8 +9,7 @@ export function fill(context: any) {
         const adjustedEnd = end !== undefined ? Math.min(end, length) : length;
 
         for (let i = start; i < adjustedEnd; i++) {
-            id.array[i] = value;
+            id.array[i] = precision(value);
         }
     };
 }
-

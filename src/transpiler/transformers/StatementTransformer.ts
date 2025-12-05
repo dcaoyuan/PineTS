@@ -206,8 +206,10 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
         const newName = scopeManager.addVariable(decl.id.name, varNode.kind);
         const kind = varNode.kind; // 'const', 'let', or 'var'
 
+        const isArrayPatternVar = scopeManager.isArrayPatternElement(decl.id.name);
+
         // Transform identifiers in the init expression
-        if (decl.init && !isArrowFunction) {
+        if (decl.init && !isArrowFunction && !isArrayPatternVar) {
             // Check if initialization is a namespace function call
             if (
                 decl.init.type === 'CallExpression' &&
@@ -298,7 +300,6 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
         // Create the target variable reference using ASTFactory
         const targetVarRef = ASTFactory.createContextVariableReference(kind, newName);
 
-        const isArrayPatternVar = scopeManager.isArrayPatternElement(decl.id.name);
         // Check if initialization is from array access
         const isArrayInit =
             !isArrayPatternVar &&
@@ -321,10 +322,7 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
             if (isArrowFunction || isArrayPatternVar) {
                 rightSide = decl.init;
             } else if (kind === 'var') {
-                rightSide = ASTFactory.createInitVarCall(
-                    targetVarRef,
-                    decl.init
-                );
+                rightSide = ASTFactory.createInitVarCall(targetVarRef, decl.init);
             } else {
                 rightSide = ASTFactory.createInitCall(
                     targetVarRef,
@@ -343,7 +341,11 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
             // For array pattern destructuring, we need to:
             // 1. Use $.get(tempVar, 0) to get the current value from the Series
             // 2. Then access the array element [index]
-            const tempVarRef = assignmentExpr.expression.right.object;
+
+            // We skipped transformation for decl.init, so it's still a MemberExpression (temp[index])
+            const tempVarName = decl.init.object.name;
+            const [scopedTempName, tempKind] = scopeManager.getVariable(tempVarName);
+            const tempVarRef = ASTFactory.createContextVariableReference(tempKind, scopedTempName);
             const arrayIndex = decl.init.property.value;
 
             // Create $.get(tempVar, 0)[index]

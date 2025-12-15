@@ -3,6 +3,7 @@
 import { PineMatrixObject } from '../PineMatrixObject';
 import { Context } from '../../../Context.class';
 import { PineArrayObject } from '../../array/PineArrayObject';
+import { inferValueType } from '@pinets/namespaces/array/utils';
 
 export function col(context: Context) {
     return (id: PineMatrixObject, column: number) => {
@@ -11,7 +12,7 @@ export function col(context: Context) {
         for (let i = 0; i < rows; i++) {
             result.push(id.matrix[i][column]);
         }
-        return new PineArrayObject(result, id.type as any, context);
+        const columnType = inferValueType(result[0]);
+        return new PineArrayObject(result, columnType as any, context);
     };
 }
-

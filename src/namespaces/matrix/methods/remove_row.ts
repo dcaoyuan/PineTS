@@ -3,11 +3,12 @@
 import { PineMatrixObject } from '../PineMatrixObject';
 import { Context } from '../../../Context.class';
 import { PineArrayObject } from '../../array/PineArrayObject';
+import { inferValueType } from '@pinets/namespaces/array/utils';
 
 export function remove_row(context: Context) {
     return (id: PineMatrixObject, row_index: number) => {
         const removed = id.matrix.splice(row_index, 1);
-        return new PineArrayObject(removed[0] || [], id.type as any, context);
+        const removedValueType = inferValueType(removed[0][0]);
+        return new PineArrayObject(removed[0] || [], removedValueType as any, context);
     };
 }
-

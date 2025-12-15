@@ -3,11 +3,12 @@
 import { PineMapObject } from '../PineMapObject';
 import { Context } from '../../../Context.class';
 import { PineArrayObject } from '../../array/PineArrayObject';
+import { inferValueType } from '@pinets/namespaces/array/utils';
 
 export function values(context: Context) {
     return (id: PineMapObject) => {
         const valuesArray = Array.from(id.map.values());
-        return new PineArrayObject(valuesArray, id.valueType as any, context);
+        const valueType = inferValueType(valuesArray[0]);
+        return new PineArrayObject(valuesArray, valueType as any, context);
     };
 }
-

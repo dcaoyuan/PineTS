@@ -6,7 +6,10 @@ parent: API Coverage
 
 ## Polyline
 
-| Function            | Status |
-| ------------------- | ------ |
-| `polyline.delete()` |        |
-| `polyline.new()`    |        |
+### Other
+
+| Function            | Status | Description              |
+| ------------------- | ------ | ------------------------ |
+| `polyline.all`      |        | All polylines collection |
+| `polyline.delete()` |        | Delete polyline          |
+| `polyline.new()`    |        | Create new polyline      |

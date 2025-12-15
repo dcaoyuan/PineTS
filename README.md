@@ -19,37 +19,41 @@ PineTS makes it possible to migrate Pine Script v5+ indicators to Javascript/Typ
 
 ### Data
 
-[![syminfo](./.github/badges/api-syminfo.svg)](./.github/badges/api-syminfo.svg)
-[![session](./.github/badges/api-session.svg)](./.github/badges/api-session.svg)
-[![timeframe](./.github/badges/api-timeframe.svg)](./.github/badges/api-timeframe.svg)
-[![barstate](./.github/badges/api-barstate.svg)](./.github/badges/api-barstate.svg)
-[![ticker](./.github/badges/api-ticker.svg)](./.github/badges/api-ticker.svg)
-[![builtin](./.github/badges/api-builtin.svg)](./.github/badges/api-builtin.svg)
+[![syminfo](./.github/badges/api-syminfo.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/syminfo.html)
+[![session](./.github/badges/api-session.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/session.html)
+[![timeframe](./.github/badges/api-timeframe.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/timeframe.html)
+[![barstate](./.github/badges/api-barstate.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/barstate.html)
+[![ticker](./.github/badges/api-ticker.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/ticker.html)
+[![builtin](./.github/badges/api-builtin.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/builtin.html)
 
 ### Calculation
 
-[![ta](./.github/badges/api-ta.svg)](./.github/badges/api-ta.svg)
-[![math](./.github/badges/api-math.svg)](./.github/badges/api-math.svg)
-[![array](./.github/badges/api-array.svg)](./.github/badges/api-array.svg)
-[![map](./.github/badges/api-map.svg)](./.github/badges/api-map.svg)
-[![matrix](./.github/badges/api-matrix.svg)](./.github/badges/api-matrix.svg)
-[![request](./.github/badges/api-request.svg)](./.github/badges/api-request.svg)
-[![types](./.github/badges/api-types.svg)](./.github/badges/api-types.svg)
-[![strategy](./.github/badges/api-strategy.svg)](./.github/badges/api-strategy.svg)
-[![input](./.github/badges/api-input.svg)](./.github/badges/api-input.svg)
+[![ta](./.github/badges/api-ta.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/ta.html)
+[![math](./.github/badges/api-math.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/math.html)
+[![array](./.github/badges/api-array.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/array.html)
+[![map](./.github/badges/api-map.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/map.html)
+[![matrix](./.github/badges/api-matrix.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/matrix.html)
+[![request](./.github/badges/api-request.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/request.html)
+[![types](./.github/badges/api-types.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/types.html)
+[![strategy](./.github/badges/api-strategy.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/strategy.html)
+[![input](./.github/badges/api-input.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/input.html)
 
-### Drawing and Logging
+### Visualization
 
-[![str](./.github/badges/api-str.svg)](./.github/badges/api-str.svg)
-[![color](./.github/badges/api-color.svg)](./.github/badges/api-color.svg)
-[![chart](./.github/badges/api-chart.svg)](./.github/badges/api-chart.svg)
-[![log](./.github/badges/api-log.svg)](./.github/badges/api-log.svg)
-[![label](./.github/badges/api-label.svg)](./.github/badges/api-label.svg)
-[![line](./.github/badges/api-line.svg)](./.github/badges/api-line.svg)
-[![polyline](./.github/badges/api-polyline.svg)](./.github/badges/api-polyline.svg)
-[![box](./.github/badges/api-box.svg)](./.github/badges/api-box.svg)
-[![table](./.github/badges/api-table.svg)](./.github/badges/api-table.svg)
-[![linefill](./.github/badges/api-linefill.svg)](./.github/badges/api-linefill.svg)
+[![color](./.github/badges/api-color.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/color.html)
+[![plots](./.github/badges/api-plots.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/plots.html)
+[![chart](./.github/badges/api-chart.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/chart.html)
+[![label](./.github/badges/api-label.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/label.html)
+[![line](./.github/badges/api-line.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/line.html)
+[![polyline](./.github/badges/api-polyline.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/polyline.html)
+[![box](./.github/badges/api-box.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/box.html)
+[![table](./.github/badges/api-table.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/table.html)
+[![linefill](./.github/badges/api-linefill.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/linefill.html)
+
+### Logging
+
+[![log](./.github/badges/api-log.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/log.html)
+[![str](./.github/badges/api-str.svg)](https://quantforgeorg.github.io/PineTS/api-coverage/str.html)
 
 ---
 
@@ -107,7 +111,7 @@ npm install pinets
 
 Original Pine Script:
 
-<table>
+<table width="100%">
 <tr>
 <td>
 

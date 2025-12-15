@@ -1,5 +1,5 @@
 {
-    "Others": {
+    "Builtin": {
         "ask": false,
         "bar_index": true,
         "bid": false,
@@ -31,8 +31,6 @@
         "true": true,
         "alert()": false,
         "alertcondition()": false,
-        "barcolor()": false,
-        "bgcolor()": false,
         "bool()": false,
         "box()": false,
         "color()": false,
@@ -55,12 +53,6 @@
         "month()": false,
         "na()": true,
         "nz()": true,
-        "plot()": true,
-        "plotarrow()": false,
-        "plotbar()": false,
-        "plotcandle()": false,
-        "plotchar()": true,
-        "plotshape()": false,
         "second()": false,
         "strategy()": false,
         "string()": false,

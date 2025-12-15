@@ -12,15 +12,17 @@ Symbol information namespace providing metadata about the current trading symbol
 
 | Constant                   | Status | Description                                               |
 | -------------------------- | ------ | --------------------------------------------------------- |
-| `syminfo.ticker`           | ✅     | Symbol name (e.g., "BTCUSDT", "BTCUSDT.P")                |
-| `syminfo.tickerid`         | ✅     | Exchange:Symbol format (e.g., "BINANCE:BTCUSDT")          |
+| `syminfo.current_contract` | ✅     | Contract name for futures (e.g., "Perpetual")             |
+| `syminfo.description`      | ✅     | Human-readable description (e.g., "BTC / USDT Perpetual") |
+| `syminfo.isin`             | ✅     | ISIN code (empty for crypto)                              |
+| `syminfo.main_tickerid`    | ✅     | Main ticker identifier                                    |
 | `syminfo.prefix`           | ✅     | Exchange identifier (e.g., "BINANCE")                     |
 | `syminfo.root`             | ✅     | Base asset/root symbol (e.g., "BTC")                      |
-| `syminfo.description`      | ✅     | Human-readable description (e.g., "BTC / USDT Perpetual") |
+| `syminfo.ticker`           | ✅     | Symbol name (e.g., "BTCUSDT", "BTCUSDT.P")                |
+| `syminfo.tickerid`         | ✅     | Exchange:Symbol format (e.g., "BINANCE:BTCUSDT")          |
 | `syminfo.type`             | ✅     | Instrument type ("crypto" or "futures")                   |
-| `syminfo.main_tickerid`    | ✅     | Main ticker identifier                                    |
-| `syminfo.current_contract` | ✅     | Contract name for futures (e.g., "Perpetual")             |
-| `syminfo.isin`             | ✅     | ISIN code (empty for crypto)                              |
+| `syminfo.prefix()`         |        | Prefix function                                           |
+| `syminfo.ticker()`         |        | Ticker function                                           |
 
 ### Currency & Location
 

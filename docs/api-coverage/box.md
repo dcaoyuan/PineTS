@@ -6,35 +6,47 @@ parent: API Coverage
 
 ## Box
 
-| Function                       | Status |
-| ------------------------------ | ------ |
-| `box()`                        |        |
-| `box.copy()`                   |        |
-| `box.delete()`                 |        |
-| `box.get_bottom()`             |        |
-| `box.get_left()`               |        |
-| `box.get_right()`              |        |
-| `box.get_top()`                |        |
-| `box.new()`                    |        |
-| `box.set_bgcolor()`            |        |
-| `box.set_border_color()`       |        |
-| `box.set_border_style()`       |        |
-| `box.set_border_width()`       |        |
-| `box.set_bottom()`             |        |
-| `box.set_bottom_right_point()` |        |
-| `box.set_extend()`             |        |
-| `box.set_left()`               |        |
-| `box.set_lefttop()`            |        |
-| `box.set_right()`              |        |
-| `box.set_rightbottom()`        |        |
-| `box.set_text()`               |        |
-| `box.set_text_color()`         |        |
-| `box.set_text_font_family()`   |        |
-| `box.set_text_halign()`        |        |
-| `box.set_text_size()`          |        |
-| `box.set_text_valign()`        |        |
-| `box.set_text_wrap()`          |        |
-| `box.set_top()`                |        |
-| `box.set_top_left_point()`     |        |
+### Management
 
----
+| Function       | Status | Description          |
+| -------------- | ------ | -------------------- |
+| `box.all`      |        | All boxes collection |
+| `box.copy()`   |        | Copy box             |
+| `box.delete()` |        | Delete box           |
+| `box.new()`    |        | Create new box       |
+
+### Getters
+
+| Function           | Status | Description           |
+| ------------------ | ------ | --------------------- |
+| `box.get_bottom()` |        | Get bottom coordinate |
+| `box.get_left()`   |        | Get left coordinate   |
+| `box.get_right()`  |        | Get right coordinate  |
+| `box.get_top()`    |        | Get top coordinate    |
+
+### Setters
+
+| Function                       | Status | Description                   |
+| ------------------------------ | ------ | ----------------------------- |
+| `box.set_bgcolor()`            |        | Set background color          |
+| `box.set_border_color()`       |        | Set border color              |
+| `box.set_border_style()`       |        | Set border style              |
+| `box.set_border_width()`       |        | Set border width              |
+| `box.set_bottom()`             |        | Set bottom coordinate         |
+| `box.set_bottom_right_point()` |        | Set bottom-right point        |
+| `box.set_extend()`             |        | Set extend mode               |
+| `box.set_left()`               |        | Set left coordinate           |
+| `box.set_lefttop()`            |        | Set left-top point            |
+| `box.set_right()`              |        | Set right coordinate          |
+| `box.set_rightbottom()`        |        | Set right-bottom point        |
+| `box.set_text()`               |        | Set text                      |
+| `box.set_text_color()`         |        | Set text color                |
+| `box.set_text_font_family()`   |        | Set text font family          |
+| `box.set_text_formatting()`    |        | Set text formatting           |
+| `box.set_text_halign()`        |        | Set text horizontal alignment |
+| `box.set_text_size()`          |        | Set text size                 |
+| `box.set_text_valign()`        |        | Set text vertical alignment   |
+| `box.set_text_wrap()`          |        | Set text wrap                 |
+| `box.set_top()`                |        | Set top coordinate            |
+| `box.set_top_left_point()`     |        | Set top-left point            |
+| `box.set_xloc()`               |        | Set x-location                |

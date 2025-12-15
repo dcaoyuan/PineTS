@@ -39,8 +39,8 @@ parent: API Coverage
 
 | Function          | Status | Description             |
 | ----------------- | ------ | ----------------------- |
-| `str.split()`     | ✅     | Split string into array |
-| `str.substring()` | ✅     | Extract substring       |
+| `str.split()`     |        | Split string into array |
+| `str.substring()` |        | Extract substring       |
 
 ### Conversion
 

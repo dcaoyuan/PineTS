@@ -4,8 +4,7 @@ import { PineMapObject } from '../PineMapObject';
 import { Context } from '../../../Context.class';
 
 export function new_fn(context: Context) {
-    return (keyType: string, valueType: string): PineMapObject => {
-        return new PineMapObject(keyType, valueType, context);
+    return (): PineMapObject => {
+        return new PineMapObject(context);
     };
 }
-

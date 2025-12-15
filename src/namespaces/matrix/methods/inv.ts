@@ -25,10 +25,10 @@ export function inv(context: Context) {
     return (id: PineMatrixObject) => {
         const rows = id.matrix.length;
         const cols = rows > 0 ? id.matrix[0].length : 0;
-        if (rows !== cols) return new PineMatrixObject(id.type, rows, cols, NaN, context);
+        if (rows !== cols) return new PineMatrixObject(rows, cols, NaN, context);
 
         const invMat = inverse(id.matrix);
-        const newMatrix = new PineMatrixObject(id.type, rows, cols, NaN, context);
+        const newMatrix = new PineMatrixObject(rows, cols, NaN, context);
         newMatrix.matrix = invMat;
         return newMatrix;
     };

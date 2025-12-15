@@ -63,7 +63,6 @@ export class PineMatrixObject {
 ${objectPrivateProps}
 
     constructor(
-        public type: string,
         rows: number = 0,
         cols: number = 0,
         initialValue: any = NaN,

@@ -5,9 +5,8 @@ import { Context } from '../../../Context.class';
 
 export function copy(context: Context) {
     return (id: PineMapObject) => {
-        const newMap = new PineMapObject(id.keyType, id.valueType, context);
+        const newMap = new PineMapObject(context);
         newMap.map = new Map(id.map);
         return newMap;
     };
 }
-

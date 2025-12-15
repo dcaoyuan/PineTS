@@ -6,11 +6,11 @@ import { Context } from '../../../Context.class';
 export function sum(context: Context) {
     return (id: PineMatrixObject, id2: PineMatrixObject | number) => {
         const rows = id.matrix.length;
-        if (rows === 0) return new PineMatrixObject(id.type, 0, 0, NaN, context);
+        if (rows === 0) return new PineMatrixObject(0, 0, NaN, context);
         const cols = id.matrix[0].length;
-        
-        const newMatrix = new PineMatrixObject(id.type, rows, cols, NaN, context);
-        
+
+        const newMatrix = new PineMatrixObject(rows, cols, NaN, context);
+
         if (id2 instanceof PineMatrixObject) {
             for (let i = 0; i < rows; i++) {
                 for (let j = 0; j < cols; j++) {
@@ -27,7 +27,7 @@ export function sum(context: Context) {
                 }
             }
         }
-        
+
         return newMatrix;
     };
 }

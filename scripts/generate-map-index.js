@@ -42,9 +42,7 @@ async function generateIndex() {
 
         const objectPrivateProps = objectMethods.map((m) => `    private _${m.classProp}: any;`).join('\n');
 
-        const objectInitProps = objectMethods
-            .map((m) => `        this._${m.classProp} = ${m.export}_factory(this.context);`)
-            .join('\n');
+        const objectInitProps = objectMethods.map((m) => `        this._${m.classProp} = ${m.export}_factory(this.context);`).join('\n');
 
         const objectMethodDefs = objectMethods
             .map((m) => {
@@ -64,17 +62,13 @@ export class PineMapObject {
     public map: Map<any, any>;
 ${objectPrivateProps}
 
-    constructor(
-        public keyType: string,
-        public valueType: string,
-        public context: any
-    ) {
+    constructor(public context: any) {
         this.map = new Map();
 ${objectInitProps}
     }
 
     toString(): string {
-        return \`PineMapObject<\${this.keyType}, \${this.valueType}>(\${this.map.size})\`;
+        return \`PineMapObject(\${this.map.size})\`;
     }
 
 ${objectMethodDefs}
@@ -156,4 +150,3 @@ export default PineMap;
 }
 
 generateIndex();
-

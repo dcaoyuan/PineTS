@@ -9,12 +9,12 @@ export function kron(context: Context) {
         const c1 = r1 > 0 ? id.matrix[0].length : 0;
         const r2 = id2.matrix.length;
         const c2 = r2 > 0 ? id2.matrix[0].length : 0;
-        
+
         const rows = r1 * r2;
         const cols = c1 * c2;
-        
-        const newMatrix = new PineMatrixObject(id.type, rows, cols, NaN, context);
-        
+
+        const newMatrix = new PineMatrixObject(rows, cols, NaN, context);
+
         for (let i = 0; i < r1; i++) {
             for (let j = 0; j < c1; j++) {
                 const val1 = id.matrix[i][j];
@@ -26,8 +26,7 @@ export function kron(context: Context) {
                 }
             }
         }
-        
+
         return newMatrix;
     };
 }
-

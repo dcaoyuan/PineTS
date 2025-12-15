@@ -8,14 +8,13 @@ export function pinv(context: Context) {
         // Pseudoinverse placeholder (uses inv if square/nonsingular, else NaN for now)
         const rows = id.matrix.length;
         const cols = rows > 0 ? id.matrix[0].length : 0;
-        
+
         if (rows === cols) {
-             // Try normal inverse
-             // We need to import inv implementation or duplicate logic. 
-             // Since we don't have shared math lib yet, let's return NaN for complex cases.
-             return new PineMatrixObject(id.type, rows, cols, NaN, context);
+            // Try normal inverse
+            // We need to import inv implementation or duplicate logic.
+            // Since we don't have shared math lib yet, let's return NaN for complex cases.
+            return new PineMatrixObject(rows, cols, NaN, context);
         }
-        return new PineMatrixObject(id.type, cols, rows, NaN, context);
+        return new PineMatrixObject(cols, rows, NaN, context);
     };
 }
-

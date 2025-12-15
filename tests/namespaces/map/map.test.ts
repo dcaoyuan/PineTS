@@ -12,7 +12,7 @@ describe('Map Namespace', () => {
             const { map } = context.pine;
 
             // new
-            const m = map.new('string', 'int');
+            const m = map.new();
 
             // put
             const p1 = map.put(m, 'a', 10); // NaN
@@ -57,7 +57,7 @@ describe('Map Namespace', () => {
             // put_all
             map.clear(m2);
             map.put(m2, 'k1', 1);
-            const m3 = map.new('string', 'int');
+            const m3 = map.new();
             map.put(m3, 'k2', 2);
             map.put_all(m3, m2); // puts m2 into m3 -> m3 has k2, k1
             const s6 = map.size(m3); // 2

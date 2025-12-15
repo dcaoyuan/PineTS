@@ -12,8 +12,8 @@ describe('Matrix Namespace', () => {
             const { matrix, array } = context.pine;
 
             // Creation
-            const m1 = matrix.new('int', 2, 3, 0); // 2 rows, 3 cols, val 0
-            const m2 = matrix.new('float', 2, 2, 1.5);
+            const m1 = matrix.new(2, 3, 0); // 2 rows, 3 cols, val 0
+            const m2 = matrix.new(2, 2, 1.5);
 
             // Set/Get
             matrix.set(m1, 0, 0, 10);
@@ -113,7 +113,7 @@ describe('Matrix Namespace', () => {
             const { matrix } = context.pine;
 
             // Transpose
-            const m1 = matrix.new('int', 2, 3, 0);
+            const m1 = matrix.new(2, 3, 0);
             matrix.set(m1, 0, 0, 1);
             matrix.set(m1, 0, 1, 2);
             matrix.set(m1, 0, 2, 3);

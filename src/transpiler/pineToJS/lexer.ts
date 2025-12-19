@@ -41,6 +41,13 @@ export class Lexer {
         while (this.pos < this.source.length) {
             const ch = this.peek();
 
+            // Handle carriage return (Windows CRLF line endings)
+            // Skip \r - the following \n will be handled as newline
+            if (ch === '\r') {
+                this.advance();
+                continue;
+            }
+
             // Handle newlines and indentation
             if (ch === '\n') {
                 this.handleNewline();

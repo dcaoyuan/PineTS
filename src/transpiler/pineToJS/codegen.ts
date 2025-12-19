@@ -11,13 +11,15 @@ export class CodeGenerator {
     private sourceCode: string | null;
     private sourceLines: string[];
     private lastCommentedLine: number;
-    constructor(options: { indentStr?: string; sourceCode?: string } = {}) {
+    private includeSourceComments: boolean;
+    constructor(options: { indentStr?: string; sourceCode?: string; includeSourceComments?: boolean } = {}) {
         this.indent = 0;
         this.indentStr = options.indentStr || '  ';
         this.output = [];
         this.sourceCode = options.sourceCode || null;
         this.sourceLines = this.sourceCode ? this.sourceCode.split('\n') : [];
         this.lastCommentedLine = -1;
+        this.includeSourceComments = options.includeSourceComments !== false; // default true
     }
 
     generate(ast) {
@@ -104,8 +106,8 @@ export class CodeGenerator {
 
     // Generate any statement
     generateStatement(node) {
-        // Emit source comment if line information is available
-        if (node._line && this.sourceLines.length > 0) {
+        // Emit source comment if line information is available and enabled
+        if (this.includeSourceComments && node._line && this.sourceLines.length > 0) {
             this.writeSourceComment(node._line);
         }
 

@@ -6,18 +6,22 @@ export const CONTEXT_DATA_VARS = ['open', 'high', 'low', 'close', 'volume', 'hl2
 
 // All known Pine variables in the context
 export const CONTEXT_PINE_VARS = [
-    'input',
-    'ta',
-    'math',
-    'request',
-    'array',
-    'na',
+    //namespaces
+    ...KNOWN_NAMESPACES,
+    //plots
     'plotchar',
-    'color',
     'plot',
-    'nz',
+
+    //declarations
+    'indicator',
     'strategy',
     'library',
+
+    //
+    'fixnan',
+    'na',
+    'color',
+    'nz',
     'str',
     'box',
     'line',
@@ -27,6 +31,8 @@ export const CONTEXT_PINE_VARS = [
     'matrix',
     'log',
     'map',
+    //types
+    'bool',
 
     //market info
     'timeframe',

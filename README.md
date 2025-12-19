@@ -71,7 +71,7 @@ Original Pine Script:
 <tr>
 <td>
 
-```javascript
+```pinescript
 /*==[ Original Pine Script ]==*/
 
 //@version=5
@@ -88,6 +88,10 @@ diff_close = close - prev_close;
 
 _oo = open;
 _oo = math.abs(open[1] - close[2]);
+
+// plot ema's
+plot(ema9, title = '9 EMA', color = color.yellow)
+plot(ema18, title = '18 EMA', color = color.red)
 ```
 
 </td>
@@ -110,6 +114,10 @@ let diff_close = close - prev_close;
 
 let _oo = open;
 _oo = math.abs(open[1] - close[2]);
+
+// plot ema's
+plot(ema9, { title: '9 EMA', color: color.yellow });
+plot(ema18, { title: '18 EMA', color: color.red });
 ```
 
 </td>

@@ -29,6 +29,7 @@ export class Context {
         ohlc4: new Series([]),
         hlcc4: new Series([]),
     };
+    public indicator: IndicatorOptions;
     public cache: any = {};
     public taState: any = {}; // State for incremental TA calculations
     public isSecondaryContext: boolean = false; // Flag to prevent infinite recursion in request.security
@@ -119,6 +120,10 @@ export class Context {
             color: core.color,
             plot: core.plot.bind(core),
             nz: core.nz.bind(core),
+            indicator: core.indicator.bind(core),
+            fixnan: core.fixnan.bind(core),
+            //types
+            bool: core.bool.bind(core),
         };
 
         // Initialize everything directly in pine - the default way to access everything
@@ -131,11 +136,11 @@ export class Context {
             array: new PineArray(this),
             map: new PineMap(this),
             matrix: new PineMatrix(this),
-            na: coreFunctions.na,
-            plotchar: coreFunctions.plotchar,
-            color: coreFunctions.color,
-            plot: coreFunctions.plot,
-            nz: coreFunctions.nz,
+            //na: coreFunctions.na,
+            //plotchar: coreFunctions.plotchar,
+            //color: coreFunctions.color,
+            //plot: coreFunctions.plot,
+            //nz: coreFunctions.nz,
             syminfo: null,
             timeframe: new Timeframe(this),
             //FIXME : this is a temporary solution to get the barstate values,
@@ -155,6 +160,7 @@ export class Context {
             },
             log: new Log(this),
             str: new Str(this),
+            ...coreFunctions,
             ...types,
         };
     }

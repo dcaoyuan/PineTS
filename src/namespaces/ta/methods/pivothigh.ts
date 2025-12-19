@@ -4,11 +4,12 @@ import { pivothigh as pivothighUtil } from '../utils/pivothigh';
 import { Series } from '../../../Series';
 
 export function pivothigh(context: any) {
-    return (source: any, _leftbars: any, _rightbars: any) => {
-        //handle the case where source is not provided
-        if (_rightbars == undefined) {
+    return (source: any, _leftbars: any, _rightbars: any, _callId?: string) => {
+        //handle the case where source is not provided, in that case _rightbars will receive the _callId from the transpiler (a string value)
+        if (typeof _rightbars === 'string') {
             _rightbars = _leftbars;
             _leftbars = source;
+            _callId = _rightbars;
 
             //by default source is
             source = context.data.high;
@@ -58,4 +59,3 @@ export function pivothigh(context: any) {
         return context.precision(result[idx]);
     };
 }
-

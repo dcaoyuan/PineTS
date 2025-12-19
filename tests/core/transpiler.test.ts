@@ -388,19 +388,58 @@ let src_open = input.any({ title: 'Open Source', defval: open });
         expect(result).toBe(expected_code);
     });
 
+    it('Objects Props', async () => {
+        const fakeContext = {};
+        const transformer = transpile.bind(fakeContext);
+
+        const source = (context) => {
+            const { ta, plot, na, bool } = context.pine;
+            let highUsePivot = 10;
+            plot(highUsePivot, {
+                color: bool(ta.change(highUsePivot)) ? na : '#FF0000',
+            });
+        };
+        let transpiled = transformer(source);
+
+        const result = transpiled.toString().trim();
+        console.log(result);
+
+        /* prettier-ignore */
+        const expected_code = `$ => {
+  const {ta, plot, na, bool} = $.pine;
+  $.let.glb1_highUsePivot = $.init($.let.glb1_highUsePivot, 10);
+  const p0 = $.param($.let.glb1_highUsePivot, undefined, 'p0');
+  const p1 = ta.param($.let.glb1_highUsePivot, undefined, 'p1');
+  const temp_1 = ta.change(p1, "_ta0");
+  const p2 = $.param(temp_1, undefined, 'p2');
+  const p3 = $.param(bool(p2) ? NaN : "#FF0000", undefined, 'p3');
+  const p4 = $.param({
+    color: p3
+  }, undefined, 'p4');
+  plot(p0, p4);
+}`;
+
+        expect(result).toBe(expected_code);
+    });
+
     it('Time Series annotations ', async () => {
         const fakeContext = {};
         const transformer = transpile.bind(fakeContext);
 
         const source = (context) => {
             const { close } = context.data;
-            const ta = context.ta;
+            const { ta, fixnan } = context.pine;
 
             let sma = ta.sma(close, 20);
             sma = sma[1];
 
             const period = 14;
             sma = ta.sma(close, period);
+
+            let leftBars = 15;
+            let rightBars = 15;
+
+            let highUsePivot = fixnan(ta.pivothigh(leftBars, rightBars)[1]);
         };
         let transpiled = transformer(source);
 
@@ -410,7 +449,7 @@ let src_open = input.any({ title: 'Open Source', defval: open });
         /* prettier-ignore */
         const expected_code = `$ => {
   const {close} = $.data;
-  const ta = $.ta;
+  const {ta, fixnan} = $.pine;
   const p0 = ta.param(close, undefined, 'p0');
   const p1 = ta.param(20, undefined, 'p1');
   const temp_1 = ta.sma(p0, p1, "_ta0");
@@ -421,6 +460,13 @@ let src_open = input.any({ title: 'Open Source', defval: open });
   const p3 = ta.param($.const.glb1_period, undefined, 'p3');
   const temp_2 = ta.sma(p2, p3, "_ta1");
   $.set($.let.glb1_sma, temp_2);
+  $.let.glb1_leftBars = $.init($.let.glb1_leftBars, 15);
+  $.let.glb1_rightBars = $.init($.let.glb1_rightBars, 15);
+  const p4 = ta.param($.let.glb1_leftBars, undefined, 'p4');
+  const p5 = ta.param($.let.glb1_rightBars, undefined, 'p5');
+  const temp_3 = ta.pivothigh(p4, p5, "_ta2");
+  const p6 = $.param(temp_3, 1, 'p6');
+  $.let.glb1_highUsePivot = $.init($.let.glb1_highUsePivot, fixnan(p6));
 }`;
 
         expect(result).toBe(expected_code);

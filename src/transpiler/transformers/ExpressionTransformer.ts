@@ -677,6 +677,21 @@ export function transformFunctionArgument(arg: any, namespace: string, scopeMana
     const isArrayAccess = arg.type === 'MemberExpression' && arg.computed && arg.property;
 
     if (isArrayAccess) {
+        // Ensure complex objects are transformed before being used as array source
+        if (arg.object.type === 'CallExpression') {
+            transformCallExpression(arg.object, scopeManager);
+        } else if (arg.object.type === 'MemberExpression') {
+            transformMemberExpression(arg.object, '', scopeManager);
+        } else if (arg.object.type === 'BinaryExpression') {
+            arg.object = getParamFromBinaryExpression(arg.object, scopeManager, namespace);
+        } else if (arg.object.type === 'LogicalExpression') {
+            arg.object = getParamFromLogicalExpression(arg.object, scopeManager, namespace);
+        } else if (arg.object.type === 'ConditionalExpression') {
+            arg.object = getParamFromConditionalExpression(arg.object, scopeManager, namespace);
+        } else if (arg.object.type === 'UnaryExpression') {
+            arg.object = getParamFromUnaryExpression(arg.object, scopeManager, namespace);
+        }
+
         // Transform array access
         const transformedObject =
             arg.object.type === 'Identifier' && scopeManager.isContextBound(arg.object.name) && !scopeManager.isRootParam(arg.object.name)
@@ -746,6 +761,9 @@ export function transformFunctionArgument(arg: any, namespace: string, scopeMana
                     shorthand: false,
                     computed: false,
                 };
+            } else if (prop.value.type !== 'Literal') {
+                // For complex expressions (CallExpression, BinaryExpression, etc.), recursively transform them
+                prop.value = transformFunctionArgument(prop.value, namespace, scopeManager);
             }
             return prop;
         });

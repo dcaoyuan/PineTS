@@ -18,6 +18,8 @@ type PlotCharOptions = {
 };
 
 type PlotOptions = {
+    series?: number;
+    title?: string;
     color?: string;
     linewidth?: number;
     style?: string;
@@ -34,21 +36,23 @@ type PlotOptions = {
 };
 
 type IndicatorOptions = {
-    overlay?: boolean;
-    format?: string;
-    precision?: number;
-    scale?: number;
-    max_bars_back?: number;
-    timeframe?: string;
-    timeframe_gaps?: boolean;
-    explicit_plot_zorder?: number;
-    max_lines_count?: number;
-    max_labels_count?: number;
-    max_boxes_count?: number;
-    calc_bars_count?: number;
-    max_polylines_count?: number;
-    dynamic_requests?: boolean;
-    behind_chart?: boolean;
+    title: string;
+    shorttitle: string;
+    overlay: boolean;
+    format: string;
+    precision: number;
+    scale: string;
+    max_bars_back: number;
+    timeframe: string;
+    timeframe_gaps: boolean;
+    explicit_plot_zorder: boolean;
+    max_lines_count: number;
+    max_labels_count: number;
+    max_boxes_count: number;
+    calc_bars_count: number;
+    max_polylines_count: number;
+    dynamic_requests: boolean;
+    behind_chart: boolean;
 };
 
 type TSessionInfo = {
@@ -62,4 +66,3 @@ type TSessionInfo = {
     extended: boolean;
     regular: boolean;
 };
-

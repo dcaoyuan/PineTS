@@ -21,7 +21,7 @@ PineTS is a runtime + transpiler that converts Pine Script (or PineTS syntax) in
 
 ### Input Format Support
 
--   **Native Pine Script** _(v0.7.0+, experimental)_: Run original Pine Script v5 and v6 indicators directly. Note that some indicators may fail if they use Pine Script API features not yet implemented in PineTS. Check the [API coverage badges](#pine-script-api-coverage) below to verify compatibility.
+-   **Native Pine Script** _(experimental)_: Run original Pine Script v5 and v6 indicators directly. Note that some indicators may fail if they use Pine Script API features not yet implemented in PineTS. Check the [API coverage badges](#pine-script-api-coverage) below to verify compatibility.
 -   **PineTS Syntax**: A JavaScript/TypeScript syntax that mirrors Pine Script closely, requiring minimal conversion effort from original Pine Script code.
 
 ## See it in action

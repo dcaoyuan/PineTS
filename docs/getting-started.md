@@ -7,7 +7,12 @@ permalink: /getting-started/
 
 # Getting Started with PineTS
 
-PineTS enables seamless conversion of Pine Script indicators to JavaScript/TypeScript code. It preserves the original functionality and behavior while providing robust handling of time-series data processing, technical analysis calculations, and Pine Script's distinctive scoping mechanisms.
+PineTS is a JavaScript/TypeScript runtime that enables execution of Pine Script indicators in JavaScript environments. It supports two input formats:
+
+1. **Native Pine Script v5/v6** _(experimental)_ - Run original Pine Script code directly
+2. **PineTS Syntax** - A JavaScript/TypeScript syntax that closely mirrors Pine Script
+
+It preserves the original functionality and behavior while providing robust handling of time-series data processing, technical analysis calculations, and Pine Script's distinctive scoping mechanisms.
 
 ## Installation
 
@@ -15,9 +20,49 @@ PineTS enables seamless conversion of Pine Script indicators to JavaScript/TypeS
 npm install pinets
 ```
 
-## Usage Example
+## Usage Examples
 
-### Converting Pine Script to PineTS
+### Option 1: Run Native Pine Script Directly _(Experimental)_
+
+Starting with v0.7.0, you can run original Pine Script code directly without conversion:
+
+```javascript
+import { PineTS, Provider } from 'pinets';
+
+// Initialize with market data
+const pineTS = new PineTS(Provider.Binance, 'BTCUSDT', 'D', 100);
+
+// Run native Pine Script directly - no conversion needed!
+const pineScriptCode = `
+//@version=5
+indicator('My EMA Cross Strategy')
+
+ema9 = ta.ema(close, 9)
+ema18 = ta.ema(close, 18)
+
+bull_bias = ema9 > ema18
+bear_bias = ema9 < ema18
+
+prev_close = close[1]
+diff_close = close - prev_close
+
+plot(ema9, title = '9 EMA', color = color.yellow)
+plot(ema18, title = '18 EMA', color = color.red)
+`;
+
+const { result, plots } = await pineTS.run(pineScriptCode);
+// Access results: result.ema9, result.ema18, result.bull_bias, result.bear_bias
+```
+
+> **⚠️ Note**: Native Pine Script support is experimental. Some indicators may fail if they use API features not yet implemented. Check the [API Coverage](../api-coverage/) pages to verify compatibility.
+
+---
+
+### Option 2: Use PineTS Syntax
+
+If you prefer or need more control, you can use PineTS syntax, which is a JavaScript/TypeScript version with minimal differences from Pine Script.
+
+#### Converting Pine Script to PineTS
 
 Original Pine Script:
 
@@ -38,7 +83,7 @@ _oo = open;
 _oo = math.abs(open[1] - close[2]);
 ```
 
-Equivalent PineTS code:
+Equivalent PineTS syntax:
 
 ```javascript
 const ema9 = ta.ema(close, 9);
@@ -54,13 +99,13 @@ let _oo = open;
 _oo = math.abs(open[1] - close[2]);
 ```
 
-### Running PineTS Code
+#### Running PineTS Syntax Code
 
 ```javascript
-import { PineTS, Providers } from 'pinets';
+import { PineTS, Provider } from 'pinets';
 
 // Initialize with market data
-const pineTS = new PineTS(Providers.Binance, 'BTCUSDT', 'D', 100);
+const pineTS = new PineTS(Provider.Binance, 'BTCUSDT', 'D', 100);
 
 // Run your indicator
 const { result } = await pineTS.run((context) => {
@@ -87,10 +132,10 @@ const { result } = await pineTS.run((context) => {
 For processing large datasets efficiently or streaming live market data, use pagination:
 
 ```javascript
-import { PineTS, Providers } from 'pinets';
+import { PineTS, Provider } from 'pinets';
 
 // Initialize with a provider for live streaming capability
-const pineTS = new PineTS(Providers.Binance, 'BTCUSDT', '1h');
+const pineTS = new PineTS(Provider.Binance, 'BTCUSDT', '1h');
 
 // Process 200 candles in pages of 50
 const iterator = pineTS.run(
@@ -121,13 +166,18 @@ for await (const page of iterator) {
 
 📖 **For complete pagination documentation and advanced examples, see [Pagination & Live Streaming](../pagination/).**
 
-## Key Differences from Pine Script
+## Key Differences: PineTS Syntax vs Native Pine Script
+
+When using **PineTS syntax** (Option 2), note these differences from native Pine Script:
 
 1. **Variable Declaration**: Use JavaScript's `const`, `let`, and `var` instead of Pine Script's implicit declaration
 2. **Function Syntax**: JavaScript arrow functions and standard function syntax
-3. **Module System**: Pine Script native types should be imported using syntax like: `const ta = context.ta; const {close, open} = context.data;`
-4. **Scoping Rules**: Maintains Pine Script's series behavior through runtime transformation
-5. **Return syntax**: PineTS can return an object with the results of the indicator, allowing you to get the results of the indicator in a single call.
+3. **Module System**: Import Pine Script namespaces from context: `const { ta, math } = context; const { close, open } = context.data;`
+4. **Object Syntax**: Use JavaScript object notation for parameters: `plot(value, { title: 'My Plot', color: color.yellow })`
+5. **Scoping Rules**: Maintains Pine Script's series behavior through runtime transformation
+6. **Return Syntax**: Can return an object with indicator results for easy access in JavaScript
+
+When using **Native Pine Script** (Option 1), write code exactly as you would in TradingView - no conversion needed!
 
 ## Core Components
 

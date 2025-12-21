@@ -1,6 +1,6 @@
 {
     "name": "pinets",
-    "version": "0.7.0",
+    "version": "0.7.1",
     "description": "",
     "main": "dist/pinets.min.cjs",
     "module": "dist/pinets.min.es.js",

@@ -96,8 +96,8 @@ plot(ema9, title = '9 EMA', color = color.yellow)
 plot(ema18, title = '18 EMA', color = color.red)
 `;
 
-const { result, plots } = await pineTS.run(pineScriptCode);
-// Access results: result.ema9, result.ema18, result.bull_bias, result.bear_bias
+const { plots } = await pineTS.run(pineScriptCode);
+//access ema9 and ema18 plots data
 ```
 
 > **⚠️ Note**: Native Pine Script support is experimental. Some indicators may fail if they use API features not yet implemented. Refer to the [API coverage badges](#pine-script-api-coverage) to check compatibility.

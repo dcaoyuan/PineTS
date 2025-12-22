@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-const BINANCE_API_URL = 'https://api.binance.com/api/v3'; //'https://testnet.binance.vision/api/v3';
+const BINANCE_API_URL_DEFAULT = 'https://api.binance.com/api/v3';
+const BINANCE_API_URL_US = 'https://api.binance.us/api/v3';
+
 const timeframe_to_binance = {
     '1': '1m', // 1 minute
     '3': '3m', // 3 minutes
@@ -84,9 +86,53 @@ class CacheManager<T> {
 
 export class BinanceProvider implements IProvider {
     private cacheManager: CacheManager<any[]>;
+    private activeApiUrl: string | null = null; // Persist the working endpoint
 
     constructor() {
         this.cacheManager = new CacheManager(5 * 60 * 1000); // 5 minutes cache duration
+    }
+
+    /**
+     * Resolves the working Binance API endpoint.
+     * Tries default first, then falls back to US endpoint.
+     * Caches the working endpoint for future calls.
+     */
+    private async getBaseUrl(): Promise<string> {
+        if (this.activeApiUrl) {
+            return this.activeApiUrl;
+        }
+
+        // Try default endpoint
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+            const response = await fetch(`${BINANCE_API_URL_DEFAULT}/ping`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (response.ok) {
+                this.activeApiUrl = BINANCE_API_URL_DEFAULT;
+                return this.activeApiUrl;
+            }
+        } catch (e) {
+            // Default failed, try US endpoint
+            // console.warn('Binance default API unreachable, trying US endpoint...');
+        }
+
+        // Try US endpoint
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const response = await fetch(`${BINANCE_API_URL_US}/ping`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (response.ok) {
+                this.activeApiUrl = BINANCE_API_URL_US;
+                return this.activeApiUrl;
+            }
+        } catch (e) {
+            // Both failed
+        }
+
+        // Fallback to default if check fails entirely (let actual request fail)
+        return BINANCE_API_URL_DEFAULT;
     }
 
     async getMarketDataInterval(tickerId: string, timeframe: string, sDate: number, eDate: number): Promise<any> {
@@ -184,7 +230,8 @@ export class BinanceProvider implements IProvider {
             }
 
             // Single request for <= 1000 candles
-            let url = `${BINANCE_API_URL}/klines?symbol=${tickerId}&interval=${interval}`;
+            const baseUrl = await this.getBaseUrl();
+            let url = `${baseUrl}/klines?symbol=${tickerId}&interval=${interval}`;
 
             //example https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=1000
             if (limit) {
@@ -276,7 +323,8 @@ export class BinanceProvider implements IProvider {
             // We keep it EXACTLY as is for ticker field (Pine Script includes .P)
 
             let marketType: 'crypto' | 'futures' = 'crypto';
-            let apiUrl = BINANCE_API_URL; // Default to spot API
+            const baseUrl = await this.getBaseUrl();
+            let apiUrl = baseUrl; // Default to resolved spot API
             let apiSymbol = tickerId; // Symbol for API call
             let contractType = '';
 

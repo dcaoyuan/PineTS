@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.7.2] - 2025-12-22 - Pine Script Parser & Build System Modernization
+
+-   Hotfix : Binance provider failing for USA users, implemented a fallback logic to use the default binance url and fallback to US local url if the first one fails.
+
 ## [0.7.0] - 2025-12-20 - Pine Script Parser & Build System Modernization
 
 ### Added

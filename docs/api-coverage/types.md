@@ -6,61 +6,6 @@ parent: API Coverage
 
 ## Types
 
-### Dividends
-
-| Function                    | Status | Description            |
-| --------------------------- | ------ | ---------------------- |
-| `dividends.future_amount`   |        | Future dividend amount |
-| `dividends.future_ex_date`  |        | Future ex-date         |
-| `dividends.future_pay_date` |        | Future pay date        |
-| `dividends.gross`           |        | Gross dividend         |
-| `dividends.net`             |        | Net dividend           |
-
-### Earnings
-
-| Function                          | Status | Description            |
-| --------------------------------- | ------ | ---------------------- |
-| `earnings.future_eps`             |        | Future EPS             |
-| `earnings.future_period_end_time` |        | Future period end time |
-| `earnings.future_revenue`         |        | Future revenue         |
-| `earnings.future_time`            |        | Future time            |
-| `earnings.actual`                 |        | Actual earnings        |
-| `earnings.estimate`               |        | Estimated earnings     |
-| `earnings.standardized`           |        | Standardized earnings  |
-
-### Adjustment
-
-| Function               | Status | Description          |
-| ---------------------- | ------ | -------------------- |
-| `adjustment.dividends` |        | Dividends adjustment |
-| `adjustment.none`      |        | No adjustment        |
-| `adjustment.splits`    |        | Splits adjustment    |
-
-### Alert
-
-| Function                        | Status | Description                        |
-| ------------------------------- | ------ | ---------------------------------- |
-| `alert.freq_all`                |        | Alert frequency all                |
-| `alert.freq_once_per_bar`       |        | Alert frequency once per bar       |
-| `alert.freq_once_per_bar_close` |        | Alert frequency once per bar close |
-
-### Backadjustment
-
-| Function                 | Status | Description            |
-| ------------------------ | ------ | ---------------------- |
-| `backadjustment.inherit` |        | Inherit backadjustment |
-| `backadjustment.off`     |        | Backadjustment off     |
-| `backadjustment.on`      |        | Backadjustment on      |
-
-### Barmerge
-
-| Function                 | Status | Description   |
-| ------------------------ | ------ | ------------- |
-| `barmerge.gaps_off`      |        | Gaps off      |
-| `barmerge.gaps_on`       |        | Gaps on       |
-| `barmerge.lookahead_off` |        | Lookahead off |
-| `barmerge.lookahead_on`  |        | Lookahead on  |
-
 ### Currency
 
 | Function        | Status | Description        |
@@ -138,13 +83,13 @@ parent: API Coverage
 
 | Function                | Status | Description              |
 | ----------------------- | ------ | ------------------------ |
-| `display.all`           |        | Display all              |
-| `display.data_window`   |        | Display in data window   |
-| `display.none`          |        | Display none             |
-| `display.pane`          |        | Display in pane          |
-| `display.pine_screener` |        | Display in Pine Screener |
-| `display.price_scale`   |        | Display in price scale   |
-| `display.status_line`   |        | Display in status line   |
+| `display.all`           | ✅     | Display all              |
+| `display.data_window`   | ✅     | Display in data window   |
+| `display.none`          | ✅     | Display none             |
+| `display.pane`          | ✅     | Display in pane          |
+| `display.pine_screener` | ✅     | Display in Pine Screener |
+| `display.price_scale`   | ✅     | Display in price scale   |
+| `display.status_line`   | ✅     | Display in status line   |
 
 ### Extend
 
@@ -166,11 +111,11 @@ parent: API Coverage
 
 | Function         | Status | Description    |
 | ---------------- | ------ | -------------- |
-| `format.inherit` |        | Inherit format |
-| `format.mintick` |        | Mintick format |
-| `format.percent` |        | Percent format |
-| `format.price`   |        | Price format   |
-| `format.volume`  |        | Volume format  |
+| `format.inherit` | ✅     | Inherit format |
+| `format.mintick` | ✅     | Mintick format |
+| `format.percent` | ✅     | Percent format |
+| `format.price`   | ✅     | Price format   |
+| `format.volume`  | ✅     | Volume format  |
 
 ### Hline
 
@@ -184,11 +129,11 @@ parent: API Coverage
 
 | Function            | Status | Description        |
 | ------------------- | ------ | ------------------ |
-| `location.abovebar` |        | Above bar location |
-| `location.absolute` |        | Absolute location  |
-| `location.belowbar` |        | Below bar location |
-| `location.bottom`   |        | Bottom location    |
-| `location.top`      |        | Top location       |
+| `location.abovebar` | ✅     | Above bar location |
+| `location.absolute` | ✅     | Absolute location  |
+| `location.belowbar` | ✅     | Below bar location |
+| `location.bottom`   | ✅     | Bottom location    |
+| `location.top`      | ✅     | Top location       |
 
 ### Order
 
@@ -201,20 +146,20 @@ parent: API Coverage
 
 | Function                      | Status | Description                 |
 | ----------------------------- | ------ | --------------------------- |
-| `plot.linestyle_dashed`       |        | Dashed line style           |
-| `plot.linestyle_dotted`       |        | Dotted line style           |
-| `plot.linestyle_solid`        |        | Solid line style            |
-| `plot.style_area`             |        | Area plot style             |
-| `plot.style_areabr`           |        | Area break plot style       |
-| `plot.style_circles`          |        | Circles plot style          |
-| `plot.style_columns`          |        | Columns plot style          |
-| `plot.style_cross`            |        | Cross plot style            |
-| `plot.style_histogram`        |        | Histogram plot style        |
-| `plot.style_line`             |        | Line plot style             |
-| `plot.style_linebr`           |        | Line break plot style       |
-| `plot.style_stepline`         |        | Stepline plot style         |
-| `plot.style_stepline_diamond` |        | Stepline diamond plot style |
-| `plot.style_steplinebr`       |        | Stepline break plot style   |
+| `plot.linestyle_dashed`       | ✅     | Dashed line style           |
+| `plot.linestyle_dotted`       | ✅     | Dotted line style           |
+| `plot.linestyle_solid`        | ✅     | Solid line style            |
+| `plot.style_area`             | ✅     | Area plot style             |
+| `plot.style_areabr`           | ✅     | Area break plot style       |
+| `plot.style_circles`          | ✅     | Circles plot style          |
+| `plot.style_columns`          | ✅     | Columns plot style          |
+| `plot.style_cross`            | ✅     | Cross plot style            |
+| `plot.style_histogram`        | ✅     | Histogram plot style        |
+| `plot.style_line`             | ✅     | Line plot style             |
+| `plot.style_linebr`           | ✅     | Line break plot style       |
+| `plot.style_stepline`         | ✅     | Stepline plot style         |
+| `plot.style_stepline_diamond` | ✅     | Stepline diamond plot style |
+| `plot.style_steplinebr`       | ✅     | Stepline break plot style   |
 
 ### Position
 
@@ -250,29 +195,29 @@ parent: API Coverage
 
 | Function             | Status | Description         |
 | -------------------- | ------ | ------------------- |
-| `shape.arrowdown`    |        | Arrow down shape    |
-| `shape.arrowup`      |        | Arrow up shape      |
-| `shape.circle`       |        | Circle shape        |
-| `shape.cross`        |        | Cross shape         |
-| `shape.diamond`      |        | Diamond shape       |
-| `shape.flag`         |        | Flag shape          |
-| `shape.labeldown`    |        | Label down shape    |
-| `shape.labelup`      |        | Label up shape      |
-| `shape.square`       |        | Square shape        |
-| `shape.triangledown` |        | Triangle down shape |
-| `shape.triangleup`   |        | Triangle up shape   |
-| `shape.xcross`       |        | X-cross shape       |
+| `shape.arrowdown`    | ✅     | Arrow down shape    |
+| `shape.arrowup`      | ✅     | Arrow up shape      |
+| `shape.circle`       | ✅     | Circle shape        |
+| `shape.cross`        | ✅     | Cross shape         |
+| `shape.diamond`      | ✅     | Diamond shape       |
+| `shape.flag`         | ✅     | Flag shape          |
+| `shape.labeldown`    | ✅     | Label down shape    |
+| `shape.labelup`      | ✅     | Label up shape      |
+| `shape.square`       | ✅     | Square shape        |
+| `shape.triangledown` | ✅     | Triangle down shape |
+| `shape.triangleup`   | ✅     | Triangle up shape   |
+| `shape.xcross`       | ✅     | X-cross shape       |
 
 ### Size
 
 | Function      | Status | Description |
 | ------------- | ------ | ----------- |
-| `size.auto`   |        | Auto size   |
-| `size.huge`   |        | Huge size   |
-| `size.large`  |        | Large size  |
-| `size.normal` |        | Normal size |
-| `size.small`  |        | Small size  |
-| `size.tiny`   |        | Tiny size   |
+| `size.auto`   | ✅     | Auto size   |
+| `size.huge`   | ✅     | Huge size   |
+| `size.large`  | ✅     | Large size  |
+| `size.normal` | ✅     | Normal size |
+| `size.small`  | ✅     | Small size  |
+| `size.tiny`   | ✅     | Tiny size   |
 
 ### Splits
 
@@ -310,3 +255,58 @@ parent: API Coverage
 | `yloc.abovebar` |        | Above bar y-location |
 | `yloc.belowbar` |        | Below bar y-location |
 | `yloc.price`    |        | Price y-location     |
+
+### Dividends
+
+| Function                    | Status | Description            |
+| --------------------------- | ------ | ---------------------- |
+| `dividends.future_amount`   |        | Future dividend amount |
+| `dividends.future_ex_date`  |        | Future ex-date         |
+| `dividends.future_pay_date` |        | Future pay date        |
+| `dividends.gross`           |        | Gross dividend         |
+| `dividends.net`             |        | Net dividend           |
+
+### Earnings
+
+| Function                          | Status | Description            |
+| --------------------------------- | ------ | ---------------------- |
+| `earnings.future_eps`             |        | Future EPS             |
+| `earnings.future_period_end_time` |        | Future period end time |
+| `earnings.future_revenue`         |        | Future revenue         |
+| `earnings.future_time`            |        | Future time            |
+| `earnings.actual`                 |        | Actual earnings        |
+| `earnings.estimate`               |        | Estimated earnings     |
+| `earnings.standardized`           |        | Standardized earnings  |
+
+### Adjustment
+
+| Function               | Status | Description          |
+| ---------------------- | ------ | -------------------- |
+| `adjustment.dividends` |        | Dividends adjustment |
+| `adjustment.none`      |        | No adjustment        |
+| `adjustment.splits`    |        | Splits adjustment    |
+
+### Alert
+
+| Function                        | Status | Description                        |
+| ------------------------------- | ------ | ---------------------------------- |
+| `alert.freq_all`                |        | Alert frequency all                |
+| `alert.freq_once_per_bar`       |        | Alert frequency once per bar       |
+| `alert.freq_once_per_bar_close` |        | Alert frequency once per bar close |
+
+### Backadjustment
+
+| Function                 | Status | Description            |
+| ------------------------ | ------ | ---------------------- |
+| `backadjustment.inherit` |        | Inherit backadjustment |
+| `backadjustment.off`     |        | Backadjustment off     |
+| `backadjustment.on`      |        | Backadjustment on      |
+
+### Barmerge
+
+| Function                 | Status | Description   |
+| ------------------------ | ------ | ------------- |
+| `barmerge.gaps_off`      |        | Gaps off      |
+| `barmerge.gaps_on`       |        | Gaps on       |
+| `barmerge.lookahead_off` |        | Lookahead off |
+| `barmerge.lookahead_on`  |        | Lookahead on  |

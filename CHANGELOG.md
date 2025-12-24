@@ -1,6 +1,19 @@
 # Change Log
 
-## [0.7.2] - 2025-12-22 - Pine Script Parser & Build System Modernization
+## [0.7.3] - 2025-12-24 - Plot Functions & PineScript Types Enhancement
+
+### Added
+
+-   **Plot Functions**: Added support for `plotshape` and `plotarrow` functions
+-   **PineScript Type Constants**: Full implementation of PineScript type namespaces:
+    -   `format.*` - Number format types
+    -   `plot.*` - Plot style types
+    -   `location.*` - Location constants for shapes
+    -   `size.*` - Size constants for shapes
+    -   `shape.*` - Shape style constants
+    -   `display.*` - Display mode constants
+
+## [0.7.2] - 2025-12-22 - Binance Provider Hotfix
 
 -   Hotfix : Binance provider failing for USA users, implemented a fallback logic to use the default binance url and fallback to US local url if the first one fails.
 

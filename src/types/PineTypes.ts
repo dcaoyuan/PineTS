@@ -35,6 +35,40 @@ type PlotOptions = {
     force_overlay?: boolean;
 };
 
+type PlotShapeOptions = {
+    series?: number;
+    title?: string;
+    style?: string;
+    location?: string;
+    color?: string;
+    offset?: number;
+    text?: string;
+    textcolor?: string;
+    editable?: boolean;
+    size?: string;
+    show_last?: number;
+    display?: string;
+    format?: string;
+    precision?: number;
+    force_overlay?: boolean;
+};
+
+type PlotArrowOptions = {
+    series?: number;
+    title?: string;
+    colorup?: string;
+    colordown?: string;
+    offset?: number;
+    minheight?: number;
+    maxheight?: number;
+    editable?: boolean;
+    show_last?: number;
+    display?: string;
+    format?: string;
+    precision?: number;
+    force_overlay?: boolean;
+};
+
 type IndicatorOptions = {
     title: string;
     shorttitle: string;

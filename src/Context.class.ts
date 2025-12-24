@@ -14,7 +14,7 @@ import TechnicalAnalysis from './namespaces/ta/ta.index';
 import { Series } from './Series';
 import { Log } from './namespaces/Log';
 import { Str } from './namespaces/Str';
-import types from './namespaces/Types';
+import types, { display, shape } from './namespaces/Types';
 import { Timeframe } from './namespaces/Timeframe';
 import { HlineHelper, PlotHelper } from './namespaces/Plots';
 
@@ -140,11 +140,7 @@ export class Context {
             array: new PineArray(this),
             map: new PineMap(this),
             matrix: new PineMatrix(this),
-            //na: coreFunctions.na,
-            //plotchar: coreFunctions.plotchar,
-            //color: coreFunctions.color,
-            //plot: coreFunctions.plot,
-            //nz: coreFunctions.nz,
+
             syminfo: null,
             timeframe: new Timeframe(this),
             //FIXME : this is a temporary solution to get the barstate values,
@@ -170,7 +166,7 @@ export class Context {
 
         const plotHelper = new PlotHelper(this);
         const hlineHelper = new HlineHelper(this);
-        this.bindContextObject(plotHelper, ['plot', 'plotchar']);
+        this.bindContextObject(plotHelper, ['plot', 'plotchar', 'plotshape', 'plotarrow']);
         this.bindContextObject(hlineHelper, ['any', 'style_dashed', 'style_solid', 'style_dotted', 'param'], 'hline');
     }
 
@@ -411,6 +407,8 @@ export class Context {
         return {
             na: this.pine.na,
             plotchar: this.pine.plotchar,
+            plotshape: this.pine.plotshape,
+            plotarrow: this.pine.plotarrow,
             color: this.pine.color,
             plot: this.pine.plot,
             nz: this.pine.nz,

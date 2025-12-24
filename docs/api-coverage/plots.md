@@ -10,9 +10,9 @@ parent: API Coverage
 | -------------- | ------ | ---------------------- |
 | `plot()`       | ✅     | Plot a series          |
 | `plotchar()`   | ✅     | Plot character markers |
-| `plotarrow()`  |        | Plot arrow markers     |
+| `plotarrow()`  | ✅     | Plot arrow markers     |
 | `plotbar()`    |        | Plot bar chart         |
 | `plotcandle()` |        | Plot candlestick chart |
-| `plotshape()`  |        | Plot shape markers     |
+| `plotshape()`  | ✅     | Plot shape markers     |
 | `barcolor()`   |        | Set bar color          |
-| `bgcolor()`    |        | Set background color   |
+| `bgcolor()`    | ✅     | Set background color   |

@@ -16,6 +16,8 @@ export const CONTEXT_PINE_VARS = [
     ...KNOWN_NAMESPACES,
     //plots
     'plotchar',
+    'plotshape',
+    'plotarrow',
     'plot',
     'hline',
 
@@ -56,6 +58,10 @@ export const CONTEXT_PINE_VARS = [
     'order',
     'currency',
     'display',
+    'shape',
+    'location',
+    'size',
+    'format',
     'dayofweek',
 ];
 

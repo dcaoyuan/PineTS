@@ -104,13 +104,13 @@
         "dayofweek.wednesday": true
     },
     "display": {
-        "display.all": false,
-        "display.data_window": false,
-        "display.none": false,
-        "display.pane": false,
-        "display.pine_screener": false,
-        "display.price_scale": false,
-        "display.status_line": false
+        "display.all": true,
+        "display.data_window": true,
+        "display.none": true,
+        "display.pane": true,
+        "display.pine_screener": true,
+        "display.price_scale": true,
+        "display.status_line": true
     },
     "extend": {
         "extend.both": false,
@@ -123,11 +123,11 @@
         "font.family_monospace": false
     },
     "format": {
-        "format.inherit": false,
-        "format.mintick": false,
-        "format.percent": false,
-        "format.price": false,
-        "format.volume": false
+        "format.inherit": true,
+        "format.mintick": true,
+        "format.percent": true,
+        "format.price": true,
+        "format.volume": true
     },
     "hline": {
         "hline.style_dashed": true,
@@ -135,31 +135,31 @@
         "hline.style_solid": true
     },
     "location": {
-        "location.abovebar": false,
-        "location.absolute": false,
-        "location.belowbar": false,
-        "location.bottom": false,
-        "location.top": false
+        "location.abovebar": true,
+        "location.absolute": true,
+        "location.belowbar": true,
+        "location.bottom": true,
+        "location.top": true
     },
     "order": {
         "order.ascending": true,
         "order.descending": true
     },
     "plot": {
-        "plot.linestyle_dashed": false,
-        "plot.linestyle_dotted": false,
-        "plot.linestyle_solid": false,
-        "plot.style_area": false,
-        "plot.style_areabr": false,
-        "plot.style_circles": false,
-        "plot.style_columns": false,
-        "plot.style_cross": false,
-        "plot.style_histogram": false,
-        "plot.style_line": false,
-        "plot.style_linebr": false,
-        "plot.style_stepline": false,
-        "plot.style_stepline_diamond": false,
-        "plot.style_steplinebr": false
+        "plot.linestyle_dashed": true,
+        "plot.linestyle_dotted": true,
+        "plot.linestyle_solid": true,
+        "plot.style_area": true,
+        "plot.style_areabr": true,
+        "plot.style_circles": true,
+        "plot.style_columns": true,
+        "plot.style_cross": true,
+        "plot.style_histogram": true,
+        "plot.style_line": true,
+        "plot.style_linebr": true,
+        "plot.style_stepline": true,
+        "plot.style_stepline_diamond": true,
+        "plot.style_steplinebr": true
     },
     "position": {
         "position.bottom_center": false,
@@ -183,26 +183,26 @@
         "settlement_as_close.on": false
     },
     "shape": {
-        "shape.arrowdown": false,
-        "shape.arrowup": false,
-        "shape.circle": false,
-        "shape.cross": false,
-        "shape.diamond": false,
-        "shape.flag": false,
-        "shape.labeldown": false,
-        "shape.labelup": false,
-        "shape.square": false,
-        "shape.triangledown": false,
-        "shape.triangleup": false,
-        "shape.xcross": false
+        "shape.arrowdown": true,
+        "shape.arrowup": true,
+        "shape.circle": true,
+        "shape.cross": true,
+        "shape.diamond": true,
+        "shape.flag": true,
+        "shape.labeldown": true,
+        "shape.labelup": true,
+        "shape.square": true,
+        "shape.triangledown": true,
+        "shape.triangleup": true,
+        "shape.xcross": true
     },
     "size": {
-        "size.auto": false,
-        "size.huge": false,
-        "size.large": false,
-        "size.normal": false,
-        "size.small": false,
-        "size.tiny": false
+        "size.auto": true,
+        "size.huge": true,
+        "size.large": true,
+        "size.normal": true,
+        "size.small": true,
+        "size.tiny": true
     },
     "splits": {
         "splits.denominator": false,

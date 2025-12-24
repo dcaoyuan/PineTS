@@ -81,11 +81,72 @@ export enum display {
     status_line = 'status_line',
 }
 
+export enum shape {
+    flag = 'flag',
+    arrowdown = 'arrowdown',
+    arrowup = 'arrowup',
+    circle = 'circle',
+    cross = 'cross',
+    diamond = 'diamond',
+    labeldown = 'labeldown',
+    labelup = 'labelup',
+    square = 'square',
+    triangledown = 'triangledown',
+    triangleup = 'triangleup',
+    xcross = 'xcross',
+}
+
+export enum location {
+    abovebar = 'abovebar',
+    belowbar = 'belowbar',
+    absolute = 'absolute',
+    bottom = 'bottom',
+    top = 'top',
+}
+
+export enum size {
+    auto = 'auto',
+    tiny = 'tiny',
+    small = 'small',
+    normal = 'normal',
+    large = 'large',
+    huge = 'huge',
+}
+
+export enum format {
+    inherit = 'inherit',
+    mintick = 'mintick',
+    percent = 'percent',
+    price = 'price',
+    volume = 'volume',
+}
+export enum plot {
+    linestyle_dashed = 'linestyle_dashed',
+    linestyle_dotted = 'linestyle_dotted',
+    linestyle_solid = 'linestyle_solid',
+    style_area = 'style_area',
+    style_areabr = 'style_areabr',
+    style_circles = 'style_circles',
+    style_columns = 'style_columns',
+    style_cross = 'style_cross',
+    style_histogram = 'style_histogram',
+    style_line = 'style_line',
+    style_linebr = 'style_linebr',
+    style_stepline = 'style_stepline',
+    style_stepline_diamond = 'style_stepline_diamond',
+    style_steplinebr = 'style_steplinebr',
+}
+
 const types = {
     order,
     currency,
     dayofweek,
     display,
+    shape,
+    location,
+    size,
+    format,
+    plot,
 };
 
 export default types;

@@ -128,7 +128,7 @@
   // to know when parsing a label, in order to allow or disallow
   // continue jumps to that label.
 
-  var TokenType = function TokenType(label, conf) {
+  var TokenType$1 = function TokenType(label, conf) {
     if ( conf === void 0 ) conf = {};
 
     this.label = label;
@@ -144,7 +144,7 @@
   };
 
   function binop(name, prec) {
-    return new TokenType(name, {beforeExpr: true, binop: prec})
+    return new TokenType$1(name, {beforeExpr: true, binop: prec})
   }
   var beforeExpr = {beforeExpr: true}, startsExpr = {startsExpr: true};
 
@@ -157,36 +157,36 @@
     if ( options === void 0 ) options = {};
 
     options.keyword = name;
-    return keywords[name] = new TokenType(name, options)
+    return keywords[name] = new TokenType$1(name, options)
   }
 
   var types$1 = {
-    num: new TokenType("num", startsExpr),
-    regexp: new TokenType("regexp", startsExpr),
-    string: new TokenType("string", startsExpr),
-    name: new TokenType("name", startsExpr),
-    privateId: new TokenType("privateId", startsExpr),
-    eof: new TokenType("eof"),
+    num: new TokenType$1("num", startsExpr),
+    regexp: new TokenType$1("regexp", startsExpr),
+    string: new TokenType$1("string", startsExpr),
+    name: new TokenType$1("name", startsExpr),
+    privateId: new TokenType$1("privateId", startsExpr),
+    eof: new TokenType$1("eof"),
 
     // Punctuation token types.
-    bracketL: new TokenType("[", {beforeExpr: true, startsExpr: true}),
-    bracketR: new TokenType("]"),
-    braceL: new TokenType("{", {beforeExpr: true, startsExpr: true}),
-    braceR: new TokenType("}"),
-    parenL: new TokenType("(", {beforeExpr: true, startsExpr: true}),
-    parenR: new TokenType(")"),
-    comma: new TokenType(",", beforeExpr),
-    semi: new TokenType(";", beforeExpr),
-    colon: new TokenType(":", beforeExpr),
-    dot: new TokenType("."),
-    question: new TokenType("?", beforeExpr),
-    questionDot: new TokenType("?."),
-    arrow: new TokenType("=>", beforeExpr),
-    template: new TokenType("template"),
-    invalidTemplate: new TokenType("invalidTemplate"),
-    ellipsis: new TokenType("...", beforeExpr),
-    backQuote: new TokenType("`", startsExpr),
-    dollarBraceL: new TokenType("${", {beforeExpr: true, startsExpr: true}),
+    bracketL: new TokenType$1("[", {beforeExpr: true, startsExpr: true}),
+    bracketR: new TokenType$1("]"),
+    braceL: new TokenType$1("{", {beforeExpr: true, startsExpr: true}),
+    braceR: new TokenType$1("}"),
+    parenL: new TokenType$1("(", {beforeExpr: true, startsExpr: true}),
+    parenR: new TokenType$1(")"),
+    comma: new TokenType$1(",", beforeExpr),
+    semi: new TokenType$1(";", beforeExpr),
+    colon: new TokenType$1(":", beforeExpr),
+    dot: new TokenType$1("."),
+    question: new TokenType$1("?", beforeExpr),
+    questionDot: new TokenType$1("?."),
+    arrow: new TokenType$1("=>", beforeExpr),
+    template: new TokenType$1("template"),
+    invalidTemplate: new TokenType$1("invalidTemplate"),
+    ellipsis: new TokenType$1("...", beforeExpr),
+    backQuote: new TokenType$1("`", startsExpr),
+    dollarBraceL: new TokenType$1("${", {beforeExpr: true, startsExpr: true}),
 
     // Operators. These carry several kinds of properties to help the
     // parser use them properly (the presence of these properties is
@@ -202,10 +202,10 @@
     // binary operators with a very low precedence, that should result
     // in AssignmentExpression nodes.
 
-    eq: new TokenType("=", {beforeExpr: true, isAssign: true}),
-    assign: new TokenType("_=", {beforeExpr: true, isAssign: true}),
-    incDec: new TokenType("++/--", {prefix: true, postfix: true, startsExpr: true}),
-    prefix: new TokenType("!/~", {beforeExpr: true, prefix: true, startsExpr: true}),
+    eq: new TokenType$1("=", {beforeExpr: true, isAssign: true}),
+    assign: new TokenType$1("_=", {beforeExpr: true, isAssign: true}),
+    incDec: new TokenType$1("++/--", {prefix: true, postfix: true, startsExpr: true}),
+    prefix: new TokenType$1("!/~", {beforeExpr: true, prefix: true, startsExpr: true}),
     logicalOR: binop("||", 1),
     logicalAND: binop("&&", 2),
     bitwiseOR: binop("|", 3),
@@ -214,11 +214,11 @@
     equality: binop("==/!=/===/!==", 6),
     relational: binop("</>/<=/>=", 7),
     bitShift: binop("<</>>/>>>", 8),
-    plusMin: new TokenType("+/-", {beforeExpr: true, binop: 9, prefix: true, startsExpr: true}),
+    plusMin: new TokenType$1("+/-", {beforeExpr: true, binop: 9, prefix: true, startsExpr: true}),
     modulo: binop("%", 10),
     star: binop("*", 10),
     slash: binop("/", 10),
-    starstar: new TokenType("**", {beforeExpr: true}),
+    starstar: new TokenType$1("**", {beforeExpr: true}),
     coalesce: binop("??", 1),
 
     // Keyword token types.
@@ -525,7 +525,7 @@
       BIND_SIMPLE_CATCH = 4, // Simple (identifier pattern) catch binding
       BIND_OUTSIDE = 5; // Special case for function names as bound inside the function
 
-  var Parser = function Parser(options, input, startPos) {
+  var Parser$1 = function Parser(options, input, startPos) {
     this.options = options = getOptions(options);
     this.sourceFile = options.sourceFile;
     this.keywords = wordsRegexp(keywords$1[options.ecmaVersion >= 6 ? 6 : options.sourceType === "module" ? "5module" : 5]);
@@ -612,7 +612,7 @@
 
   var prototypeAccessors = { inFunction: { configurable: true },inGenerator: { configurable: true },inAsync: { configurable: true },canAwait: { configurable: true },allowSuper: { configurable: true },allowDirectSuper: { configurable: true },treatFunctionsAsVar: { configurable: true },allowNewDotTarget: { configurable: true },inClassStaticBlock: { configurable: true } };
 
-  Parser.prototype.parse = function parse () {
+  Parser$1.prototype.parse = function parse () {
     var node = this.options.program || this.startNode();
     this.nextToken();
     return this.parseTopLevel(node)
@@ -655,7 +655,7 @@
     return (this.currentVarScope().flags & SCOPE_CLASS_STATIC_BLOCK) > 0
   };
 
-  Parser.extend = function extend () {
+  Parser$1.extend = function extend () {
       var plugins = [], len = arguments.length;
       while ( len-- ) plugins[ len ] = arguments[ len ];
 
@@ -664,23 +664,23 @@
     return cls
   };
 
-  Parser.parse = function parse (input, options) {
+  Parser$1.parse = function parse (input, options) {
     return new this(options, input).parse()
   };
 
-  Parser.parseExpressionAt = function parseExpressionAt (input, pos, options) {
+  Parser$1.parseExpressionAt = function parseExpressionAt (input, pos, options) {
     var parser = new this(options, input, pos);
     parser.nextToken();
     return parser.parseExpression()
   };
 
-  Parser.tokenizer = function tokenizer (input, options) {
+  Parser$1.tokenizer = function tokenizer (input, options) {
     return new this(options, input)
   };
 
-  Object.defineProperties( Parser.prototype, prototypeAccessors );
+  Object.defineProperties( Parser$1.prototype, prototypeAccessors );
 
-  var pp$9 = Parser.prototype;
+  var pp$9 = Parser$1.prototype;
 
   // ## Parser utilities
 
@@ -830,7 +830,7 @@
     return expr.type === "Identifier" || expr.type === "MemberExpression"
   };
 
-  var pp$8 = Parser.prototype;
+  var pp$8 = Parser$1.prototype;
 
   // ### Statement parsing
 
@@ -1994,7 +1994,7 @@
     )
   };
 
-  var pp$7 = Parser.prototype;
+  var pp$7 = Parser$1.prototype;
 
   // Convert existing expression atom to assignable pattern
   // if possible.
@@ -2353,7 +2353,7 @@
     f_gen: new TokContext("function", false, false, null, true)
   };
 
-  var pp$6 = Parser.prototype;
+  var pp$6 = Parser$1.prototype;
 
   pp$6.initialContext = function() {
     return [types$2.b_stat]
@@ -2509,7 +2509,7 @@
   // [opp]: http://en.wikipedia.org/wiki/Operator-precedence_parser
 
 
-  var pp$5 = Parser.prototype;
+  var pp$5 = Parser$1.prototype;
 
   // Check if property name clashes with already added.
   // Object/class getters and setters are not allowed to clash —
@@ -3649,7 +3649,7 @@
     return this.finishNode(node, "AwaitExpression")
   };
 
-  var pp$4 = Parser.prototype;
+  var pp$4 = Parser$1.prototype;
 
   // This function is used to raise exceptions on parse errors. It
   // takes an offset integer (into the current `input`) to indicate
@@ -3673,7 +3673,7 @@
     }
   };
 
-  var pp$3 = Parser.prototype;
+  var pp$3 = Parser$1.prototype;
 
   var Scope = function Scope(flags) {
     this.flags = flags;
@@ -3780,7 +3780,7 @@
 
   // Start an AST node, attaching a start offset.
 
-  var pp$2 = Parser.prototype;
+  var pp$2 = Parser$1.prototype;
 
   pp$2.startNode = function() {
     return new Node(this, this.start, this.startLoc)
@@ -3897,7 +3897,7 @@
     buildUnicodeData(ecmaVersion);
   }
 
-  var pp$1 = Parser.prototype;
+  var pp$1 = Parser$1.prototype;
 
   // Track disjunction structure to determine whether a duplicate
   // capture group name is allowed because it is in a separate branch.
@@ -5302,7 +5302,7 @@
   // simply exist as properties on the parser object. This is only
   // used for the onToken callback and the external tokenizer.
 
-  var Token = function Token(p) {
+  var Token$1 = function Token(p) {
     this.type = p.type;
     this.value = p.value;
     this.start = p.start;
@@ -5315,7 +5315,7 @@
 
   // ## Tokenizer
 
-  var pp = Parser.prototype;
+  var pp = Parser$1.prototype;
 
   // Move to the next token
 
@@ -5323,7 +5323,7 @@
     if (!ignoreEscapeSequenceInKeyword && this.type.keyword && this.containsEsc)
       { this.raiseRecoverable(this.start, "Escape sequence in keyword " + this.type.keyword); }
     if (this.options.onToken)
-      { this.options.onToken(new Token(this)); }
+      { this.options.onToken(new Token$1(this)); }
 
     this.lastTokEnd = this.end;
     this.lastTokStart = this.start;
@@ -5334,7 +5334,7 @@
 
   pp.getToken = function() {
     this.next();
-    return new Token(this)
+    return new Token$1(this)
   };
 
   // If we're in an ES6 environment, make parsers iterable
@@ -6118,22 +6118,22 @@
 
   var version = "8.14.0";
 
-  Parser.acorn = {
-    Parser: Parser,
+  Parser$1.acorn = {
+    Parser: Parser$1,
     version: version,
     defaultOptions: defaultOptions,
     Position: Position,
     SourceLocation: SourceLocation,
     getLineInfo: getLineInfo,
     Node: Node,
-    TokenType: TokenType,
+    TokenType: TokenType$1,
     tokTypes: types$1,
     keywordTypes: keywords,
     TokContext: TokContext,
     tokContexts: types$2,
     isIdentifierChar: isIdentifierChar,
     isIdentifierStart: isIdentifierStart,
-    Token: Token,
+    Token: Token$1,
     isNewLine: isNewLine,
     lineBreak: lineBreak,
     lineBreakG: lineBreakG,
@@ -6147,7 +6147,7 @@
   // [estree]: https://github.com/estree/estree
 
   function parse(input, options) {
-    return Parser.parse(input, options)
+    return Parser$1.parse(input, options)
   }
 
   // Astring is a tiny and fast JavaScript code generator from an ESTree-compliant AST.
@@ -6394,11 +6394,11 @@
   }
 
   let ForInStatement,
-    FunctionDeclaration,
+    FunctionDeclaration$1,
     RestElement,
-    BinaryExpression,
-    ArrayExpression,
-    BlockStatement;
+    BinaryExpression$1,
+    ArrayExpression$1,
+    BlockStatement$1;
 
   const GENERATOR = {
     /*
@@ -6425,7 +6425,7 @@
         formatComments(state, node.trailingComments, indent, lineEnd);
       }
     },
-    BlockStatement: (BlockStatement = function (node, state) {
+    BlockStatement: (BlockStatement$1 = function (node, state) {
       const indent = state.indent.repeat(state.indentLevel++);
       const { lineEnd, writeComments } = state;
       const statementIndent = indent + state.indent;
@@ -6460,7 +6460,7 @@
       state.write('}');
       state.indentLevel--;
     }),
-    ClassBody: BlockStatement,
+    ClassBody: BlockStatement$1,
     StaticBlock(node, state) {
       state.write('static ');
       this.BlockStatement(node, state);
@@ -6642,7 +6642,7 @@
     DebuggerStatement(node, state) {
       state.write('debugger;', node);
     },
-    FunctionDeclaration: (FunctionDeclaration = function (node, state) {
+    FunctionDeclaration: (FunctionDeclaration$1 = function (node, state) {
       state.write(
         (node.async ? 'async ' : '') +
           (node.generator ? 'function* ' : 'function ') +
@@ -6653,7 +6653,7 @@
       state.write(' ');
       this[node.body.type](node.body, state);
     }),
-    FunctionExpression: FunctionDeclaration,
+    FunctionExpression: FunctionDeclaration$1,
     VariableDeclaration(node, state) {
       formatVariableDeclaration(state, node);
       state.write(';');
@@ -6926,7 +6926,7 @@
       formatExpression(state, node.tag, node);
       this[node.quasi.type](node.quasi, state);
     },
-    ArrayExpression: (ArrayExpression = function (node, state) {
+    ArrayExpression: (ArrayExpression$1 = function (node, state) {
       state.write('[');
       if (node.elements.length > 0) {
         const { elements } = node,
@@ -6948,7 +6948,7 @@
       }
       state.write(']');
     }),
-    ArrayPattern: ArrayExpression,
+    ArrayPattern: ArrayExpression$1,
     ObjectExpression(node, state) {
       const indent = state.indent.repeat(state.indentLevel++);
       const { lineEnd, writeComments } = state;
@@ -7112,7 +7112,7 @@
       state.write(' = ');
       this[node.right.type](node.right, state);
     },
-    BinaryExpression: (BinaryExpression = function (node, state) {
+    BinaryExpression: (BinaryExpression$1 = function (node, state) {
       const isIn = node.operator === 'in';
       if (isIn) {
         // Avoids confusion in `for` loops initializers
@@ -7125,7 +7125,7 @@
         state.write(')');
       }
     }),
-    LogicalExpression: BinaryExpression,
+    LogicalExpression: BinaryExpression$1,
     ConditionalExpression(node, state) {
       const { test } = node;
       const precedence = state.expressionsPrecedence[test.type];
@@ -7376,17 +7376,10 @@
     return state.output
   }
 
-  var __defProp$c = Object.defineProperty;
-  var __defNormalProp$c = (obj, key, value) => key in obj ? __defProp$c(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-  var __publicField$c = (obj, key, value) => __defNormalProp$c(obj, typeof key !== "symbol" ? key + "" : key, value);
-  const JS_GLOBAL_LITERALS = /* @__PURE__ */ new Set([
-    "Infinity",
-    "NaN",
-    "undefined",
-    "null",
-    "true",
-    "false"
-  ]);
+  var __defProp$g = Object.defineProperty;
+  var __defNormalProp$g = (obj, key, value) => key in obj ? __defProp$g(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField$g = (obj, key, value) => __defNormalProp$g(obj, typeof key !== "symbol" ? key + "" : key, value);
+  const JS_GLOBAL_LITERALS = /* @__PURE__ */ new Set(["Infinity", "NaN", "undefined", "null", "true", "false"]);
   const JS_GLOBAL_OBJECTS = /* @__PURE__ */ new Set([
     "Math",
     "Array",
@@ -7419,23 +7412,23 @@
   ]);
   class ScopeManager {
     constructor() {
-      __publicField$c(this, "scopes", []);
-      __publicField$c(this, "scopeTypes", []);
-      __publicField$c(this, "scopeCounts", /* @__PURE__ */ new Map());
-      __publicField$c(this, "contextBoundVars", /* @__PURE__ */ new Set());
-      __publicField$c(this, "arrayPatternElements", /* @__PURE__ */ new Set());
-      __publicField$c(this, "rootParams", /* @__PURE__ */ new Set());
-      __publicField$c(this, "localSeriesVars", /* @__PURE__ */ new Set());
-      __publicField$c(this, "varKinds", /* @__PURE__ */ new Map());
-      __publicField$c(this, "loopVars", /* @__PURE__ */ new Set());
-      __publicField$c(this, "loopVarNames", /* @__PURE__ */ new Map());
+      __publicField$g(this, "scopes", []);
+      __publicField$g(this, "scopeTypes", []);
+      __publicField$g(this, "scopeCounts", /* @__PURE__ */ new Map());
+      __publicField$g(this, "contextBoundVars", /* @__PURE__ */ new Set());
+      __publicField$g(this, "arrayPatternElements", /* @__PURE__ */ new Set());
+      __publicField$g(this, "rootParams", /* @__PURE__ */ new Set());
+      __publicField$g(this, "localSeriesVars", /* @__PURE__ */ new Set());
+      __publicField$g(this, "varKinds", /* @__PURE__ */ new Map());
+      __publicField$g(this, "loopVars", /* @__PURE__ */ new Set());
+      __publicField$g(this, "loopVarNames", /* @__PURE__ */ new Map());
       // Map original names to transformed names
-      __publicField$c(this, "paramIdCounter", 0);
-      __publicField$c(this, "cacheIdCounter", 0);
-      __publicField$c(this, "tempVarCounter", 0);
-      __publicField$c(this, "taCallIdCounter", 0);
-      __publicField$c(this, "hoistingStack", []);
-      __publicField$c(this, "suppressHoisting", false);
+      __publicField$g(this, "paramIdCounter", 0);
+      __publicField$g(this, "cacheIdCounter", 0);
+      __publicField$g(this, "tempVarCounter", 0);
+      __publicField$g(this, "taCallIdCounter", 0);
+      __publicField$g(this, "hoistingStack", []);
+      __publicField$g(this, "suppressHoisting", false);
       this.pushScope("glb");
     }
     get nextParamIdArg() {
@@ -7999,23 +7992,38 @@
           }
         ]
       };
+    },
+    createAwaitExpression(argument) {
+      return {
+        type: "AwaitExpression",
+        argument
+      };
     }
   };
 
+  const KNOWN_NAMESPACES = ["ta", "math", "request", "array", "input"];
+  const NAMESPACES_LIKE = ["hline"];
+  const ASYNC_METHODS = ["request.security", "request.security_lower_tf"];
   const CONTEXT_DATA_VARS = ["open", "high", "low", "close", "volume", "hl2", "hlc3", "ohlc4", "openTime", "closeTime"];
   const CONTEXT_PINE_VARS = [
-    "input",
-    "ta",
-    "math",
-    "request",
-    "array",
-    "na",
+    //namespaces
+    ...KNOWN_NAMESPACES,
+    //plots
     "plotchar",
-    "color",
+    "plotshape",
+    "plotarrow",
     "plot",
-    "nz",
+    "hline",
+    //declarations
+    "indicator",
     "strategy",
     "library",
+    //
+    "alertcondition",
+    "fixnan",
+    "na",
+    "color",
+    "nz",
     "str",
     "box",
     "line",
@@ -8025,6 +8033,8 @@
     "matrix",
     "log",
     "map",
+    //types
+    "bool",
     //market info
     "timeframe",
     "syminfo",
@@ -8035,9 +8045,15 @@
     "last_bar_time",
     // Pine Script enum types
     "order",
-    "currency"
+    "currency",
+    "display",
+    "shape",
+    "location",
+    "size",
+    "format",
+    "dayofweek"
   ];
-  const CONTEXT_CORE_VARS = ["na", "nz", "plot", "plotchar", "color"];
+  const CONTEXT_CORE_VARS = ["na", "nz", "plot", "plotchar", "color", "hline"];
 
   function injectImplicitImports(ast) {
     let mainBody = null;
@@ -8216,8 +8232,7 @@
                 }
               });
             } else if (decl.id.type === "Identifier") {
-              const validSingletonNames = ["ta", "math", "input", "request", "array"];
-              if (validSingletonNames.includes(sourceName)) {
+              if (KNOWN_NAMESPACES.includes(sourceName)) {
                 const originalName = sourceName;
                 const aliasName = decl.id.name;
                 if (originalName !== aliasName) {
@@ -8258,7 +8273,7 @@
     }
   }
 
-  function isWrappedInFunction(code) {
+  function checkFunctionWrapping(code) {
     try {
       const ast = parse(code, {
         ecmaVersion: "latest",
@@ -8269,24 +8284,32 @@
         if (firstStatement.type === "ExpressionStatement") {
           const expr = firstStatement.expression;
           if (expr.type === "ArrowFunctionExpression" || expr.type === "FunctionExpression") {
-            return true;
+            return { isWrapped: true, isAsync: expr.async || false, functionNode: expr };
           }
         }
         if (firstStatement.type === "FunctionDeclaration") {
-          return true;
+          return { isWrapped: true, isAsync: firstStatement.async || false, functionNode: firstStatement };
         }
       }
-      return false;
+      return { isWrapped: false, isAsync: false };
     } catch (e) {
-      return false;
+      return { isWrapped: false, isAsync: false };
     }
+  }
+  function convertToAsync(functionNode) {
+    functionNode.async = true;
+    return generate(functionNode);
   }
   function wrapInContextFunction(code) {
     code = code.trim();
-    if (isWrappedInFunction(code)) {
+    const { isWrapped, isAsync, functionNode } = checkFunctionWrapping(code);
+    if (isWrapped && functionNode) {
+      if (!isAsync) {
+        return convertToAsync(functionNode);
+      }
       return code;
     }
-    return `(context) => {
+    return `async (context) => {
 ${code}
 }`;
   }
@@ -8509,7 +8532,6 @@ ${code}
             isSeriesFunctionArg = true;
           }
         } else {
-          const KNOWN_NAMESPACES = ["ta", "math", "request", "array", "input"];
           const isNamespaceCall = callee.type === "MemberExpression" && callee.object && callee.object.type === "Identifier" && KNOWN_NAMESPACES.includes(callee.object.name);
           if (callee.type === "MemberExpression" && !isNamespaceCall) {
             isSeriesFunctionArg = false;
@@ -8576,7 +8598,6 @@ ${code}
     if (memberNode.object && memberNode.object.type === "Identifier" && memberNode.object.name === "Math") {
       return;
     }
-    const KNOWN_NAMESPACES = ["ta", "math", "request", "array", "input"];
     const isDirectNamespaceMemberAccess = memberNode.object && memberNode.object.type === "Identifier" && KNOWN_NAMESPACES.includes(memberNode.object.name) && scopeManager.isContextBound(memberNode.object.name) && !memberNode.computed;
     if (isDirectNamespaceMemberAccess) {
       const isAlreadyBeingCalled = memberNode.parent && memberNode.parent.type === "CallExpression" && memberNode.parent.callee === memberNode;
@@ -8865,6 +8886,19 @@ ${code}
     }
     const isArrayAccess = arg.type === "MemberExpression" && arg.computed && arg.property;
     if (isArrayAccess) {
+      if (arg.object.type === "CallExpression") {
+        transformCallExpression(arg.object, scopeManager);
+      } else if (arg.object.type === "MemberExpression") {
+        transformMemberExpression(arg.object, "", scopeManager);
+      } else if (arg.object.type === "BinaryExpression") {
+        arg.object = getParamFromBinaryExpression(arg.object, scopeManager, namespace);
+      } else if (arg.object.type === "LogicalExpression") {
+        arg.object = getParamFromLogicalExpression(arg.object, scopeManager, namespace);
+      } else if (arg.object.type === "ConditionalExpression") {
+        arg.object = getParamFromConditionalExpression(arg.object, scopeManager, namespace);
+      } else if (arg.object.type === "UnaryExpression") {
+        arg.object = getParamFromUnaryExpression(arg.object, scopeManager, namespace);
+      }
       const transformedObject = arg.object.type === "Identifier" && scopeManager.isContextBound(arg.object.name) && !scopeManager.isRootParam(arg.object.name) ? arg.object : transformIdentifierForParam(arg.object, scopeManager);
       const transformedProperty = arg.property.type === "Identifier" && !scopeManager.isContextBound(arg.property.name) && !scopeManager.isLoopVariable(arg.property.name) ? transformIdentifierForParam(arg.property, scopeManager) : arg.property;
       const memberExpr2 = ASTFactory.createMemberExpression(ASTFactory.createIdentifier(namespace), ASTFactory.createIdentifier("param"));
@@ -8888,6 +8922,20 @@ ${code}
     if (arg.type === "ObjectExpression") {
       arg.properties = arg.properties.map((prop) => {
         if (prop.value.name) {
+          if (scopeManager.isContextBound(prop.value.name) && !scopeManager.isRootParam(prop.value.name)) {
+            return {
+              type: "Property",
+              key: {
+                type: "Identifier",
+                name: prop.key.name
+              },
+              value: ASTFactory.createIdentifier(prop.value.name),
+              kind: "init",
+              method: false,
+              shorthand: false,
+              computed: false
+            };
+          }
           const [scopedName, kind] = scopeManager.getVariable(prop.value.name);
           return {
             type: "Property",
@@ -8901,6 +8949,8 @@ ${code}
             shorthand: false,
             computed: false
           };
+        } else if (prop.value.type !== "Literal") {
+          prop.value = transformFunctionArgument(prop.value, namespace, scopeManager);
         }
         return prop;
       });
@@ -8956,6 +9006,9 @@ ${code}
     if (node._transformed) {
       return;
     }
+    if (node.callee && node.callee.type === "Identifier" && (KNOWN_NAMESPACES.includes(node.callee.name) || NAMESPACES_LIKE.includes(node.callee.name)) && scopeManager.isContextBound(node.callee.name)) {
+      node.callee = ASTFactory.createMemberExpression(node.callee, ASTFactory.createIdentifier("any"));
+    }
     const isNamespaceCall = node.callee && node.callee.type === "MemberExpression" && node.callee.object && node.callee.object.type === "Identifier" && (scopeManager.isContextBound(node.callee.object.name) || node.callee.object.name === "math" || node.callee.object.name === "ta");
     if (isNamespaceCall) {
       if (node.callee.object.name === CONTEXT_NAME && ["get", "init", "param"].includes(node.callee.property.name)) {
@@ -8974,12 +9027,29 @@ ${code}
       if (namespace2 === "ta") {
         node.arguments.push(scopeManager.getNextTACallId());
       }
+      const methodName = node.callee.property.name;
+      const methodPath = `${namespace2}.${methodName}`;
+      const isAsyncMethod = ASYNC_METHODS.includes(methodPath);
+      const isAlreadyAwaited = node._insideAwait === true;
+      if (isAsyncMethod && !isAlreadyAwaited) {
+        const callExpressionCopy = Object.assign({}, node);
+        const awaitExpr = ASTFactory.createAwaitExpression(callExpressionCopy);
+        Object.assign(node, awaitExpr);
+      }
       if (!scopeManager.shouldSuppressHoisting()) {
         const tempVarName = scopeManager.generateTempVar();
         scopeManager.addLocalSeriesVar(tempVarName);
-        const variableDecl = ASTFactory.createVariableDeclaration(tempVarName, Object.assign({}, node));
+        const wasInsideAwait = node._insideAwait === true;
+        let initExpression = Object.assign({}, node);
+        if (wasInsideAwait) {
+          initExpression = ASTFactory.createAwaitExpression(initExpression);
+        }
+        const variableDecl = ASTFactory.createVariableDeclaration(tempVarName, initExpression);
         scopeManager.addHoistedStatement(variableDecl);
-        Object.assign(node, ASTFactory.createIdentifier(tempVarName));
+        const tempIdentifier = ASTFactory.createIdentifier(tempVarName);
+        Object.assign(node, tempIdentifier);
+        node._wasHoisted = true;
+        node._wasInsideAwait = wasInsideAwait;
         return;
       }
       node._transformed = true;
@@ -9228,6 +9298,15 @@ ${code}
                   node.arguments.forEach((arg) => c(arg, { parent: node }));
                 } else if (node.object) {
                   c(node.object, { parent: node });
+                }
+              },
+              AwaitExpression(node, state, c) {
+                if (node.argument) {
+                  node.argument._insideAwait = true;
+                  c(node.argument, { parent: node });
+                  if (node.argument.type === "Identifier" && node.argument._wasInsideAwait) {
+                    Object.assign(node, node.argument);
+                  }
                 }
               }
             }
@@ -9618,17 +9697,2707 @@ ${code}
       },
       IfStatement(node, state, c) {
         transformIfStatement(node, state, c);
+      },
+      AwaitExpression(node, state, c) {
+        if (node.argument) {
+          node.argument._insideAwait = true;
+          c(node.argument, state);
+          if (node.argument.type === "Identifier") {
+            const isHoistedAwaitedCall = node.argument._wasInsideAwait === true;
+            if (isHoistedAwaitedCall) {
+              node.type = "Identifier";
+              node.name = node.argument.name;
+              if (node.argument._wasHoisted) node._wasHoisted = node.argument._wasHoisted;
+              delete node.argument;
+            }
+          }
+        }
       }
     });
   }
 
-  function transpile(fn, options = { debug: false, ln: false }) {
+  const TokenType = {
+    // Literals
+    NUMBER: "NUMBER",
+    STRING: "STRING",
+    BOOLEAN: "BOOLEAN",
+    // Identifiers and keywords
+    IDENTIFIER: "IDENTIFIER",
+    KEYWORD: "KEYWORD",
+    // Operators
+    OPERATOR: "OPERATOR",
+    // Punctuation
+    LPAREN: "LPAREN",
+    // (
+    RPAREN: "RPAREN",
+    // )
+    LBRACKET: "LBRACKET",
+    // [
+    RBRACKET: "RBRACKET",
+    // ]
+    LBRACE: "LBRACE",
+    // {
+    RBRACE: "RBRACE",
+    // }
+    COMMA: "COMMA",
+    // ,
+    DOT: "DOT",
+    // .
+    COLON: "COLON",
+    // :
+    SEMICOLON: "SEMICOLON",
+    // ;
+    // Indentation (critical for PineScript!)
+    INDENT: "INDENT",
+    DEDENT: "DEDENT",
+    NEWLINE: "NEWLINE",
+    // Special
+    COMMENT: "COMMENT",
+    EOF: "EOF"
+  };
+  const Keywords = /* @__PURE__ */ new Set([
+    // Control flow
+    "if",
+    "else",
+    "for",
+    "while",
+    "switch",
+    "break",
+    "continue",
+    // Declarations
+    "var",
+    "varip",
+    "type",
+    // Logical operators
+    "and",
+    "or",
+    "not",
+    // Other
+    "to",
+    "by",
+    "in",
+    "import",
+    "export",
+    "method",
+    "extends"
+  ]);
+  const MultiCharOperators = ["==", "!=", "<=", ">=", ":=", "+=", "-=", "*=", "/=", "%=", "=>", "//", "and", "or", "not"];
+  class Token {
+    constructor(type, value, line, column, indent = 0) {
+      this.type = type;
+      this.value = value;
+      this.line = line;
+      this.column = column;
+      this.indent = indent;
+    }
+    toString() {
+      return `Token(${this.type}, ${JSON.stringify(this.value)}, ${this.line}:${this.column}, indent=${this.indent})`;
+    }
+  }
+
+  var __defProp$f = Object.defineProperty;
+  var __defNormalProp$f = (obj, key, value) => key in obj ? __defProp$f(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField$f = (obj, key, value) => __defNormalProp$f(obj, typeof key !== "symbol" ? key + "" : key, value);
+  class Lexer {
+    constructor(source) {
+      __publicField$f(this, "source");
+      __publicField$f(this, "pos");
+      __publicField$f(this, "line");
+      __publicField$f(this, "column");
+      __publicField$f(this, "tokens");
+      __publicField$f(this, "indentStack");
+      __publicField$f(this, "atLineStart");
+      __publicField$f(this, "parenDepth");
+      __publicField$f(this, "bracketDepth");
+      __publicField$f(this, "braceDepth");
+      this.source = source;
+      this.pos = 0;
+      this.line = 1;
+      this.column = 1;
+      this.tokens = [];
+      this.indentStack = [0];
+      this.atLineStart = true;
+      this.parenDepth = 0;
+      this.bracketDepth = 0;
+      this.braceDepth = 0;
+    }
+    // Main tokenize method
+    tokenize() {
+      while (this.pos < this.source.length) {
+        const ch = this.peek();
+        if (ch === "\r") {
+          this.advance();
+          continue;
+        }
+        if (ch === "\n") {
+          this.handleNewline();
+          continue;
+        }
+        if (this.atLineStart && ch !== "\n") {
+          this.handleIndentation();
+          this.atLineStart = false;
+          continue;
+        }
+        if (ch === " " || ch === "	") {
+          this.advance();
+          continue;
+        }
+        if (this.pos >= this.source.length) break;
+        if (ch === "/" && this.peek(1) === "/") {
+          this.readComment();
+          continue;
+        }
+        if (ch === '"' || ch === "'") {
+          this.readString();
+          continue;
+        }
+        if (ch === "#") {
+          this.readColorLiteral();
+          continue;
+        }
+        if (this.isDigit(ch)) {
+          this.readNumber();
+          continue;
+        }
+        if (this.isIdentifierStart(ch)) {
+          this.readIdentifier();
+          continue;
+        }
+        if (this.readOperatorOrPunctuation()) {
+          continue;
+        }
+        throw new Error(`Unexpected character '${ch}' at ${this.line}:${this.column}`);
+      }
+      while (this.indentStack.length > 1) {
+        this.indentStack.pop();
+        this.addToken(TokenType.DEDENT, "", this.getCurrentIndent());
+      }
+      this.addToken(TokenType.EOF, "");
+      return this.tokens;
+    }
+    // Handle newline and emit NEWLINE token
+    handleNewline() {
+      if (this.parenDepth === 0 && this.bracketDepth === 0 && this.braceDepth === 0) {
+        this.addToken(TokenType.NEWLINE, "\n");
+        this.atLineStart = true;
+      }
+      this.advance();
+      this.line++;
+      this.column = 1;
+    }
+    // Handle indentation at start of line
+    handleIndentation() {
+      let indent = 0;
+      let spaceCount = 0;
+      this.pos;
+      while (this.pos < this.source.length) {
+        const ch = this.peek();
+        if (ch === " ") {
+          spaceCount++;
+          this.advance();
+        } else if (ch === "	") {
+          indent++;
+          this.advance();
+        } else {
+          break;
+        }
+      }
+      if (this.peek() === "\n" || this.peek() === "\0") {
+        return;
+      }
+      indent += Math.floor(spaceCount / 4);
+      const currentIndent = this.indentStack[this.indentStack.length - 1];
+      if (indent > currentIndent) {
+        this.indentStack.push(indent);
+        this.addToken(TokenType.INDENT, "", indent);
+      } else if (indent < currentIndent) {
+        while (this.indentStack.length > 1 && this.indentStack[this.indentStack.length - 1] > indent) {
+          this.indentStack.pop();
+          this.addToken(TokenType.DEDENT, "", this.indentStack[this.indentStack.length - 1]);
+        }
+        if (this.indentStack[this.indentStack.length - 1] !== indent) {
+          throw new Error(`Indentation error at ${this.line}:${this.column} - misaligned dedent`);
+        }
+      }
+    }
+    // Read comment
+    readComment() {
+      this.column;
+      let comment = "";
+      this.advance();
+      this.advance();
+      while (this.pos < this.source.length && this.peek() !== "\n") {
+        comment += this.advance();
+      }
+      this.addToken(TokenType.COMMENT, comment.trim());
+    }
+    // Read string literal
+    readString() {
+      const quote = this.advance();
+      const startCol = this.column - 1;
+      let value = "";
+      while (this.pos < this.source.length && this.peek() !== quote) {
+        if (this.peek() === "\\") {
+          this.advance();
+          const escaped = this.advance();
+          switch (escaped) {
+            case "n":
+              value += "\n";
+              break;
+            case "t":
+              value += "	";
+              break;
+            case "r":
+              value += "\r";
+              break;
+            case "\\":
+              value += "\\";
+              break;
+            case quote:
+              value += quote;
+              break;
+            default:
+              value += escaped;
+          }
+        } else {
+          value += this.advance();
+        }
+      }
+      if (this.peek() !== quote) {
+        throw new Error(`Unterminated string at ${this.line}:${startCol}`);
+      }
+      this.advance();
+      this.addToken(TokenType.STRING, value);
+    }
+    // Read color literal (#RRGGBB or #RRGGBBAA)
+    readColorLiteral() {
+      const startCol = this.column;
+      let value = "#";
+      this.advance();
+      while (this.pos < this.source.length && value.length < 9) {
+        const ch = this.peek();
+        if (ch >= "0" && ch <= "9" || ch >= "A" && ch <= "F" || ch >= "a" && ch <= "f") {
+          value += this.advance();
+        } else {
+          break;
+        }
+      }
+      if (value.length !== 7 && value.length !== 9) {
+        throw new Error(`Invalid color literal '${value}' at ${this.line}:${startCol}`);
+      }
+      this.addToken(TokenType.STRING, value);
+    }
+    // Read number literal
+    readNumber() {
+      this.column;
+      let value = "";
+      let hasDecimal = false;
+      while (this.pos < this.source.length) {
+        const ch = this.peek();
+        if (this.isDigit(ch)) {
+          value += this.advance();
+        } else if (ch === "." && !hasDecimal) {
+          const nextCh = this.peek(1);
+          if (this.isDigit(nextCh) || !this.isIdentifierStart(nextCh)) {
+            hasDecimal = true;
+            value += this.advance();
+            if (!this.isDigit(this.peek())) {
+              break;
+            }
+          } else {
+            break;
+          }
+        } else {
+          break;
+        }
+      }
+      this.addToken(TokenType.NUMBER, parseFloat(value));
+    }
+    // Read identifier or keyword
+    readIdentifier() {
+      this.column;
+      let value = "";
+      while (this.pos < this.source.length && this.isIdentifierChar(this.peek())) {
+        value += this.advance();
+      }
+      if (Keywords.has(value)) {
+        this.addToken(TokenType.KEYWORD, value);
+      } else if (value === "true" || value === "false") {
+        this.addToken(TokenType.BOOLEAN, value === "true");
+      } else {
+        this.addToken(TokenType.IDENTIFIER, value);
+      }
+    }
+    // Read operator or punctuation
+    readOperatorOrPunctuation() {
+      const ch = this.peek();
+      const next = this.peek(1);
+      const twoChar = ch + next;
+      if (MultiCharOperators.includes(twoChar)) {
+        this.advance();
+        this.advance();
+        this.addToken(TokenType.OPERATOR, twoChar);
+        return true;
+      }
+      if ("+-*/%<>=!?".includes(ch)) {
+        this.advance();
+        this.addToken(TokenType.OPERATOR, ch);
+        return true;
+      }
+      switch (ch) {
+        case "(":
+          this.parenDepth++;
+          this.advance();
+          this.addToken(TokenType.LPAREN, ch);
+          return true;
+        case ")":
+          this.parenDepth--;
+          this.advance();
+          this.addToken(TokenType.RPAREN, ch);
+          return true;
+        case "[":
+          this.bracketDepth++;
+          this.advance();
+          this.addToken(TokenType.LBRACKET, ch);
+          return true;
+        case "]":
+          this.bracketDepth--;
+          this.advance();
+          this.addToken(TokenType.RBRACKET, ch);
+          return true;
+        case "{":
+          this.braceDepth++;
+          this.advance();
+          this.addToken(TokenType.LBRACE, ch);
+          return true;
+        case "}":
+          this.braceDepth--;
+          this.advance();
+          this.addToken(TokenType.RBRACE, ch);
+          return true;
+        case ",":
+          this.advance();
+          this.addToken(TokenType.COMMA, ch);
+          return true;
+        case ".":
+          this.advance();
+          this.addToken(TokenType.DOT, ch);
+          return true;
+        case ":":
+          this.advance();
+          this.addToken(TokenType.COLON, ch);
+          return true;
+        case ";":
+          this.advance();
+          this.addToken(TokenType.SEMICOLON, ch);
+          return true;
+      }
+      return false;
+    }
+    // Helper methods
+    peek(offset = 0) {
+      const pos = this.pos + offset;
+      return pos < this.source.length ? this.source[pos] : "\0";
+    }
+    advance() {
+      const ch = this.source[this.pos++];
+      this.column++;
+      return ch;
+    }
+    skipWhitespaceInline() {
+      if (this.atLineStart) return;
+      while (this.pos < this.source.length && (this.peek() === " " || this.peek() === "	")) {
+        this.advance();
+      }
+    }
+    isDigit(ch) {
+      return ch >= "0" && ch <= "9";
+    }
+    isIdentifierStart(ch) {
+      return ch >= "a" && ch <= "z" || ch >= "A" && ch <= "Z" || ch === "_";
+    }
+    isIdentifierChar(ch) {
+      return this.isIdentifierStart(ch) || this.isDigit(ch);
+    }
+    getCurrentIndent() {
+      return this.indentStack[this.indentStack.length - 1];
+    }
+    addToken(type, value, indent = null) {
+      const token = new Token(type, value, this.line, this.column, indent !== null ? indent : this.getCurrentIndent());
+      this.tokens.push(token);
+    }
+  }
+
+  var __defProp$e = Object.defineProperty;
+  var __defNormalProp$e = (obj, key, value) => key in obj ? __defProp$e(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField$e = (obj, key, value) => __defNormalProp$e(obj, typeof key !== "symbol" ? key + "" : key, value);
+  class ASTNode {
+    constructor(type) {
+      this.type = type;
+    }
+  }
+  class Program extends ASTNode {
+    constructor(body) {
+      super("Program");
+      this.body = body;
+    }
+  }
+  class ExpressionStatement extends ASTNode {
+    constructor(expression) {
+      super("ExpressionStatement");
+      this.expression = expression;
+    }
+  }
+  var VariableDeclarationKind = /* @__PURE__ */ ((VariableDeclarationKind2) => {
+    VariableDeclarationKind2["VAR"] = "var";
+    VariableDeclarationKind2["LET"] = "let";
+    VariableDeclarationKind2["CONST"] = "const";
+    return VariableDeclarationKind2;
+  })(VariableDeclarationKind || {});
+  class VariableDeclaration extends ASTNode {
+    constructor(declarations, kind = "let" /* LET */) {
+      super("VariableDeclaration");
+      this.declarations = declarations;
+      this.kind = kind;
+    }
+  }
+  class VariableDeclarator extends ASTNode {
+    constructor(id, init, varType = null) {
+      super("VariableDeclarator");
+      this.id = id;
+      this.init = init;
+      this.varType = varType;
+    }
+  }
+  class FunctionDeclaration extends ASTNode {
+    constructor(id, params, body, returnType = null) {
+      super("FunctionDeclaration");
+      this.id = id;
+      this.params = params;
+      this.body = body;
+      this.returnType = returnType;
+    }
+  }
+  class TypeDefinition extends ASTNode {
+    constructor(name, fields) {
+      super("TypeDefinition");
+      this.name = name;
+      this.fields = fields;
+    }
+  }
+  class IfStatement extends ASTNode {
+    constructor(test, consequent, alternate = null) {
+      super("IfStatement");
+      this.test = test;
+      this.consequent = consequent;
+      this.alternate = alternate;
+      __publicField$e(this, "_line");
+    }
+  }
+  class ForStatement extends ASTNode {
+    constructor(init, test, update, body) {
+      super("ForStatement");
+      this.init = init;
+      this.test = test;
+      this.update = update;
+      this.body = body;
+      __publicField$e(this, "isForIn");
+    }
+  }
+  class WhileStatement extends ASTNode {
+    constructor(test, body) {
+      super("WhileStatement");
+      this.test = test;
+      this.body = body;
+    }
+  }
+  class BlockStatement extends ASTNode {
+    constructor(body) {
+      super("BlockStatement");
+      this.body = body;
+    }
+  }
+  class ReturnStatement extends ASTNode {
+    constructor(argument) {
+      super("ReturnStatement");
+      this.argument = argument;
+    }
+  }
+  class Identifier extends ASTNode {
+    constructor(name) {
+      super("Identifier");
+      this.name = name;
+      __publicField$e(this, "varType");
+      __publicField$e(this, "returnType");
+      __publicField$e(this, "isMethod");
+    }
+  }
+  class Literal extends ASTNode {
+    constructor(value, raw = null) {
+      super("Literal");
+      this.value = value;
+      this.raw = raw;
+    }
+  }
+  class BinaryExpression extends ASTNode {
+    constructor(operator, left, right) {
+      super("BinaryExpression");
+      this.operator = operator;
+      this.left = left;
+      this.right = right;
+    }
+  }
+  class UnaryExpression extends ASTNode {
+    constructor(operator, argument, prefix = true) {
+      super("UnaryExpression");
+      this.operator = operator;
+      this.argument = argument;
+      this.prefix = prefix;
+    }
+  }
+  class AssignmentExpression extends ASTNode {
+    constructor(operator, left, right) {
+      super("AssignmentExpression");
+      this.operator = operator;
+      this.left = left;
+      this.right = right;
+    }
+  }
+  class UpdateExpression extends ASTNode {
+    constructor(operator, argument, prefix = false) {
+      super("UpdateExpression");
+      this.operator = operator;
+      this.argument = argument;
+      this.prefix = prefix;
+    }
+  }
+  class CallExpression extends ASTNode {
+    constructor(callee, args) {
+      super("CallExpression");
+      this.callee = callee;
+      this.args = args;
+      __publicField$e(this, "arguments");
+      this.callee = callee;
+      this.arguments = args;
+    }
+  }
+  class MemberExpression extends ASTNode {
+    constructor(object, property, computed = false) {
+      super("MemberExpression");
+      this.object = object;
+      this.property = property;
+      this.computed = computed;
+    }
+  }
+  class ConditionalExpression extends ASTNode {
+    constructor(test, consequent, alternate) {
+      super("ConditionalExpression");
+      this.test = test;
+      this.consequent = consequent;
+      this.alternate = alternate;
+      __publicField$e(this, "needsIIFE");
+      __publicField$e(this, "consequentStmts");
+      __publicField$e(this, "alternateStmts");
+    }
+  }
+  class ArrayExpression extends ASTNode {
+    constructor(elements) {
+      super("ArrayExpression");
+      this.elements = elements;
+    }
+  }
+  class ObjectExpression extends ASTNode {
+    constructor(properties) {
+      super("ObjectExpression");
+      this.properties = properties;
+    }
+  }
+  class Property extends ASTNode {
+    constructor(key, value) {
+      super("Property");
+      this.key = key;
+      this.value = value;
+      __publicField$e(this, "kind");
+      __publicField$e(this, "method");
+      __publicField$e(this, "shorthand");
+      __publicField$e(this, "computed");
+      this.kind = "init";
+      this.method = false;
+      this.shorthand = false;
+      this.computed = false;
+    }
+  }
+  class ArrayPattern extends ASTNode {
+    constructor(elements) {
+      super("ArrayPattern");
+      this.elements = elements;
+    }
+  }
+  class AssignmentPattern extends ASTNode {
+    constructor(left, right) {
+      super("AssignmentPattern");
+      this.left = left;
+      this.right = right;
+    }
+  }
+  class SwitchExpression extends ASTNode {
+    constructor(discriminant, cases) {
+      super("SwitchExpression");
+      this.discriminant = discriminant;
+      this.cases = cases;
+    }
+  }
+  class SwitchCase extends ASTNode {
+    constructor(test, consequent) {
+      super("SwitchCase");
+      this.test = test;
+      this.consequent = consequent;
+    }
+  }
+
+  var __defProp$d = Object.defineProperty;
+  var __defNormalProp$d = (obj, key, value) => key in obj ? __defProp$d(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField$d = (obj, key, value) => __defNormalProp$d(obj, typeof key !== "symbol" ? key + "" : key, value);
+  class Parser {
+    constructor(tokens) {
+      __publicField$d(this, "tokens");
+      __publicField$d(this, "pos");
+      this.tokens = tokens;
+      this.pos = 0;
+    }
+    // Utility methods
+    peek(offset = 0) {
+      return this.tokens[this.pos + offset] || this.tokens[this.tokens.length - 1];
+    }
+    advance() {
+      return this.tokens[this.pos++];
+    }
+    match(type, value = null) {
+      const token = this.peek();
+      if (token.type !== type) return false;
+      if (value !== null && token.value !== value) return false;
+      return true;
+    }
+    expect(type, value = null) {
+      const token = this.peek();
+      if (token.type !== type) {
+        throw new Error(`Expected ${type} but got ${token.type} at ${token.line}:${token.column}`);
+      }
+      if (value !== null && token.value !== value) {
+        throw new Error(`Expected '${value}' but got '${token.value}' at ${token.line}:${token.column}`);
+      }
+      return this.advance();
+    }
+    skipNewlines() {
+      while (this.match(TokenType.NEWLINE)) {
+        this.advance();
+      }
+    }
+    // Main parse method
+    parse() {
+      const body = [];
+      while (!this.match(TokenType.EOF)) {
+        this.skipNewlines();
+        if (this.match(TokenType.EOF)) break;
+        const stmt = this.parseStatement();
+        if (stmt) body.push(stmt);
+        this.skipNewlines();
+      }
+      return new Program(body);
+    }
+    // Parse statement
+    parseStatement() {
+      this.skipNewlines();
+      const startLine = this.peek().line;
+      if (this.match(TokenType.COMMENT)) {
+        this.advance();
+        return null;
+      }
+      let stmt;
+      if (this.match(TokenType.KEYWORD, "type")) {
+        stmt = this.parseTypeDefinition();
+      } else if (this.match(TokenType.KEYWORD, "var") || this.match(TokenType.KEYWORD, "varip")) {
+        stmt = this.parseVarDeclaration();
+      } else if (this.match(TokenType.KEYWORD, "method")) {
+        stmt = this.parseMethodDeclaration();
+      } else if (this.isFunctionDeclaration()) {
+        stmt = this.parseFunctionDeclaration();
+      } else if (this.match(TokenType.KEYWORD, "if")) {
+        stmt = this.parseIfStatement();
+      } else if (this.match(TokenType.KEYWORD, "for")) {
+        stmt = this.parseForStatement();
+      } else if (this.match(TokenType.KEYWORD, "while")) {
+        stmt = this.parseWhileStatement();
+      } else if (this.match(TokenType.KEYWORD, "break") || this.match(TokenType.KEYWORD, "continue")) {
+        const keyword = this.advance().value;
+        stmt = new ExpressionStatement(new Identifier(keyword));
+      } else if (this.isTupleDestructuring()) {
+        stmt = this.parseTupleDestructuring();
+      } else if (this.peek().type === TokenType.IDENTIFIER && this.peek(1).type === TokenType.IDENTIFIER) {
+        let offset = 2;
+        while (this.peek(offset).type === TokenType.IDENTIFIER) {
+          offset++;
+        }
+        if (this.peek(offset).type === TokenType.OPERATOR && this.peek(offset).value === "=") {
+          stmt = this.parseTypedVarDeclaration();
+        }
+      }
+      if (!stmt) {
+        const expr = this.parseExpression();
+        if (this.match(TokenType.OPERATOR)) {
+          const op = this.peek().value;
+          if (["=", ":=", "+=", "-=", "*=", "/=", "%="].includes(op)) {
+            this.advance();
+            this.skipNewlines();
+            const right = this.parseExpression();
+            if (op === "=" && expr.type === "Identifier") {
+              stmt = new VariableDeclaration([new VariableDeclarator(expr, right)], VariableDeclarationKind.LET);
+            } else {
+              stmt = new ExpressionStatement(new AssignmentExpression(op === ":=" ? "=" : op, expr, right));
+            }
+          } else {
+            stmt = new ExpressionStatement(expr);
+          }
+        } else {
+          stmt = new ExpressionStatement(expr);
+        }
+      }
+      if (stmt) {
+        stmt._line = startLine;
+      }
+      return stmt;
+    }
+    // Check if current position is function declaration
+    isFunctionDeclaration() {
+      const saved = this.pos;
+      try {
+        let i = 0;
+        if (this.peek(i).type === TokenType.IDENTIFIER && this.peek(i + 1).type === TokenType.IDENTIFIER) {
+          i++;
+        }
+        if (this.peek(i).type !== TokenType.IDENTIFIER) {
+          return false;
+        }
+        i++;
+        if (this.peek(i).type !== TokenType.LPAREN) {
+          return false;
+        }
+        i++;
+        let depth = 1;
+        while (depth > 0 && this.peek(i).type !== TokenType.EOF) {
+          if (this.peek(i).type === TokenType.LPAREN) depth++;
+          if (this.peek(i).type === TokenType.RPAREN) depth--;
+          i++;
+        }
+        while (this.peek(i).type === TokenType.NEWLINE) i++;
+        return this.peek(i).type === TokenType.OPERATOR && this.peek(i).value === "=>";
+      } finally {
+        this.pos = saved;
+      }
+    }
+    // Parse type definition (v5: type X => fields, v6: type X\n fields)
+    parseTypeDefinition() {
+      this.expect(TokenType.KEYWORD, "type");
+      const name = this.expect(TokenType.IDENTIFIER).value;
+      const hasArrow = this.match(TokenType.OPERATOR, "=>");
+      if (hasArrow) {
+        this.advance();
+      }
+      this.skipNewlines();
+      this.expect(TokenType.INDENT);
+      const fields = [];
+      while (!this.match(TokenType.DEDENT) && !this.match(TokenType.EOF)) {
+        this.skipNewlines();
+        if (this.match(TokenType.DEDENT)) break;
+        const fieldType = this.expect(TokenType.IDENTIFIER).value;
+        const fieldName = this.expect(TokenType.IDENTIFIER).value;
+        let defaultValue = null;
+        if (this.match(TokenType.OPERATOR, "=")) {
+          this.advance();
+          this.skipNewlines();
+          defaultValue = this.parseExpression();
+        }
+        fields.push({ type: fieldType, name: fieldName, defaultValue });
+        this.skipNewlines();
+      }
+      if (this.match(TokenType.DEDENT)) {
+        this.advance();
+      }
+      return new TypeDefinition(name, fields);
+    }
+    // Parse var/varip declaration
+    parseVarDeclaration() {
+      const keyword = this.advance();
+      const kind = keyword.value;
+      let varType = null;
+      let name = null;
+      if (this.peek().type === TokenType.IDENTIFIER && this.peek(1).type === TokenType.LBRACKET && this.peek(2).type === TokenType.RBRACKET) {
+        varType = this.advance().value;
+        this.advance();
+        varType += "[]";
+        this.advance();
+        name = this.expect(TokenType.IDENTIFIER).value;
+      } else if (this.peek().type === TokenType.IDENTIFIER && (this.peek(1).type === TokenType.IDENTIFIER || this.peek(1).type === TokenType.OPERATOR && this.peek(1).value === "<")) {
+        varType = this.advance().value;
+        if (this.match(TokenType.OPERATOR, "<")) {
+          this.advance();
+          varType += "<";
+          while (!this.match(TokenType.OPERATOR, ">")) {
+            if (this.match(TokenType.IDENTIFIER)) {
+              varType += this.advance().value;
+            } else if (this.match(TokenType.COMMA)) {
+              varType += this.advance().value;
+              this.skipNewlines();
+            } else {
+              break;
+            }
+          }
+          if (this.match(TokenType.OPERATOR, ">")) {
+            varType += ">";
+            this.advance();
+          }
+        }
+        name = this.expect(TokenType.IDENTIFIER).value;
+      } else if (this.peek().type === TokenType.IDENTIFIER) {
+        name = this.advance().value;
+      } else {
+        throw new Error(`Expected identifier after ${kind} at ${this.peek().line}:${this.peek().column}`);
+      }
+      this.expect(TokenType.OPERATOR, "=");
+      this.skipNewlines();
+      const init = this.parseExpression();
+      const id = new Identifier(name);
+      if (varType) {
+        id.varType = varType;
+      }
+      return new VariableDeclaration([new VariableDeclarator(id, init, varType)], kind);
+    }
+    // Parse typed variable declaration (int x = ... or series float x = ...)
+    parseTypedVarDeclaration() {
+      let varType = this.advance().value;
+      while (this.peek().type === TokenType.IDENTIFIER && this.peek(1).type === TokenType.IDENTIFIER) {
+        varType += " " + this.advance().value;
+      }
+      const name = this.expect(TokenType.IDENTIFIER).value;
+      this.expect(TokenType.OPERATOR, "=");
+      this.skipNewlines();
+      const init = this.parseExpression();
+      const id = new Identifier(name);
+      id.varType = varType;
+      return new VariableDeclaration([new VariableDeclarator(id, init, varType)], VariableDeclarationKind.LET);
+    }
+    // Parse function declaration
+    parseFunctionDeclaration() {
+      let returnType = null;
+      if (this.peek().type === TokenType.IDENTIFIER && this.peek(1).type === TokenType.IDENTIFIER) {
+        returnType = this.advance().value;
+      }
+      const name = this.expect(TokenType.IDENTIFIER).value;
+      this.expect(TokenType.LPAREN);
+      const params = [];
+      while (!this.match(TokenType.RPAREN)) {
+        this.skipNewlines();
+        if (this.match(TokenType.RPAREN)) break;
+        let paramType = null;
+        while (this.peek().type === TokenType.IDENTIFIER && this.peek(1).type === TokenType.IDENTIFIER && this.peek(2).type !== TokenType.LPAREN) {
+          if (paramType) {
+            paramType += " ";
+          }
+          paramType = (paramType || "") + this.advance().value;
+        }
+        const paramName = this.expect(TokenType.IDENTIFIER).value;
+        const param = new Identifier(paramName);
+        if (paramType) param.varType = paramType;
+        if (this.match(TokenType.OPERATOR, "=")) {
+          this.advance();
+          this.skipNewlines();
+          const defaultValue = this.parseExpression();
+          params.push(new AssignmentPattern(param, defaultValue));
+        } else {
+          params.push(param);
+        }
+        if (this.match(TokenType.COMMA)) {
+          this.advance();
+        }
+      }
+      this.expect(TokenType.RPAREN);
+      this.skipNewlines();
+      this.expect(TokenType.OPERATOR, "=>");
+      this.skipNewlines();
+      const body = this.parseFunctionBody();
+      const id = new Identifier(name);
+      if (returnType) id.returnType = returnType;
+      return new FunctionDeclaration(id, params, body, returnType);
+    }
+    // Parse method declaration (method name(Type this, params) => ...)
+    parseMethodDeclaration() {
+      this.expect(TokenType.KEYWORD, "method");
+      let returnType = null;
+      if (this.peek().type === TokenType.IDENTIFIER && this.peek(1).type === TokenType.IDENTIFIER && this.peek(2).type === TokenType.LPAREN) {
+        returnType = this.advance().value;
+      }
+      const name = this.expect(TokenType.IDENTIFIER).value;
+      this.expect(TokenType.LPAREN);
+      const params = [];
+      while (!this.match(TokenType.RPAREN)) {
+        this.skipNewlines();
+        if (this.match(TokenType.RPAREN)) break;
+        let paramType = null;
+        while (this.peek().type === TokenType.IDENTIFIER && this.peek(1).type === TokenType.IDENTIFIER && this.peek(2).type !== TokenType.LPAREN) {
+          if (paramType) {
+            paramType += " ";
+          }
+          paramType = (paramType || "") + this.advance().value;
+        }
+        const paramName = this.expect(TokenType.IDENTIFIER).value;
+        const param = new Identifier(paramName);
+        if (paramType) param.varType = paramType;
+        if (this.match(TokenType.OPERATOR, "=")) {
+          this.advance();
+          this.skipNewlines();
+          const defaultValue = this.parseExpression();
+          params.push(new AssignmentPattern(param, defaultValue));
+        } else {
+          params.push(param);
+        }
+        if (this.match(TokenType.COMMA)) {
+          this.advance();
+        }
+      }
+      this.expect(TokenType.RPAREN);
+      this.skipNewlines();
+      this.expect(TokenType.OPERATOR, "=>");
+      this.skipNewlines();
+      const body = this.parseFunctionBody();
+      const id = new Identifier(name);
+      if (returnType) id.returnType = returnType;
+      id.isMethod = true;
+      return new FunctionDeclaration(id, params, body, returnType);
+    }
+    // Parse function body (handles both single expression and block)
+    parseFunctionBody() {
+      const statements = [];
+      if (!this.match(TokenType.INDENT)) {
+        const expr = this.parseExpression();
+        return new BlockStatement([new ReturnStatement(expr)]);
+      }
+      this.advance();
+      while (!this.match(TokenType.DEDENT) && !this.match(TokenType.EOF)) {
+        this.skipNewlines();
+        if (this.match(TokenType.DEDENT)) break;
+        const stmts = this.parseStatementOrSequence();
+        if (Array.isArray(stmts)) {
+          statements.push(...stmts);
+        } else if (stmts) {
+          statements.push(stmts);
+        }
+      }
+      if (this.match(TokenType.DEDENT)) {
+        this.advance();
+      }
+      if (statements.length > 0) {
+        const last = statements[statements.length - 1];
+        if (last.type === "ExpressionStatement") {
+          statements[statements.length - 1] = new ReturnStatement(last.expression);
+        }
+      }
+      return new BlockStatement(statements);
+    }
+    // Parse statement or comma-separated sequence
+    parseStatementOrSequence() {
+      this.pos;
+      const startLine = this.peek().line;
+      if (this.match(TokenType.KEYWORD, "if")) {
+        const stmt = this.parseIfStatement();
+        if (stmt) stmt._line = startLine;
+        return stmt;
+      }
+      if (this.match(TokenType.KEYWORD, "for")) {
+        return this.parseForStatement();
+      }
+      if (this.match(TokenType.KEYWORD, "while")) {
+        return this.parseWhileStatement();
+      }
+      if (this.match(TokenType.KEYWORD, "break") || this.match(TokenType.KEYWORD, "continue")) {
+        const keyword = this.advance().value;
+        return new ExpressionStatement(new Identifier(keyword));
+      }
+      if (this.match(TokenType.KEYWORD, "var") || this.match(TokenType.KEYWORD, "varip")) {
+        return this.parseVarDeclaration();
+      }
+      if (this.isTupleDestructuring()) {
+        return this.parseTupleDestructuring();
+      }
+      if (this.peek().type === TokenType.IDENTIFIER && this.peek(1).type === TokenType.IDENTIFIER) {
+        let offset = 2;
+        while (this.peek(offset).type === TokenType.IDENTIFIER) {
+          offset++;
+        }
+        if (this.peek(offset).type === TokenType.OPERATOR && this.peek(offset).value === "=") {
+          return this.parseTypedVarDeclaration();
+        }
+      }
+      const sequenceItems = [];
+      while (true) {
+        const expr = this.parseExpression();
+        if (this.match(TokenType.OPERATOR)) {
+          const op = this.peek().value;
+          if (["=", ":=", "+=", "-=", "*=", "/=", "%="].includes(op)) {
+            this.advance();
+            this.skipNewlines();
+            const right = this.parseExpression();
+            if (op === "=" && expr.type === "Identifier") {
+              sequenceItems.push(new VariableDeclaration([new VariableDeclarator(expr, right)], VariableDeclarationKind.LET));
+            } else {
+              sequenceItems.push(new ExpressionStatement(new AssignmentExpression(op === ":=" ? "=" : op, expr, right)));
+            }
+            if (this.match(TokenType.COMMA)) {
+              this.advance();
+              this.skipNewlines();
+              continue;
+            }
+            break;
+          } else {
+            if (sequenceItems.length > 0) {
+              sequenceItems.push(new ExpressionStatement(expr));
+            } else {
+              return new ExpressionStatement(expr);
+            }
+            break;
+          }
+        } else {
+          if (this.match(TokenType.COMMA)) {
+            sequenceItems.push(new ExpressionStatement(expr));
+            this.advance();
+            this.skipNewlines();
+            continue;
+          } else {
+            if (sequenceItems.length > 0) {
+              sequenceItems.push(new ExpressionStatement(expr));
+            } else {
+              return new ExpressionStatement(expr);
+            }
+            break;
+          }
+        }
+      }
+      if (sequenceItems.length > 1) {
+        return sequenceItems;
+      } else if (sequenceItems.length === 1) {
+        return sequenceItems[0];
+      }
+      return null;
+    }
+    // Parse if statement
+    parseIfStatement() {
+      this.expect(TokenType.KEYWORD, "if");
+      const test = this.parseExpression();
+      this.skipNewlines();
+      const consequent = this.parseBlock();
+      let alternate = null;
+      if (this.match(TokenType.KEYWORD, "else")) {
+        this.advance();
+        this.skipNewlines();
+        if (this.match(TokenType.KEYWORD, "if")) {
+          alternate = this.parseIfStatement();
+        } else {
+          alternate = this.parseBlock();
+        }
+      }
+      return new IfStatement(test, consequent, alternate);
+    }
+    // Parse for statement (both range-based and for-in)
+    parseForStatement() {
+      this.expect(TokenType.KEYWORD, "for");
+      let loopVar = null;
+      let isDestructuring = false;
+      if (this.match(TokenType.LBRACKET)) {
+        this.advance();
+        const elements = [];
+        while (!this.match(TokenType.RBRACKET)) {
+          this.skipNewlines();
+          elements.push(new Identifier(this.expect(TokenType.IDENTIFIER).value));
+          if (this.match(TokenType.COMMA)) {
+            this.advance();
+          }
+        }
+        this.expect(TokenType.RBRACKET);
+        loopVar = new ArrayPattern(elements);
+        isDestructuring = true;
+      } else {
+        const varName = this.expect(TokenType.IDENTIFIER).value;
+        loopVar = new Identifier(varName);
+      }
+      if (this.match(TokenType.KEYWORD, "in")) {
+        this.advance();
+        const iterable = this.parseExpression();
+        this.skipNewlines();
+        const body = this.parseBlock();
+        const init = new VariableDeclaration([new VariableDeclarator(loopVar, iterable)], VariableDeclarationKind.CONST);
+        const forStmt = new ForStatement(init, null, null, body);
+        forStmt.isForIn = true;
+        return forStmt;
+      } else {
+        if (isDestructuring) {
+          throw new Error(`Range-based for loops don't support destructuring at ${this.peek().line}:${this.peek().column}`);
+        }
+        this.expect(TokenType.OPERATOR, "=");
+        const start = this.parseExpression();
+        this.expect(TokenType.KEYWORD, "to");
+        const end = this.parseExpression();
+        let step = null;
+        if (this.match(TokenType.KEYWORD, "by")) {
+          this.advance();
+          step = this.parseExpression();
+        }
+        this.skipNewlines();
+        const body = this.parseBlock();
+        const init = new VariableDeclaration([new VariableDeclarator(loopVar, start)], VariableDeclarationKind.LET);
+        const test = new BinaryExpression("<=", loopVar, end);
+        const update = step ? new AssignmentExpression("+=", loopVar, step) : new UpdateExpression("++", loopVar);
+        return new ForStatement(init, test, update, body);
+      }
+    }
+    // Parse while statement
+    parseWhileStatement() {
+      this.expect(TokenType.KEYWORD, "while");
+      const test = this.parseExpression();
+      this.skipNewlines();
+      const body = this.parseBlock();
+      return new WhileStatement(test, body);
+    }
+    // Parse indented block
+    parseBlock() {
+      if (!this.match(TokenType.INDENT)) {
+        const stmt = this.parseStatement();
+        return new BlockStatement(stmt ? [stmt] : []);
+      }
+      this.advance();
+      const statements = [];
+      while (!this.match(TokenType.DEDENT) && !this.match(TokenType.EOF)) {
+        this.skipNewlines();
+        if (this.match(TokenType.DEDENT)) break;
+        const stmt = this.parseStatement();
+        if (stmt) statements.push(stmt);
+      }
+      if (this.match(TokenType.DEDENT)) {
+        this.advance();
+      }
+      return new BlockStatement(statements);
+    }
+    // Check if current position looks like tuple destructuring
+    isTupleDestructuring() {
+      if (!this.match(TokenType.LBRACKET)) return false;
+      let i = 1;
+      while (true) {
+        while (this.peek(i).type === TokenType.NEWLINE) i++;
+        if (this.peek(i).type !== TokenType.IDENTIFIER) return false;
+        i++;
+        while (this.peek(i).type === TokenType.NEWLINE) i++;
+        if (this.peek(i).type === TokenType.RBRACKET) {
+          i++;
+          break;
+        } else if (this.peek(i).type === TokenType.COMMA) {
+          i++;
+          continue;
+        } else {
+          return false;
+        }
+      }
+      while (this.peek(i).type === TokenType.NEWLINE) i++;
+      return this.peek(i).type === TokenType.OPERATOR && this.peek(i).value === "=";
+    }
+    // Parse tuple destructuring
+    parseTupleDestructuring() {
+      this.expect(TokenType.LBRACKET);
+      const elements = [];
+      while (!this.match(TokenType.RBRACKET)) {
+        this.skipNewlines();
+        elements.push(new Identifier(this.expect(TokenType.IDENTIFIER).value));
+        if (this.match(TokenType.COMMA)) {
+          this.advance();
+        }
+      }
+      this.expect(TokenType.RBRACKET);
+      this.skipNewlines();
+      this.expect(TokenType.OPERATOR, "=");
+      this.skipNewlines();
+      const init = this.parseExpression();
+      return new VariableDeclaration([new VariableDeclarator(new ArrayPattern(elements), init)], VariableDeclarationKind.CONST);
+    }
+    // Expression parsing (operator precedence)
+    parseExpression() {
+      return this.parseTernary();
+    }
+    parseTernary() {
+      let expr = this.parseLogicalOr();
+      if (this.match(TokenType.OPERATOR, "?")) {
+        this.advance();
+        this.skipNewlines();
+        const consequent = this.parseExpression();
+        this.expect(TokenType.COLON);
+        this.skipNewlines();
+        const alternate = this.parseExpression();
+        return new ConditionalExpression(expr, consequent, alternate);
+      }
+      return expr;
+    }
+    parseLogicalOr() {
+      let left = this.parseLogicalAnd();
+      while (this.match(TokenType.KEYWORD, "or") || this.match(TokenType.OPERATOR) && this.peek().value === "||") {
+        this.advance();
+        this.skipNewlines();
+        const right = this.parseLogicalAnd();
+        left = new BinaryExpression("||", left, right);
+      }
+      return left;
+    }
+    parseLogicalAnd() {
+      let left = this.parseEquality();
+      while (this.match(TokenType.KEYWORD, "and") || this.match(TokenType.OPERATOR) && this.peek().value === "&&") {
+        this.advance();
+        this.skipNewlines();
+        const right = this.parseEquality();
+        left = new BinaryExpression("&&", left, right);
+      }
+      return left;
+    }
+    parseEquality() {
+      let left = this.parseComparison();
+      while (this.match(TokenType.OPERATOR)) {
+        const op = this.peek().value;
+        if (!["==", "!="].includes(op)) break;
+        this.advance();
+        this.skipNewlines();
+        const right = this.parseComparison();
+        left = new BinaryExpression(op, left, right);
+      }
+      return left;
+    }
+    parseComparison() {
+      let left = this.parseAdditive();
+      while (this.match(TokenType.OPERATOR)) {
+        const op = this.peek().value;
+        if (!["<", ">", "<=", ">="].includes(op)) break;
+        this.advance();
+        this.skipNewlines();
+        const right = this.parseAdditive();
+        left = new BinaryExpression(op, left, right);
+      }
+      return left;
+    }
+    parseAdditive() {
+      let left = this.parseMultiplicative();
+      while (this.match(TokenType.OPERATOR)) {
+        const op = this.peek().value;
+        if (!["+", "-"].includes(op)) break;
+        this.advance();
+        this.skipNewlines();
+        const right = this.parseMultiplicative();
+        left = new BinaryExpression(op, left, right);
+      }
+      return left;
+    }
+    parseMultiplicative() {
+      let left = this.parseUnary();
+      while (this.match(TokenType.OPERATOR)) {
+        const op = this.peek().value;
+        if (!["*", "/", "%"].includes(op)) break;
+        this.advance();
+        this.skipNewlines();
+        const right = this.parseUnary();
+        left = new BinaryExpression(op, left, right);
+      }
+      return left;
+    }
+    parseUnary() {
+      if (this.match(TokenType.OPERATOR)) {
+        const op = this.peek().value;
+        if (["+", "-", "!"].includes(op)) {
+          this.advance();
+          this.skipNewlines();
+          return new UnaryExpression(op, this.parseUnary());
+        }
+      }
+      if (this.match(TokenType.KEYWORD, "not")) {
+        this.advance();
+        this.skipNewlines();
+        return new UnaryExpression("!", this.parseUnary());
+      }
+      return this.parsePostfix();
+    }
+    parsePostfix() {
+      let expr = this.parsePrimary();
+      while (true) {
+        if (this.match(TokenType.OPERATOR, "<")) {
+          const saved = this.pos;
+          this.advance();
+          let depth = 1;
+          let isGeneric = true;
+          while (depth > 0 && !this.match(TokenType.EOF)) {
+            if (this.match(TokenType.OPERATOR, "<")) {
+              depth++;
+              this.advance();
+            } else if (this.match(TokenType.OPERATOR, ">")) {
+              depth--;
+              this.advance();
+            } else if (this.match(TokenType.IDENTIFIER) || this.match(TokenType.COMMA)) {
+              this.advance();
+            } else {
+              isGeneric = false;
+              this.pos = saved;
+              break;
+            }
+          }
+          if (isGeneric && this.match(TokenType.LPAREN)) {
+            expr = this.parseCallExpression(expr);
+            continue;
+          } else if (!isGeneric) {
+            break;
+          } else {
+            continue;
+          }
+        } else if (this.match(TokenType.LPAREN)) {
+          expr = this.parseCallExpression(expr);
+        } else if (this.match(TokenType.DOT)) {
+          this.advance();
+          this.skipNewlines();
+          const property = this.expect(TokenType.IDENTIFIER).value;
+          expr = new MemberExpression(expr, new Identifier(property), false);
+        } else if (this.match(TokenType.LBRACKET)) {
+          this.advance();
+          this.skipNewlines();
+          const index = this.parseExpression();
+          this.expect(TokenType.RBRACKET);
+          expr = new MemberExpression(expr, index, true);
+        } else {
+          break;
+        }
+      }
+      return expr;
+    }
+    parseCallExpression(callee) {
+      this.expect(TokenType.LPAREN);
+      const args = [];
+      const namedArgs = [];
+      while (!this.match(TokenType.RPAREN)) {
+        this.skipNewlines();
+        if (this.match(TokenType.RPAREN)) break;
+        if ((this.peek().type === TokenType.IDENTIFIER || this.peek().type === TokenType.KEYWORD) && this.peek(1).type === TokenType.OPERATOR && this.peek(1).value === "=") {
+          const name = this.advance().value;
+          this.advance();
+          this.skipNewlines();
+          const value = this.parseExpression();
+          namedArgs.push(new Property(new Identifier(name), value));
+        } else {
+          args.push(this.parseExpression());
+        }
+        if (this.match(TokenType.COMMA)) {
+          this.advance();
+        }
+        this.skipNewlines();
+      }
+      this.expect(TokenType.RPAREN);
+      if (namedArgs.length > 0) {
+        args.push(new ObjectExpression(namedArgs));
+      }
+      return new CallExpression(callee, args);
+    }
+    parsePrimary() {
+      const token = this.peek();
+      if (this.match(TokenType.NUMBER)) {
+        const num = this.advance();
+        return new Literal(num.value);
+      }
+      if (this.match(TokenType.STRING)) {
+        const str = this.advance();
+        return new Literal(str.value);
+      }
+      if (this.match(TokenType.BOOLEAN)) {
+        const bool = this.advance();
+        return new Literal(bool.value);
+      }
+      if (this.match(TokenType.IDENTIFIER)) {
+        const id = this.advance();
+        return new Identifier(id.value);
+      }
+      if (this.match(TokenType.LBRACKET)) {
+        return this.parseArrayLiteral();
+      }
+      if (this.match(TokenType.LPAREN)) {
+        this.advance();
+        this.skipNewlines();
+        const expr = this.parseExpression();
+        this.skipNewlines();
+        this.expect(TokenType.RPAREN);
+        return expr;
+      }
+      if (this.match(TokenType.KEYWORD, "if")) {
+        return this.parseIfExpression();
+      }
+      if (this.match(TokenType.KEYWORD, "switch")) {
+        return this.parseSwitchExpression();
+      }
+      throw new Error(`Unexpected token ${token.type} '${token.value}' at ${token.line}:${token.column}`);
+    }
+    parseArrayLiteral() {
+      this.expect(TokenType.LBRACKET);
+      const elements = [];
+      while (!this.match(TokenType.RBRACKET)) {
+        this.skipNewlines();
+        if (this.match(TokenType.RBRACKET)) break;
+        elements.push(this.parseExpression());
+        if (this.match(TokenType.COMMA)) {
+          this.advance();
+        }
+        this.skipNewlines();
+      }
+      this.expect(TokenType.RBRACKET);
+      return new ArrayExpression(elements);
+    }
+    parseIfExpression() {
+      this.expect(TokenType.KEYWORD, "if");
+      const test = this.parseExpression();
+      this.skipNewlines();
+      this.expect(TokenType.INDENT);
+      const consequentStmts = [];
+      while (!this.match(TokenType.DEDENT) && !this.match(TokenType.EOF)) {
+        this.skipNewlines();
+        if (this.match(TokenType.DEDENT)) break;
+        const stmt = this.parseStatement();
+        if (stmt) consequentStmts.push(stmt);
+      }
+      this.advance();
+      let alternateStmts = [];
+      if (this.match(TokenType.KEYWORD, "else")) {
+        this.advance();
+        this.skipNewlines();
+        if (this.match(TokenType.KEYWORD, "if")) {
+          const nestedIf = this.parseIfExpression();
+          const needsIIFE2 = this.needsIIFE(consequentStmts, alternateStmts);
+          if (needsIIFE2) {
+            const condExpr = new ConditionalExpression(test, new BlockStatement(consequentStmts), nestedIf);
+            condExpr.needsIIFE = true;
+            condExpr.consequentStmts = consequentStmts;
+            condExpr.alternateExpr = nestedIf;
+            return condExpr;
+          } else {
+            return new ConditionalExpression(test, this.getBlockValue(consequentStmts), nestedIf);
+          }
+        } else {
+          this.expect(TokenType.INDENT);
+          while (!this.match(TokenType.DEDENT) && !this.match(TokenType.EOF)) {
+            this.skipNewlines();
+            if (this.match(TokenType.DEDENT)) break;
+            const stmt = this.parseStatement();
+            if (stmt) alternateStmts.push(stmt);
+          }
+          this.advance();
+        }
+      }
+      const needsIIFE = this.needsIIFE(consequentStmts, alternateStmts);
+      if (needsIIFE) {
+        const condExpr = new ConditionalExpression(test, new BlockStatement(consequentStmts), new BlockStatement(alternateStmts));
+        condExpr.needsIIFE = true;
+        condExpr.consequentStmts = consequentStmts;
+        condExpr.alternateStmts = alternateStmts;
+        return condExpr;
+      }
+      const consequent = this.getBlockValue(consequentStmts);
+      const alternate = alternateStmts.length > 0 ? this.getBlockValue(alternateStmts) : new Literal(null);
+      return new ConditionalExpression(test, consequent, alternate);
+    }
+    // Check if if-expression needs IIFE (multi-statement or has control flow)
+    needsIIFE(consequentStmts, alternateStmts) {
+      if (consequentStmts.length > 1 || alternateStmts.length > 1) {
+        return true;
+      }
+      const hasControlFlow = (stmts) => {
+        return stmts.some(
+          (stmt) => stmt.type === "IfStatement" || stmt.type === "ForStatement" || stmt.type === "WhileStatement" || stmt.type === "BlockStatement"
+        );
+      };
+      return hasControlFlow(consequentStmts) || hasControlFlow(alternateStmts);
+    }
+    parseSwitchExpression() {
+      this.expect(TokenType.KEYWORD, "switch");
+      const discriminant = this.parseExpression();
+      this.skipNewlines();
+      this.expect(TokenType.INDENT);
+      const cases = [];
+      while (!this.match(TokenType.DEDENT) && !this.match(TokenType.EOF)) {
+        this.skipNewlines();
+        if (this.match(TokenType.DEDENT)) break;
+        let test = null;
+        if (!this.match(TokenType.OPERATOR, "=>")) {
+          test = this.parseExpression();
+        }
+        this.expect(TokenType.OPERATOR, "=>");
+        this.skipNewlines();
+        const consequentStmts = [];
+        if (this.match(TokenType.INDENT)) {
+          this.advance();
+          while (!this.match(TokenType.DEDENT) && !this.match(TokenType.EOF)) {
+            this.skipNewlines();
+            if (this.match(TokenType.DEDENT)) break;
+            const stmt = this.parseStatement();
+            if (stmt) consequentStmts.push(stmt);
+          }
+          this.advance();
+        } else {
+          consequentStmts.push(new ExpressionStatement(this.parseExpression()));
+        }
+        const consequent = this.getBlockValue(consequentStmts);
+        cases.push(new SwitchCase(test, consequent));
+        this.skipNewlines();
+      }
+      this.advance();
+      return new SwitchExpression(discriminant, cases);
+    }
+    getBlockValue(statements) {
+      if (statements.length === 0) {
+        return new Literal(null);
+      }
+      const last = statements[statements.length - 1];
+      if (last.type === "ExpressionStatement") {
+        return last.expression;
+      }
+      if (last.type === "VariableDeclaration" && last.declarations.length > 0) {
+        return last.declarations[0].id;
+      }
+      return new Literal(null);
+    }
+  }
+
+  var __defProp$c = Object.defineProperty;
+  var __defNormalProp$c = (obj, key, value) => key in obj ? __defProp$c(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField$c = (obj, key, value) => __defNormalProp$c(obj, typeof key !== "symbol" ? key + "" : key, value);
+  class CodeGenerator {
+    constructor(options = {}) {
+      __publicField$c(this, "indent");
+      __publicField$c(this, "indentStr");
+      __publicField$c(this, "output");
+      __publicField$c(this, "sourceCode");
+      __publicField$c(this, "sourceLines");
+      __publicField$c(this, "lastCommentedLine");
+      __publicField$c(this, "includeSourceComments");
+      this.indent = 0;
+      this.indentStr = options.indentStr || "  ";
+      this.output = [];
+      this.sourceCode = options.sourceCode || null;
+      this.sourceLines = this.sourceCode ? this.sourceCode.split("\n") : [];
+      this.lastCommentedLine = -1;
+      this.includeSourceComments = options.includeSourceComments || false;
+    }
+    generate(ast) {
+      this.output = [];
+      this.indent = 0;
+      this.lastCommentedLine = -1;
+      if (ast.type === "Program") {
+        this.generateProgram(ast);
+      } else {
+        throw new Error(`Expected Program node, got ${ast.type}`);
+      }
+      return this.output.join("");
+    }
+    // Write source code comments
+    writeSourceComment(startLine, endLine = null) {
+      if (!this.sourceLines.length) return;
+      const end = endLine || startLine;
+      const linesToComment = [];
+      for (let i = startLine - 1; i < end && i < this.sourceLines.length; i++) {
+        if (i > this.lastCommentedLine) {
+          const line = this.sourceLines[i].trim();
+          if (line && !line.startsWith("//@") && !line.startsWith("//")) {
+            linesToComment.push(this.sourceLines[i]);
+          }
+        }
+      }
+      if (linesToComment.length > 0) {
+        for (const line of linesToComment) {
+          this.write(this.indentStr.repeat(this.indent));
+          this.write("/// ");
+          this.write(line.trimEnd());
+          this.write("\n");
+        }
+        this.lastCommentedLine = Math.max(this.lastCommentedLine, end - 1);
+      }
+    }
+    // Helper to add indentation
+    write(str) {
+      this.output.push(str);
+    }
+    writeLine(str = "") {
+      if (str) {
+        this.output.push(this.indentStr.repeat(this.indent) + str + "\n");
+      } else {
+        this.output.push("\n");
+      }
+    }
+    increaseIndent() {
+      this.indent++;
+    }
+    decreaseIndent() {
+      this.indent--;
+    }
+    // Generate Program node
+    generateProgram(node) {
+      for (let i = 0; i < node.body.length; i++) {
+        this.generateStatement(node.body[i]);
+        if (i < node.body.length - 1) {
+          const current = node.body[i];
+          const next = node.body[i + 1];
+          if ((current.type === "FunctionDeclaration" || current.type === "TypeDefinition") && (next.type === "FunctionDeclaration" || next.type === "TypeDefinition")) {
+            this.writeLine();
+          }
+        }
+      }
+    }
+    // Generate any statement
+    generateStatement(node) {
+      if (this.includeSourceComments && node._line && this.sourceLines.length > 0) {
+        this.writeSourceComment(node._line);
+      }
+      switch (node.type) {
+        case "FunctionDeclaration":
+          return this.generateFunctionDeclaration(node);
+        case "VariableDeclaration":
+          return this.generateVariableDeclaration(node);
+        case "ExpressionStatement":
+          return this.generateExpressionStatement(node);
+        case "IfStatement":
+          return this.generateIfStatement(node);
+        case "ForStatement":
+          return this.generateForStatement(node);
+        case "WhileStatement":
+          return this.generateWhileStatement(node);
+        case "ReturnStatement":
+          return this.generateReturnStatement(node);
+        case "BlockStatement":
+          return this.generateBlockStatement(node);
+        case "TypeDefinition":
+          return this.generateTypeDefinition(node);
+        default:
+          throw new Error(`Unknown statement type: ${node.type}`);
+      }
+    }
+    // Generate TypeDefinition (convert to class in JavaScript)
+    generateTypeDefinition(node) {
+      this.write(this.indentStr.repeat(this.indent));
+      this.write(`class ${node.name} {
+`);
+      this.increaseIndent();
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("constructor(");
+      const params = node.fields.map((f) => f.name).join(", ");
+      this.write(params);
+      this.write(") {\n");
+      this.increaseIndent();
+      for (const field of node.fields) {
+        this.write(this.indentStr.repeat(this.indent));
+        this.write(`this.${field.name} = ${field.name}`);
+        if (field.defaultValue) {
+          this.write(" !== undefined ? ");
+          this.write(field.name);
+          this.write(" : ");
+          this.generateExpression(field.defaultValue);
+        }
+        this.write(";\n");
+      }
+      this.decreaseIndent();
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("}\n");
+      this.decreaseIndent();
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("}\n");
+    }
+    // Generate FunctionDeclaration
+    generateFunctionDeclaration(node) {
+      this.write(this.indentStr.repeat(this.indent));
+      const isMethod = node.id.isMethod;
+      this.write("function ");
+      this.write(node.id.name);
+      this.write("(");
+      const params = node.params;
+      const startIdx = isMethod && params.length > 0 && params[0].type === "Identifier" && params[0].name === "this" ? 1 : 0;
+      for (let i = startIdx; i < params.length; i++) {
+        const param = params[i];
+        if (param.type === "Identifier") {
+          this.write(param.name);
+        } else if (param.type === "AssignmentPattern") {
+          const leftName = param.left.name === "this" && isMethod ? "self" : param.left.name;
+          this.write(leftName);
+          this.write(" = ");
+          this.generateExpression(param.right);
+        }
+        if (i < params.length - 1) {
+          this.write(", ");
+        }
+      }
+      this.write(") ");
+      this.generateBlockStatement(node.body, false);
+      this.write("\n");
+    }
+    // Generate VariableDeclaration
+    generateVariableDeclaration(node) {
+      const kind = node.kind === "var" || node.kind === "varip" ? "var" : "let";
+      for (let i = 0; i < node.declarations.length; i++) {
+        const decl = node.declarations[i];
+        if (decl.init && decl.init.type === "ConditionalExpression" && decl.init.needsIIFE) {
+          const varName = decl.id.type === "Identifier" ? decl.id.name : null;
+          if (varName) {
+            this.write(this.indentStr.repeat(this.indent));
+            this.write(kind);
+            this.write(" ");
+            this.write(varName);
+            this.write(";\n");
+            this.generateIfStatementWithAssignment(decl.init, varName);
+            continue;
+          }
+        }
+        this.write(this.indentStr.repeat(this.indent));
+        this.write(kind);
+        this.write(" ");
+        if (decl.id.type === "Identifier") {
+          this.write(decl.id.name);
+        } else if (decl.id.type === "ArrayPattern") {
+          this.write("[");
+          for (let j = 0; j < decl.id.elements.length; j++) {
+            this.write(decl.id.elements[j].name);
+            if (j < decl.id.elements.length - 1) {
+              this.write(", ");
+            }
+          }
+          this.write("]");
+        }
+        if (decl.init) {
+          this.write(" = ");
+          this.generateExpression(decl.init);
+        }
+        this.write(";\n");
+      }
+    }
+    // Generate ExpressionStatement
+    generateExpressionStatement(node) {
+      this.write(this.indentStr.repeat(this.indent));
+      this.generateExpression(node.expression);
+      this.write(";\n");
+    }
+    // Generate IfStatement
+    generateIfStatement(node) {
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("if (");
+      this.generateExpression(node.test);
+      this.write(") ");
+      this.generateBlockStatement(node.consequent, false);
+      if (node.alternate) {
+        this.write(" else ");
+        if (node.alternate.type === "IfStatement") {
+          this.generateIfStatement(node.alternate);
+        } else {
+          this.generateBlockStatement(node.alternate, false);
+        }
+      } else {
+        this.write("\n");
+      }
+    }
+    // Generate if statement that assigns to a variable (for complex if expressions)
+    generateIfStatementWithAssignment(condExpr, varName) {
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("if (");
+      this.generateExpression(condExpr.test);
+      this.write(") {\n");
+      this.indent++;
+      if (condExpr.consequentStmts) {
+        for (let i = 0; i < condExpr.consequentStmts.length; i++) {
+          const stmt = condExpr.consequentStmts[i];
+          const isLast = i === condExpr.consequentStmts.length - 1;
+          if (isLast) {
+            if (stmt.type === "ExpressionStatement") {
+              this.write(this.indentStr.repeat(this.indent));
+              this.write(varName);
+              this.write(" = ");
+              this.generateExpression(stmt.expression);
+              this.write(";\n");
+            } else if (stmt.type === "IfStatement") {
+              this.generateNestedIfWithAssignments(stmt, varName);
+            } else {
+              this.generateStatement(stmt);
+            }
+          } else {
+            this.generateStatement(stmt);
+          }
+        }
+      }
+      this.indent--;
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("}");
+      if (condExpr.alternateExpr) {
+        this.write(" else {\n");
+        this.indent++;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write(varName);
+        this.write(" = ");
+        this.generateExpression(condExpr.alternateExpr);
+        this.write(";\n");
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("}");
+      } else if (condExpr.alternateStmts && condExpr.alternateStmts.length > 0) {
+        this.write(" else {\n");
+        this.indent++;
+        for (let i = 0; i < condExpr.alternateStmts.length; i++) {
+          const stmt = condExpr.alternateStmts[i];
+          const isLast = i === condExpr.alternateStmts.length - 1;
+          if (isLast) {
+            if (stmt.type === "ExpressionStatement") {
+              this.write(this.indentStr.repeat(this.indent));
+              this.write(varName);
+              this.write(" = ");
+              this.generateExpression(stmt.expression);
+              this.write(";\n");
+            } else if (stmt.type === "IfStatement") {
+              this.generateNestedIfWithAssignments(stmt, varName);
+            } else {
+              this.generateStatement(stmt);
+            }
+          } else {
+            this.generateStatement(stmt);
+          }
+        }
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("}");
+      } else {
+        this.write(" else {\n");
+        this.indent++;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write(varName);
+        this.write(" = false;\n");
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("}");
+      }
+      this.write("\n");
+    }
+    // Helper to generate nested if statement with assignments (no IIFE)
+    generateNestedIfWithAssignments(node, varName) {
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("if (");
+      this.generateExpression(node.test);
+      this.write(") {\n");
+      this.indent++;
+      if (node.consequent.type === "BlockStatement" && node.consequent.body.length > 0) {
+        for (let i = 0; i < node.consequent.body.length; i++) {
+          const stmt = node.consequent.body[i];
+          const isLast = i === node.consequent.body.length - 1;
+          if (isLast) {
+            if (stmt.type === "ExpressionStatement") {
+              this.write(this.indentStr.repeat(this.indent));
+              this.write(varName);
+              this.write(" = ");
+              this.generateExpression(stmt.expression);
+              this.write(";\n");
+            } else if (stmt.type === "IfStatement") {
+              this.generateNestedIfWithAssignments(stmt, varName);
+            } else {
+              this.generateStatement(stmt);
+            }
+          } else {
+            this.generateStatement(stmt);
+          }
+        }
+      }
+      this.indent--;
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("}");
+      if (node.alternate) {
+        if (node.alternate.type === "IfStatement") {
+          this.write(" else ");
+          this.write("if (");
+          this.generateExpression(node.alternate.test);
+          this.write(") {\n");
+          this.indent++;
+          if (node.alternate.consequent.type === "BlockStatement" && node.alternate.consequent.body.length > 0) {
+            for (let i = 0; i < node.alternate.consequent.body.length; i++) {
+              const stmt = node.alternate.consequent.body[i];
+              const isLast = i === node.alternate.consequent.body.length - 1;
+              if (isLast) {
+                if (stmt.type === "ExpressionStatement") {
+                  this.write(this.indentStr.repeat(this.indent));
+                  this.write(varName);
+                  this.write(" = ");
+                  this.generateExpression(stmt.expression);
+                  this.write(";\n");
+                } else if (stmt.type === "IfStatement") {
+                  this.generateNestedIfWithAssignments(stmt, varName);
+                } else {
+                  this.generateStatement(stmt);
+                }
+              } else {
+                this.generateStatement(stmt);
+              }
+            }
+          }
+          this.indent--;
+          this.write(this.indentStr.repeat(this.indent));
+          this.write("}");
+          this.generateNestedIfAlternatesWithAssignments(node.alternate.alternate, varName);
+        } else if (node.alternate.type === "BlockStatement" && node.alternate.body.length > 0) {
+          this.write(" else {\n");
+          this.indent++;
+          for (let i = 0; i < node.alternate.body.length; i++) {
+            const stmt = node.alternate.body[i];
+            const isLast = i === node.alternate.body.length - 1;
+            if (isLast) {
+              if (stmt.type === "ExpressionStatement") {
+                this.write(this.indentStr.repeat(this.indent));
+                this.write(varName);
+                this.write(" = ");
+                this.generateExpression(stmt.expression);
+                this.write(";\n");
+              } else if (stmt.type === "IfStatement") {
+                this.generateNestedIfWithAssignments(stmt, varName);
+              } else {
+                this.generateStatement(stmt);
+              }
+            } else {
+              this.generateStatement(stmt);
+            }
+          }
+          this.indent--;
+          this.write(this.indentStr.repeat(this.indent));
+          this.write("}\n");
+        } else {
+          this.write(" else {\n");
+          this.indent++;
+          this.write(this.indentStr.repeat(this.indent));
+          this.write(varName);
+          this.write(" = false;\n");
+          this.indent--;
+          this.write(this.indentStr.repeat(this.indent));
+          this.write("}\n");
+        }
+      } else {
+        this.write("\n");
+      }
+    }
+    // Helper to continue generating else if / else chain with assignments
+    generateNestedIfAlternatesWithAssignments(alternate, varName) {
+      if (!alternate) {
+        return;
+      }
+      if (alternate.type === "IfStatement") {
+        this.write(" else ");
+        this.write("if (");
+        this.generateExpression(alternate.test);
+        this.write(") {\n");
+        this.indent++;
+        if (alternate.consequent.type === "BlockStatement" && alternate.consequent.body.length > 0) {
+          for (let i = 0; i < alternate.consequent.body.length; i++) {
+            const stmt = alternate.consequent.body[i];
+            const isLast = i === alternate.consequent.body.length - 1;
+            if (isLast) {
+              if (stmt.type === "ExpressionStatement") {
+                this.write(this.indentStr.repeat(this.indent));
+                this.write(varName);
+                this.write(" = ");
+                this.generateExpression(stmt.expression);
+                this.write(";\n");
+              } else if (stmt.type === "IfStatement") {
+                this.generateNestedIfWithAssignments(stmt, varName);
+              } else {
+                this.generateStatement(stmt);
+              }
+            } else {
+              this.generateStatement(stmt);
+            }
+          }
+        }
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("}");
+        this.generateNestedIfAlternatesWithAssignments(alternate.alternate, varName);
+      } else if (alternate.type === "BlockStatement" && alternate.body.length > 0) {
+        this.write(" else {\n");
+        this.indent++;
+        for (let i = 0; i < alternate.body.length; i++) {
+          const stmt = alternate.body[i];
+          const isLast = i === alternate.body.length - 1;
+          if (isLast) {
+            if (stmt.type === "ExpressionStatement") {
+              this.write(this.indentStr.repeat(this.indent));
+              this.write(varName);
+              this.write(" = ");
+              this.generateExpression(stmt.expression);
+              this.write(";\n");
+            } else if (stmt.type === "IfStatement") {
+              this.generateNestedIfWithAssignments(stmt, varName);
+            } else {
+              this.generateStatement(stmt);
+            }
+          } else {
+            this.generateStatement(stmt);
+          }
+        }
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("}\n");
+      } else {
+        this.write(" else {\n");
+        this.indent++;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write(varName);
+        this.write(" = false;\n");
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("}\n");
+      }
+    }
+    // Generate ForStatement
+    generateForStatement(node) {
+      this.write(this.indentStr.repeat(this.indent));
+      if (node.isForIn) {
+        this.write("for (");
+        if (node.init && node.init.type === "VariableDeclaration") {
+          const decl = node.init.declarations[0];
+          this.write(`${node.init.kind} `);
+          if (decl.id.type === "Identifier") {
+            this.write(decl.id.name);
+          } else if (decl.id.type === "ArrayPattern") {
+            this.write("[");
+            for (let i = 0; i < decl.id.elements.length; i++) {
+              this.write(decl.id.elements[i].name);
+              if (i < decl.id.elements.length - 1) {
+                this.write(", ");
+              }
+            }
+            this.write("]");
+          }
+          this.write(" of ");
+          this.generateExpression(decl.init);
+        }
+        this.write(") ");
+        this.generateBlockStatement(node.body, false);
+        return;
+      }
+      this.write("for (");
+      if (node.init) {
+        if (node.init.type === "VariableDeclaration") {
+          const decl = node.init.declarations[0];
+          this.write(`${node.init.kind} ${decl.id.name}`);
+          if (decl.init) {
+            this.write(" = ");
+            this.generateExpression(decl.init);
+          }
+        } else {
+          this.generateExpression(node.init);
+        }
+      }
+      this.write("; ");
+      if (node.test) {
+        this.generateExpression(node.test);
+      }
+      this.write("; ");
+      if (node.update) {
+        if (node.update.type === "AssignmentExpression") {
+          this.generateExpression(node.update.left);
+          this.write(` ${node.update.operator} `);
+          this.generateExpression(node.update.right);
+        } else {
+          this.generateExpression(node.update);
+        }
+      }
+      this.write(") ");
+      this.generateBlockStatement(node.body, false);
+    }
+    // Generate WhileStatement
+    generateWhileStatement(node) {
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("while (");
+      this.generateExpression(node.test);
+      this.write(") ");
+      this.generateBlockStatement(node.body, false);
+    }
+    // Generate ReturnStatement
+    generateReturnStatement(node) {
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("return");
+      if (node.argument) {
+        this.write(" ");
+        this.generateExpression(node.argument);
+      }
+      this.write(";\n");
+    }
+    // Generate BlockStatement
+    generateBlockStatement(node, addIndent = true) {
+      this.write("{\n");
+      if (addIndent) this.increaseIndent();
+      else this.indent++;
+      for (const stmt of node.body) {
+        this.generateStatement(stmt);
+      }
+      if (addIndent) this.decreaseIndent();
+      else this.indent--;
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("}");
+      if (addIndent) this.write("\n");
+    }
+    // Generate any expression
+    generateExpression(node) {
+      switch (node.type) {
+        case "Identifier":
+          return this.write(node.name);
+        case "Literal":
+          return this.generateLiteral(node);
+        case "BinaryExpression":
+        case "LogicalExpression":
+          return this.generateBinaryExpression(node);
+        case "UnaryExpression":
+          return this.generateUnaryExpression(node);
+        case "AssignmentExpression":
+          return this.generateAssignmentExpression(node);
+        case "UpdateExpression":
+          return this.generateUpdateExpression(node);
+        case "CallExpression":
+          return this.generateCallExpression(node);
+        case "MemberExpression":
+          return this.generateMemberExpression(node);
+        case "ConditionalExpression":
+          return this.generateConditionalExpression(node);
+        case "ArrayExpression":
+          return this.generateArrayExpression(node);
+        case "ObjectExpression":
+          return this.generateObjectExpression(node);
+        case "SwitchExpression":
+          return this.generateSwitchExpression(node);
+        case "SequenceExpression":
+          return this.generateSequenceExpression(node);
+        default:
+          throw new Error(`Unknown expression type: ${node.type}`);
+      }
+    }
+    // Generate Literal
+    generateLiteral(node) {
+      if (typeof node.value === "string") {
+        const escaped = node.value.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
+        this.write(`'${escaped}'`);
+      } else if (node.value === null) {
+        this.write("null");
+      } else {
+        this.write(String(node.value));
+      }
+    }
+    // Generate BinaryExpression
+    generateBinaryExpression(node) {
+      const needsParens = this.needsParentheses(node);
+      if (needsParens) this.write("(");
+      this.generateExpression(node.left);
+      this.write(" ");
+      let op = node.operator;
+      if (op === "and") op = "&&";
+      else if (op === "or") op = "||";
+      this.write(op);
+      this.write(" ");
+      this.generateExpression(node.right);
+      if (needsParens) this.write(")");
+    }
+    // Generate UnaryExpression
+    generateUnaryExpression(node) {
+      let op = node.operator;
+      if (op === "not") op = "!";
+      this.write(op);
+      this.generateExpression(node.argument);
+    }
+    // Generate AssignmentExpression
+    generateAssignmentExpression(node) {
+      this.generateExpression(node.left);
+      this.write(" ");
+      let op = node.operator;
+      if (op === ":=") op = "=";
+      this.write(op);
+      this.write(" ");
+      this.generateExpression(node.right);
+    }
+    // Generate UpdateExpression
+    generateUpdateExpression(node) {
+      if (node.prefix) {
+        this.write(node.operator);
+        this.generateExpression(node.argument);
+      } else {
+        this.generateExpression(node.argument);
+        this.write(node.operator);
+      }
+    }
+    // Generate CallExpression
+    generateCallExpression(node) {
+      this.generateExpression(node.callee);
+      this.write("(");
+      for (let i = 0; i < node.arguments.length; i++) {
+        const arg = node.arguments[i];
+        if (arg.type === "AssignmentExpression" && arg.operator === "=") {
+          this.generateExpression(arg.right);
+        } else {
+          this.generateExpression(arg);
+        }
+        if (i < node.arguments.length - 1) {
+          this.write(", ");
+        }
+      }
+      this.write(")");
+    }
+    // Generate MemberExpression
+    generateMemberExpression(node) {
+      this.generateExpression(node.object);
+      if (node.computed) {
+        this.write("[");
+        this.generateExpression(node.property);
+        this.write("]");
+      } else {
+        this.write(".");
+        this.generateExpression(node.property);
+      }
+    }
+    // Generate ConditionalExpression (ternary or IIFE)
+    generateConditionalExpression(node) {
+      if (node.needsIIFE) {
+        this.generateIIFEConditional(node);
+        return;
+      }
+      this.write("(");
+      this.generateExpression(node.test);
+      this.write(" ? ");
+      this.generateExpression(node.consequent);
+      this.write(" : ");
+      this.generateExpression(node.alternate);
+      this.write(")");
+    }
+    // Generate IIFE for complex if expressions
+    generateIIFEConditional(node) {
+      this.write("(() => {\n");
+      this.indent++;
+      this.generateIIFEIfBlock(node);
+      this.indent--;
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("})()");
+    }
+    // Helper to generate if block inside IIFE with returns
+    generateIIFEIfBlock(node) {
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("if (");
+      this.generateExpression(node.test);
+      this.write(") {\n");
+      this.indent++;
+      if (node.consequentStmts) {
+        for (let i = 0; i < node.consequentStmts.length; i++) {
+          const stmt = node.consequentStmts[i];
+          const isLast = i === node.consequentStmts.length - 1;
+          if (isLast) {
+            if (stmt.type === "ExpressionStatement") {
+              this.write(this.indentStr.repeat(this.indent));
+              this.write("return ");
+              this.generateExpression(stmt.expression);
+              this.write(";\n");
+            } else if (stmt.type === "IfStatement") {
+              this.generateNestedIfWithReturns(stmt);
+            } else {
+              this.generateStatement(stmt);
+            }
+          } else {
+            this.generateStatement(stmt);
+          }
+        }
+      }
+      this.indent--;
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("}");
+      if (node.alternateExpr) {
+        this.write(" else {\n");
+        this.indent++;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("return ");
+        this.generateExpression(node.alternateExpr);
+        this.write(";\n");
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("}");
+      } else if (node.alternateStmts && node.alternateStmts.length > 0) {
+        this.write(" else {\n");
+        this.indent++;
+        for (let i = 0; i < node.alternateStmts.length; i++) {
+          const stmt = node.alternateStmts[i];
+          const isLast = i === node.alternateStmts.length - 1;
+          if (isLast) {
+            if (stmt.type === "ExpressionStatement") {
+              this.write(this.indentStr.repeat(this.indent));
+              this.write("return ");
+              this.generateExpression(stmt.expression);
+              this.write(";\n");
+            } else if (stmt.type === "IfStatement") {
+              this.generateNestedIfWithReturns(stmt);
+            } else {
+              this.generateStatement(stmt);
+            }
+          } else {
+            this.generateStatement(stmt);
+          }
+        }
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("}");
+      } else {
+        this.write(" else {\n");
+        this.indent++;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("return false;\n");
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("}");
+      }
+      this.write("\n");
+    }
+    // Helper to generate nested if statement with returns (for IIFE)
+    generateNestedIfWithReturns(node) {
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("if (");
+      this.generateExpression(node.test);
+      this.write(") {\n");
+      this.indent++;
+      if (node.consequent.type === "BlockStatement" && node.consequent.body.length > 0) {
+        for (let i = 0; i < node.consequent.body.length; i++) {
+          const stmt = node.consequent.body[i];
+          const isLast = i === node.consequent.body.length - 1;
+          if (isLast) {
+            if (stmt.type === "ExpressionStatement") {
+              this.write(this.indentStr.repeat(this.indent));
+              this.write("return ");
+              this.generateExpression(stmt.expression);
+              this.write(";\n");
+            } else if (stmt.type === "IfStatement") {
+              this.generateNestedIfWithReturns(stmt);
+            } else {
+              this.generateStatement(stmt);
+            }
+          } else {
+            this.generateStatement(stmt);
+          }
+        }
+      }
+      this.indent--;
+      this.write(this.indentStr.repeat(this.indent));
+      this.write("}");
+      if (node.alternate) {
+        if (node.alternate.type === "IfStatement") {
+          this.write(" else ");
+          this.write("if (");
+          this.generateExpression(node.alternate.test);
+          this.write(") {\n");
+          this.indent++;
+          if (node.alternate.consequent.type === "BlockStatement" && node.alternate.consequent.body.length > 0) {
+            for (let i = 0; i < node.alternate.consequent.body.length; i++) {
+              const stmt = node.alternate.consequent.body[i];
+              const isLast = i === node.alternate.consequent.body.length - 1;
+              if (isLast) {
+                if (stmt.type === "ExpressionStatement") {
+                  this.write(this.indentStr.repeat(this.indent));
+                  this.write("return ");
+                  this.generateExpression(stmt.expression);
+                  this.write(";\n");
+                } else if (stmt.type === "IfStatement") {
+                  this.generateNestedIfWithReturns(stmt);
+                } else {
+                  this.generateStatement(stmt);
+                }
+              } else {
+                this.generateStatement(stmt);
+              }
+            }
+          }
+          this.indent--;
+          this.write(this.indentStr.repeat(this.indent));
+          this.write("}");
+          this.generateNestedIfAlternates(node.alternate.alternate);
+        } else if (node.alternate.type === "BlockStatement" && node.alternate.body.length > 0) {
+          this.write(" else {\n");
+          this.indent++;
+          for (let i = 0; i < node.alternate.body.length; i++) {
+            const stmt = node.alternate.body[i];
+            const isLast = i === node.alternate.body.length - 1;
+            if (isLast) {
+              if (stmt.type === "ExpressionStatement") {
+                this.write(this.indentStr.repeat(this.indent));
+                this.write("return ");
+                this.generateExpression(stmt.expression);
+                this.write(";\n");
+              } else if (stmt.type === "IfStatement") {
+                this.generateNestedIfWithReturns(stmt);
+              } else {
+                this.generateStatement(stmt);
+              }
+            } else {
+              this.generateStatement(stmt);
+            }
+          }
+          this.indent--;
+          this.write(this.indentStr.repeat(this.indent));
+          this.write("}\n");
+        } else {
+          this.write(" else {\n");
+          this.indent++;
+          this.write(this.indentStr.repeat(this.indent));
+          this.write("return false;\n");
+          this.indent--;
+          this.write(this.indentStr.repeat(this.indent));
+          this.write("}\n");
+        }
+      } else {
+        this.write("\n");
+      }
+    }
+    // Helper to continue generating else if / else chain
+    generateNestedIfAlternates(alternate) {
+      if (!alternate) {
+        return;
+      }
+      if (alternate.type === "IfStatement") {
+        this.write(" else ");
+        this.write("if (");
+        this.generateExpression(alternate.test);
+        this.write(") {\n");
+        this.indent++;
+        if (alternate.consequent.type === "BlockStatement" && alternate.consequent.body.length > 0) {
+          for (let i = 0; i < alternate.consequent.body.length; i++) {
+            const stmt = alternate.consequent.body[i];
+            const isLast = i === alternate.consequent.body.length - 1;
+            if (isLast) {
+              if (stmt.type === "ExpressionStatement") {
+                this.write(this.indentStr.repeat(this.indent));
+                this.write("return ");
+                this.generateExpression(stmt.expression);
+                this.write(";\n");
+              } else if (stmt.type === "IfStatement") {
+                this.generateNestedIfWithReturns(stmt);
+              } else {
+                this.generateStatement(stmt);
+              }
+            } else {
+              this.generateStatement(stmt);
+            }
+          }
+        }
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("}");
+        this.generateNestedIfAlternates(alternate.alternate);
+      } else if (alternate.type === "BlockStatement" && alternate.body.length > 0) {
+        this.write(" else {\n");
+        this.indent++;
+        for (let i = 0; i < alternate.body.length; i++) {
+          const stmt = alternate.body[i];
+          const isLast = i === alternate.body.length - 1;
+          if (isLast) {
+            if (stmt.type === "ExpressionStatement") {
+              this.write(this.indentStr.repeat(this.indent));
+              this.write("return ");
+              this.generateExpression(stmt.expression);
+              this.write(";\n");
+            } else if (stmt.type === "IfStatement") {
+              this.generateNestedIfWithReturns(stmt);
+            } else {
+              this.generateStatement(stmt);
+            }
+          } else {
+            this.generateStatement(stmt);
+          }
+        }
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("}\n");
+      } else {
+        this.write(" else {\n");
+        this.indent++;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("return false;\n");
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write("}\n");
+      }
+    }
+    // Helper to generate nested if as expression return
+    generateNestedIfAsExpression(node) {
+      if (node.type === "IfStatement") {
+        this.write("(");
+        this.generateExpression(node.test);
+        this.write(" ? ");
+        if (node.consequent.type === "BlockStatement" && node.consequent.body.length > 0) {
+          const lastStmt = node.consequent.body[node.consequent.body.length - 1];
+          if (lastStmt.type === "ExpressionStatement") {
+            this.generateExpression(lastStmt.expression);
+          } else if (lastStmt.type === "IfStatement") {
+            this.generateNestedIfAsExpression(lastStmt);
+          }
+        }
+        this.write(" : ");
+        if (node.alternate) {
+          if (node.alternate.type === "IfStatement") {
+            this.generateNestedIfAsExpression(node.alternate);
+          } else if (node.alternate.type === "BlockStatement" && node.alternate.body.length > 0) {
+            const lastStmt = node.alternate.body[node.alternate.body.length - 1];
+            if (lastStmt.type === "ExpressionStatement") {
+              this.generateExpression(lastStmt.expression);
+            }
+          } else {
+            this.write("false");
+          }
+        } else {
+          this.write("false");
+        }
+        this.write(")");
+      }
+    }
+    // Generate ArrayExpression
+    generateArrayExpression(node) {
+      this.write("[");
+      for (let i = 0; i < node.elements.length; i++) {
+        this.generateExpression(node.elements[i]);
+        if (i < node.elements.length - 1) {
+          this.write(", ");
+        }
+      }
+      this.write("]");
+    }
+    // Generate ObjectExpression
+    generateObjectExpression(node) {
+      this.write("{");
+      for (let i = 0; i < node.properties.length; i++) {
+        const prop = node.properties[i];
+        if (prop.key.type === "Identifier") {
+          this.write(prop.key.name);
+        } else {
+          this.generateExpression(prop.key);
+        }
+        this.write(": ");
+        this.generateExpression(prop.value);
+        if (i < node.properties.length - 1) {
+          this.write(", ");
+        }
+      }
+      this.write("}");
+    }
+    // Generate SwitchExpression (convert to ternary chain)
+    generateSwitchExpression(node) {
+      this.write("(");
+      for (let i = 0; i < node.cases.length; i++) {
+        const c = node.cases[i];
+        if (c.test) {
+          this.generateExpression(node.discriminant);
+          this.write(" == ");
+          this.generateExpression(c.test);
+          this.write(" ? ");
+          this.generateExpression(c.consequent);
+          this.write(" : ");
+        } else {
+          this.generateExpression(c.consequent);
+        }
+      }
+      const hasDefault = node.cases.some((c) => !c.test);
+      if (!hasDefault) {
+        this.write("undefined");
+      }
+      this.write(")");
+    }
+    // Generate SequenceExpression
+    generateSequenceExpression(node) {
+      this.write("(");
+      for (let i = 0; i < node.expressions.length; i++) {
+        this.generateExpression(node.expressions[i]);
+        if (i < node.expressions.length - 1) {
+          this.write(", ");
+        }
+      }
+      this.write(")");
+    }
+    // Helper: determine if expression needs parentheses
+    needsParentheses(node) {
+      return false;
+    }
+  }
+
+  function extractPineScriptVersion(sourceCode) {
+    const versionRegex = /^\s*\/\/\s*@version\s*=\s*(\d+)\s*$/im;
+    const match = sourceCode.match(versionRegex);
+    if (match && match[1]) {
+      return parseInt(match[1], 10);
+    }
+    return null;
+  }
+  function pineToJS(sourceCode, options = {}) {
+    const version = extractPineScriptVersion(sourceCode);
+    if (version === null) {
+      return {
+        success: false,
+        version: null,
+        error: "Pine Script version not found. Please add //@version=X comment to your script."
+      };
+    }
+    if (version < 5) {
+      return {
+        success: false,
+        version,
+        error: `Pine Script version ${version} is not supported. Only version 5 and above are supported.`
+      };
+    }
+    try {
+      const lexer = new Lexer(sourceCode);
+      const tokens = lexer.tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+      const codegenOptions = { ...options, sourceCode };
+      const codegen = new CodeGenerator(codegenOptions);
+      const jsCode = codegen.generate(ast);
+      return {
+        success: true,
+        version,
+        code: jsCode,
+        ast,
+        tokens
+      };
+    } catch (error) {
+      return {
+        success: false,
+        version,
+        error: error.message,
+        stack: error.stack
+      };
+    }
+  }
+
+  function getPineTSFromSource(source) {
+    if (typeof source === "function") {
+      return source.toString();
+    } else {
+      const pineScriptVersion = extractPineScriptVersion(source);
+      if (pineScriptVersion === null) {
+        return source;
+      }
+      if (pineScriptVersion >= 5) {
+        const pineToJSResult = pineToJS(source);
+        if (pineToJSResult.success) {
+          return pineToJSResult.code;
+        } else {
+          throw new Error(`Failed to transpile Pine Script version ${pineScriptVersion}: ${pineToJSResult.error}`);
+        }
+      } else {
+        throw new Error(`Unsupported Pine Script version ${pineScriptVersion}. Only version 5 and above are supported.`);
+      }
+    }
+  }
+  function transpile(source, options = { debug: false, ln: false }) {
     if (typeof options === "boolean") {
       options = { debug: options, ln: true };
     }
     const { debug } = options;
-    let code = typeof fn === "function" ? fn.toString() : fn;
-    code = code.trim();
+    let code = getPineTSFromSource(source);
     code = wrapInContextFunction(code);
     const sourceLines = debug ? code.split("\n") : [];
     const ast = parse(code, {
@@ -10105,7 +12874,7 @@ ${code}
     };
   }
 
-  function size$1(context) {
+  function size$2(context) {
     return (id) => {
       return id.array.length;
     };
@@ -10198,10 +12967,82 @@ ${code}
     dayofweek2[dayofweek2["saturday"] = 7] = "saturday";
     return dayofweek2;
   })(dayofweek || {});
+  var display = /* @__PURE__ */ ((display2) => {
+    display2["all"] = "all";
+    display2["data_window"] = "data_window";
+    display2["none"] = "none";
+    display2["pane"] = "pane";
+    display2["price_scale"] = "price_scale";
+    display2["status_line"] = "status_line";
+    return display2;
+  })(display || {});
+  var shape = /* @__PURE__ */ ((shape2) => {
+    shape2["flag"] = "flag";
+    shape2["arrowdown"] = "arrowdown";
+    shape2["arrowup"] = "arrowup";
+    shape2["circle"] = "circle";
+    shape2["cross"] = "cross";
+    shape2["diamond"] = "diamond";
+    shape2["labeldown"] = "labeldown";
+    shape2["labelup"] = "labelup";
+    shape2["square"] = "square";
+    shape2["triangledown"] = "triangledown";
+    shape2["triangleup"] = "triangleup";
+    shape2["xcross"] = "xcross";
+    return shape2;
+  })(shape || {});
+  var location = /* @__PURE__ */ ((location2) => {
+    location2["abovebar"] = "abovebar";
+    location2["belowbar"] = "belowbar";
+    location2["absolute"] = "absolute";
+    location2["bottom"] = "bottom";
+    location2["top"] = "top";
+    return location2;
+  })(location || {});
+  var size$1 = /* @__PURE__ */ ((size2) => {
+    size2["auto"] = "auto";
+    size2["tiny"] = "tiny";
+    size2["small"] = "small";
+    size2["normal"] = "normal";
+    size2["large"] = "large";
+    size2["huge"] = "huge";
+    return size2;
+  })(size$1 || {});
+  var format = /* @__PURE__ */ ((format2) => {
+    format2["inherit"] = "inherit";
+    format2["mintick"] = "mintick";
+    format2["percent"] = "percent";
+    format2["price"] = "price";
+    format2["volume"] = "volume";
+    return format2;
+  })(format || {});
+  var plot = /* @__PURE__ */ ((plot2) => {
+    plot2["linestyle_dashed"] = "linestyle_dashed";
+    plot2["linestyle_dotted"] = "linestyle_dotted";
+    plot2["linestyle_solid"] = "linestyle_solid";
+    plot2["style_area"] = "style_area";
+    plot2["style_areabr"] = "style_areabr";
+    plot2["style_circles"] = "style_circles";
+    plot2["style_columns"] = "style_columns";
+    plot2["style_cross"] = "style_cross";
+    plot2["style_histogram"] = "style_histogram";
+    plot2["style_line"] = "style_line";
+    plot2["style_linebr"] = "style_linebr";
+    plot2["style_stepline"] = "style_stepline";
+    plot2["style_stepline_diamond"] = "style_stepline_diamond";
+    plot2["style_steplinebr"] = "style_steplinebr";
+    return plot2;
+  })(plot || {});
   const types = {
     order,
     currency,
-    dayofweek
+    dayofweek,
+    display,
+    shape,
+    location,
+    size: size$1,
+    format,
+    plot
   };
 
   function sort$1(context) {
@@ -10427,7 +13268,7 @@ ${code}
       this._reverse = reverse$1(this.context);
       this._set = set$1(this.context);
       this._shift = shift(this.context);
-      this._size = size$1(this.context);
+      this._size = size$2(this.context);
       this._slice = slice(this.context);
       this._some = some(this.context);
       this._sort = sort$1(this.context);
@@ -10719,7 +13560,7 @@ ${code}
 
   function copy$1(context) {
     return (id) => {
-      const newMap = new PineMapObject(id.keyType, id.valueType, context);
+      const newMap = new PineMapObject(context);
       newMap.map = new Map(id.map);
       return newMap;
     };
@@ -10735,7 +13576,8 @@ ${code}
   function keys(context) {
     return (id) => {
       const keysArray = Array.from(id.map.keys());
-      return new PineArrayObject(keysArray, id.keyType, context);
+      const keyType = inferValueType(keysArray[0]);
+      return new PineArrayObject(keysArray, keyType, context);
     };
   }
 
@@ -10772,7 +13614,8 @@ ${code}
   function values(context) {
     return (id) => {
       const valuesArray = Array.from(id.map.values());
-      return new PineArrayObject(valuesArray, id.valueType, context);
+      const valueType = inferValueType(valuesArray[0]);
+      return new PineArrayObject(valuesArray, valueType, context);
     };
   }
 
@@ -10780,9 +13623,7 @@ ${code}
   var __defNormalProp$a = (obj, key, value) => key in obj ? __defProp$a(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __publicField$a = (obj, key, value) => __defNormalProp$a(obj, typeof key !== "symbol" ? key + "" : key, value);
   class PineMapObject {
-    constructor(keyType, valueType, context) {
-      this.keyType = keyType;
-      this.valueType = valueType;
+    constructor(context) {
       this.context = context;
       __publicField$a(this, "map");
       __publicField$a(this, "_clear");
@@ -10808,7 +13649,7 @@ ${code}
       this._values = values(this.context);
     }
     toString() {
-      return `PineMapObject<${this.keyType}, ${this.valueType}>(${this.map.size})`;
+      return `PineMapObject(${this.map.size})`;
     }
     clear(...args) {
       return this._clear(this, ...args);
@@ -10843,8 +13684,8 @@ ${code}
   }
 
   function new_fn$1(context) {
-    return (keyType, valueType) => {
-      return new PineMapObject(keyType, valueType, context);
+    return () => {
+      return new PineMapObject(context);
     };
   }
 
@@ -10972,7 +13813,8 @@ ${code}
       for (let i = 0; i < rows; i++) {
         result.push(id.matrix[i][column]);
       }
-      return new PineArrayObject(result, id.type, context);
+      const columnType = inferValueType(result[0]);
+      return new PineArrayObject(result, columnType, context);
     };
   }
 
@@ -11009,7 +13851,7 @@ ${code}
     return (id) => {
       const rows = id.matrix.length;
       const cols = rows > 0 ? id.matrix[0].length : 0;
-      const newMatrix = new PineMatrixObject(id.type, rows, cols, NaN, context);
+      const newMatrix = new PineMatrixObject(rows, cols, NaN, context);
       newMatrix.matrix = id.matrix.map((row) => [...row]);
       return newMatrix;
     };
@@ -11052,9 +13894,9 @@ ${code}
   function diff(context) {
     return (id, id2) => {
       const rows = id.matrix.length;
-      if (rows === 0) return new PineMatrixObject(id.type, 0, 0, NaN, context);
+      if (rows === 0) return new PineMatrixObject(0, 0, NaN, context);
       const cols = id.matrix[0].length;
-      const newMatrix = new PineMatrixObject(id.type, rows, cols, NaN, context);
+      const newMatrix = new PineMatrixObject(rows, cols, NaN, context);
       if (id2 instanceof PineMatrixObject) {
         for (let i = 0; i < rows; i++) {
           for (let j = 0; j < cols; j++) {
@@ -11094,9 +13936,13 @@ ${code}
     return (id) => {
       const rows = id.matrix.length;
       const cols = rows > 0 ? id.matrix[0].length : 0;
-      if (rows !== cols) return new PineArrayObject([], id.type, context);
+      if (rows !== cols) {
+        const anyType = inferValueType(id.matrix[0][0]);
+        return new PineArrayObject([], anyType, context);
+      }
       const vals = calculateEigenvalues(id.matrix);
-      return new PineArrayObject(vals, id.type, context);
+      const valueType = inferValueType(vals[0]);
+      return new PineArrayObject(vals, valueType, context);
     };
   }
 
@@ -11104,8 +13950,8 @@ ${code}
     return (id) => {
       const rows = id.matrix.length;
       const cols = rows > 0 ? id.matrix[0].length : 0;
-      if (rows !== cols) return new PineMatrixObject(id.type, 0, 0, NaN, context);
-      const newMatrix = new PineMatrixObject(id.type, rows, cols, 0, context);
+      if (rows !== cols) return new PineMatrixObject(0, 0, NaN, context);
+      const newMatrix = new PineMatrixObject(rows, cols, 0, context);
       for (let i = 0; i < rows; i++) newMatrix.matrix[i][i] = 1;
       return newMatrix;
     };
@@ -11164,9 +14010,9 @@ ${code}
     return (id) => {
       const rows = id.matrix.length;
       const cols = rows > 0 ? id.matrix[0].length : 0;
-      if (rows !== cols) return new PineMatrixObject(id.type, rows, cols, NaN, context);
+      if (rows !== cols) return new PineMatrixObject(rows, cols, NaN, context);
       const invMat = inverse(id.matrix);
-      const newMatrix = new PineMatrixObject(id.type, rows, cols, NaN, context);
+      const newMatrix = new PineMatrixObject(rows, cols, NaN, context);
       newMatrix.matrix = invMat;
       return newMatrix;
     };
@@ -11337,7 +14183,7 @@ ${code}
       const c2 = r2 > 0 ? id2.matrix[0].length : 0;
       const rows = r1 * r2;
       const cols = c1 * c2;
-      const newMatrix = new PineMatrixObject(id.type, rows, cols, NaN, context);
+      const newMatrix = new PineMatrixObject(rows, cols, NaN, context);
       for (let i = 0; i < r1; i++) {
         for (let j = 0; j < c1; j++) {
           const val1 = id.matrix[i][j];
@@ -11453,9 +14299,9 @@ ${code}
         const rows2 = id2.matrix.length;
         const cols2 = rows2 > 0 ? id2.matrix[0].length : 0;
         if (cols1 !== rows2) {
-          return new PineMatrixObject(id.type, 0, 0, NaN, context);
+          return new PineMatrixObject(0, 0, NaN, context);
         }
-        const newMatrix = new PineMatrixObject(id.type, rows1, cols2, 0, context);
+        const newMatrix = new PineMatrixObject(rows1, cols2, 0, context);
         for (let i = 0; i < rows1; i++) {
           for (let j = 0; j < cols2; j++) {
             let sum = 0;
@@ -11469,9 +14315,9 @@ ${code}
       } else if (id2 instanceof PineArrayObject || Array.isArray(id2.array || id2)) {
         const vec = id2.array || id2;
         if (cols1 !== vec.length) {
-          return new PineMatrixObject(id.type, 0, 0, NaN, context);
+          return new PineMatrixObject(0, 0, NaN, context);
         }
-        const newMatrix = new PineMatrixObject(id.type, rows1, 1, 0, context);
+        const newMatrix = new PineMatrixObject(rows1, 1, 0, context);
         for (let i = 0; i < rows1; i++) {
           let sum = 0;
           for (let j = 0; j < cols1; j++) {
@@ -11482,7 +14328,7 @@ ${code}
         return newMatrix;
       } else {
         const scalar = id2;
-        const newMatrix = new PineMatrixObject(id.type, rows1, cols1, NaN, context);
+        const newMatrix = new PineMatrixObject(rows1, cols1, NaN, context);
         for (let i = 0; i < rows1; i++) {
           for (let j = 0; j < cols1; j++) {
             newMatrix.matrix[i][j] = id.matrix[i][j] * scalar;
@@ -11498,9 +14344,9 @@ ${code}
       const rows = id.matrix.length;
       const cols = rows > 0 ? id.matrix[0].length : 0;
       if (rows === cols) {
-        return new PineMatrixObject(id.type, rows, cols, NaN, context);
+        return new PineMatrixObject(rows, cols, NaN, context);
       }
-      return new PineMatrixObject(id.type, cols, rows, NaN, context);
+      return new PineMatrixObject(cols, rows, NaN, context);
     };
   }
 
@@ -11509,17 +14355,17 @@ ${code}
       const rows = id.matrix.length;
       const cols = rows > 0 ? id.matrix[0].length : 0;
       if (rows !== cols) {
-        return new PineMatrixObject(id.type, 0, 0, NaN, context);
+        return new PineMatrixObject(0, 0, NaN, context);
       }
-      let result = new PineMatrixObject(id.type, rows, cols, 0, context);
+      let result = new PineMatrixObject(rows, cols, 0, context);
       for (let i = 0; i < rows; i++) result.matrix[i][i] = 1;
-      let base = new PineMatrixObject(id.type, rows, cols, NaN, context);
+      let base = new PineMatrixObject(rows, cols, NaN, context);
       for (let i = 0; i < rows; i++) base.matrix[i] = [...id.matrix[i]];
       let p = Math.floor(power);
-      if (p < 0) return new PineMatrixObject(id.type, rows, cols, NaN, context);
+      if (p < 0) return new PineMatrixObject(rows, cols, NaN, context);
       while (p > 0) {
         if (p % 2 === 1) {
-          const temp = new PineMatrixObject(id.type, rows, cols, 0, context);
+          const temp = new PineMatrixObject(rows, cols, 0, context);
           for (let i = 0; i < rows; i++) {
             for (let j = 0; j < cols; j++) {
               let sum = 0;
@@ -11531,7 +14377,7 @@ ${code}
           }
           result = temp;
         }
-        const tempBase = new PineMatrixObject(id.type, rows, cols, 0, context);
+        const tempBase = new PineMatrixObject(rows, cols, 0, context);
         for (let i = 0; i < rows; i++) {
           for (let j = 0; j < cols; j++) {
             let sum = 0;
@@ -11578,20 +14424,25 @@ ${code}
   function remove_col(context) {
     return (id, column_index) => {
       const rows = id.matrix.length;
-      if (rows === 0) return new PineArrayObject([], id.type, context);
+      if (rows === 0) {
+        const anyType = inferValueType(id.matrix[0][0]);
+        return new PineArrayObject([], anyType, context);
+      }
       const removedValues = [];
       for (let i = 0; i < rows; i++) {
         const removed = id.matrix[i].splice(column_index, 1);
         removedValues.push(removed[0]);
       }
-      return new PineArrayObject(removedValues, id.type, context);
+      const removedValueType = inferValueType(removedValues[0]);
+      return new PineArrayObject(removedValues, removedValueType, context);
     };
   }
 
   function remove_row(context) {
     return (id, row_index) => {
       const removed = id.matrix.splice(row_index, 1);
-      return new PineArrayObject(removed[0] || [], id.type, context);
+      const removedValueType = inferValueType(removed[0][0]);
+      return new PineArrayObject(removed[0] || [], removedValueType, context);
     };
   }
 
@@ -11632,8 +14483,12 @@ ${code}
 
   function row(context) {
     return (id, row2) => {
-      if (!id.matrix[row2]) return new PineArrayObject([], id.type, context);
-      return new PineArrayObject([...id.matrix[row2]], id.type, context);
+      if (!id.matrix[row2]) {
+        const anyType = inferValueType(id.matrix[0][0]);
+        return new PineArrayObject([], anyType, context);
+      }
+      const rowType = inferValueType(id.matrix[row2][0]);
+      return new PineArrayObject([...id.matrix[row2]], rowType, context);
     };
   }
 
@@ -11668,7 +14523,7 @@ ${code}
     return (id, from_row, to_row, from_col, to_col) => {
       const rows = to_row - from_row;
       const cols = to_col - from_col;
-      const newMatrix = new PineMatrixObject(id.type, rows, cols, NaN, context);
+      const newMatrix = new PineMatrixObject(rows, cols, NaN, context);
       for (let i = 0; i < rows; i++) {
         const sourceRow = from_row + i;
         if (sourceRow >= id.matrix.length) break;
@@ -11685,9 +14540,9 @@ ${code}
   function sum$1(context) {
     return (id, id2) => {
       const rows = id.matrix.length;
-      if (rows === 0) return new PineMatrixObject(id.type, 0, 0, NaN, context);
+      if (rows === 0) return new PineMatrixObject(0, 0, NaN, context);
       const cols = id.matrix[0].length;
-      const newMatrix = new PineMatrixObject(id.type, rows, cols, NaN, context);
+      const newMatrix = new PineMatrixObject(rows, cols, NaN, context);
       if (id2 instanceof PineMatrixObject) {
         for (let i = 0; i < rows; i++) {
           for (let j = 0; j < cols; j++) {
@@ -11744,9 +14599,9 @@ ${code}
   function transpose(context) {
     return (id) => {
       const rows = id.matrix.length;
-      if (rows === 0) return new PineMatrixObject(id.type, 0, 0, NaN, context);
+      if (rows === 0) return new PineMatrixObject(0, 0, NaN, context);
       const cols = id.matrix[0].length;
-      const newMatrix = new PineMatrixObject(id.type, cols, rows, NaN, context);
+      const newMatrix = new PineMatrixObject(cols, rows, NaN, context);
       for (let i = 0; i < rows; i++) {
         for (let j = 0; j < cols; j++) {
           newMatrix.matrix[j][i] = id.matrix[i][j];
@@ -11760,8 +14615,7 @@ ${code}
   var __defNormalProp$9 = (obj, key, value) => key in obj ? __defProp$9(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __publicField$9 = (obj, key, value) => __defNormalProp$9(obj, typeof key !== "symbol" ? key + "" : key, value);
   class PineMatrixObject {
-    constructor(type, rows$1 = 0, cols = 0, initialValue = NaN, context) {
-      this.type = type;
+    constructor(rows$1 = 0, cols = 0, initialValue = NaN, context) {
       this.context = context;
       __publicField$9(this, "matrix");
       __publicField$9(this, "_add_col");
@@ -12022,8 +14876,8 @@ ${code}
   }
 
   function new_fn(context) {
-    return (type, rows, cols, initial_value) => {
-      return new PineMatrixObject(type, rows, cols, initial_value, context);
+    return (rows, cols, initial_value) => {
+      return new PineMatrixObject(rows, cols, initial_value, context);
     };
   }
 
@@ -12123,9 +14977,97 @@ ${code}
     }
   }
 
+  const TYPE_CHECK = {
+    series: (arg) => arg instanceof Series || typeof arg === "number",
+    string: (arg) => typeof arg === "string",
+    number: (arg) => typeof arg === "number",
+    boolean: (arg) => typeof arg === "boolean",
+    array: (arg) => Array.isArray(arg),
+    object: (arg) => typeof arg === "object",
+    primitive: (arg) => typeof arg === null || typeof arg !== "object" && typeof arg !== "function",
+    function: (arg) => typeof arg === "function",
+    undefined: (arg) => arg === void 0,
+    null: (arg) => arg === null,
+    NaN: (arg) => isNaN(arg),
+    //TODO should we exclude the other PineTS Objects ?
+    remaining_options: (arg) => typeof arg === "object" && !(arg instanceof Series)
+  };
+  function parseArgsForPineParams(args, signatures, types) {
+    if (Array.isArray(signatures) && typeof signatures[0] === "string") {
+      signatures = [signatures];
+    }
+    const options = {};
+    let options_arg = {};
+    const valid = new Array(signatures.length).fill(true);
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i];
+      if (TYPE_CHECK.remaining_options(arg)) {
+        options_arg = arg;
+        break;
+      }
+      const curOptions = signatures.map((e, idx) => valid[idx] ? e[i] : void 0);
+      for (let o = 0; o < curOptions.length; o++) {
+        const optionName = curOptions[o];
+        if (optionName === void 0) {
+          valid[o] = false;
+          continue;
+        }
+        const typeChecker = TYPE_CHECK[types[optionName]];
+        if (typeof typeChecker === "function" && typeChecker(arg)) {
+          options[optionName] = arg;
+        } else {
+          valid[o] = false;
+        }
+      }
+    }
+    return { ...options_arg, ...options };
+  }
+
   var __defProp$7 = Object.defineProperty;
   var __defNormalProp$7 = (obj, key, value) => key in obj ? __defProp$7(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __publicField$7 = (obj, key, value) => __defNormalProp$7(obj, typeof key !== "symbol" ? key + "" : key, value);
+  const INDICATOR_SIGNATURE = [
+    "title",
+    "shorttitle",
+    "overlay",
+    "format",
+    "precision",
+    "scale",
+    "max_bars_back",
+    "timeframe",
+    "timeframe_gaps",
+    "explicit_plot_zorder",
+    "max_lines_count",
+    "max_labels_count",
+    "max_boxes_count",
+    "calc_bars_count",
+    "max_polylines_count",
+    "dynamic_requests",
+    "behind_chart"
+  ];
+  const INDICATOR_ARGS_TYPES = {
+    title: "string",
+    shorttitle: "string",
+    overlay: "boolean",
+    format: "string",
+    precision: "number",
+    scale: "string",
+    ////TODO : handle enums types
+    max_bars_back: "number",
+    timeframe: "string",
+    timeframe_gaps: "boolean",
+    explicit_plot_zorder: "boolean",
+    max_lines_count: "number",
+    max_labels_count: "number",
+    max_boxes_count: "number",
+    calc_bars_count: "number",
+    max_polylines_count: "number",
+    dynamic_requests: "boolean",
+    behind_chart: "boolean"
+  };
+  function parseIndicatorOptions(args) {
+    return parseArgsForPineParams(args, INDICATOR_SIGNATURE, INDICATOR_ARGS_TYPES);
+  }
   class Core {
     constructor(context) {
       this.context = context;
@@ -12176,30 +15118,29 @@ ${code}
       }
       return _options;
     }
-    indicator(title, shorttitle, options) {
-    }
-    //in the current implementation, plot functions are only used to collect data for the plots array and map it to the market data
-    plotchar(series, title, options) {
-      if (!this.context.plots[title]) {
-        this.context.plots[title] = { data: [], options: this.extractPlotOptions(options), title };
-      }
-      const value = Series.from(series).get(0);
-      this.context.plots[title].data.push({
-        time: this.context.marketData[this.context.idx].openTime,
-        value,
-        options: { ...this.extractPlotOptions(options), style: "char" }
-      });
-    }
-    plot(series, title, options) {
-      if (!this.context.plots[title]) {
-        this.context.plots[title] = { data: [], options: this.extractPlotOptions(options), title };
-      }
-      const value = Series.from(series).get(0);
-      this.context.plots[title].data.push({
-        time: this.context.marketData[this.context.idx].openTime,
-        value,
-        options: this.extractPlotOptions(options)
-      });
+    indicator(...args) {
+      const options = parseIndicatorOptions(args);
+      const defaults = {
+        title: "",
+        shorttitle: "",
+        overlay: false,
+        format: "inherit",
+        precision: 10,
+        scale: "points",
+        max_bars_back: 0,
+        timeframe: "",
+        timeframe_gaps: true,
+        explicit_plot_zorder: false,
+        max_lines_count: 50,
+        max_labels_count: 50,
+        max_boxes_count: 50,
+        calc_bars_count: 0,
+        max_polylines_count: 50,
+        dynamic_requests: false,
+        behind_chart: true
+      };
+      this.context.indicator = { ...defaults, ...options };
+      return this.context.indicator;
     }
     get bar_index() {
       return this.context.idx;
@@ -12212,96 +15153,171 @@ ${code}
       const rep = Series.from(replacement).get(0);
       return isNaN(val) ? rep : val;
     }
+    fixnan(series) {
+      const _s = Series.from(series);
+      for (let i = 0; i < _s.length; i++) {
+        const val = _s.get(i);
+        if (!isNaN(val)) {
+          return val;
+        }
+      }
+      return NaN;
+    }
+    alertcondition(condition, title, message) {
+    }
+    //types
+    bool(series) {
+      const val = Series.from(series).get(0);
+      return !isNaN(val) && val !== 0;
+    }
+    int(series) {
+      const val = Series.from(series).get(0);
+      if (typeof val !== "number")
+        throw new Error(
+          `Cannot call "int" with argument "x"="${val}". An argument of "literal string" type was used but a "simple int" is expected.`
+        );
+      return Math.floor(val);
+    }
+    float(series) {
+      const val = Series.from(series).get(0);
+      if (typeof val !== "number")
+        throw new Error(
+          `Cannot call "float" with argument "x"="${val}". An argument of "literal string" type was used but a "const float" is expected.`
+        );
+      return val;
+    }
+    string(series) {
+      const val = Series.from(series).get(0);
+      return val.toString();
+    }
+  }
+
+  const INPUT_SIGNATURES = [
+    ["defval", "title", "tooltip", "inline", "group", "display"],
+    ["defval", "title", "tooltip", "group", "confirm", "display"],
+    ["defval", "title", "tooltip", "inline", "group", "confirm", "display"],
+    ["defval", "title", "options", "tooltip", "inline", "group", "confirm", "display"],
+    ["defval", "title", "minval", "maxval", "step", "tooltip", "inline", "group", "confirm", "display"]
+  ];
+  const INPUT_ARGS_TYPES = {
+    defval: "primitive",
+    title: "string",
+    tooltip: "string",
+    inline: "string",
+    group: "string",
+    display: "string",
+    confirm: "boolean",
+    options: "array",
+    minval: "number",
+    maxval: "number",
+    step: "number"
+  };
+  function parseInputOptions(args) {
+    return parseArgsForPineParams(args, INPUT_SIGNATURES, INPUT_ARGS_TYPES);
   }
 
   function any(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
   function bool(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
   function color(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
   function enum_fn(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
   function float(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
   function int(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
   function param$3(context) {
     return (source, index = 0) => {
       const val = Series.from(source).get(index);
-      return [val];
+      return val;
     };
   }
 
   function price(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
   function session(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
   function source(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
   function string(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
   function symbol(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
   function text_area(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
   function time(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
   function timeframe(context) {
-    return (value, { title, group } = {}) => {
-      return Array.isArray(value) ? value[0] : value;
+    return (...args) => {
+      const options = parseInputOptions(args);
+      return options.defval;
     };
   }
 
@@ -12552,9 +15568,12 @@ ${code}
     return (a, b) => {
       const valA = Series.from(a).get(0);
       const valB = Series.from(b).get(0);
-      if (isNaN(valA) && isNaN(valB)) return true;
-      if (isNaN(valA) || isNaN(valB)) return false;
-      return Math.abs(valA - valB) < 1e-8;
+      if (typeof valA === "number" && typeof valB === "number") {
+        if (isNaN(valA) && isNaN(valB)) return true;
+        if (isNaN(valA) || isNaN(valB)) return false;
+        return Math.abs(valA - valB) < 1e-8;
+      }
+      return valA === valB;
     };
   }
 
@@ -12948,6 +15967,9 @@ ${code}
       const high = context.get(context.data.high, 0);
       const low = context.get(context.data.low, 0);
       const close = context.get(context.data.close, 0);
+      if (isNaN(high) || isNaN(low) || isNaN(close)) {
+        return NaN;
+      }
       let tr;
       if (state.prevClose !== null) {
         const hl = high - low;
@@ -13442,6 +16464,9 @@ ${code}
       }
       const state = context.taState[stateKey];
       const currentValue = Series.from(source).get(0);
+      if (currentValue === null || currentValue === void 0 || isNaN(currentValue)) {
+        return NaN;
+      }
       if (state.initCount < period) {
         state.initSum += currentValue;
         state.initCount++;
@@ -14110,8 +17135,8 @@ ${code}
   }
 
   function pivothigh(context) {
-    return (source, _leftbars, _rightbars) => {
-      if (_rightbars == void 0) {
+    return (source, _leftbars, _rightbars, _callId) => {
+      if (typeof _rightbars === "string") {
         _rightbars = _leftbars;
         _leftbars = source;
         source = context.data.high;
@@ -14152,8 +17177,8 @@ ${code}
   }
 
   function pivotlow(context) {
-    return (source, _leftbars, _rightbars) => {
-      if (_rightbars == void 0) {
+    return (source, _leftbars, _rightbars, _callId) => {
+      if (typeof _rightbars === "string") {
         _rightbars = _leftbars;
         _leftbars = source;
         source = context.data.low;
@@ -14468,6 +17493,9 @@ ${code}
       }
       const state = context.taState[stateKey];
       const currentValue = Series.from(source).get(0);
+      if (currentValue === null || currentValue === void 0 || isNaN(currentValue)) {
+        return NaN;
+      }
       state.window.unshift(currentValue);
       state.sum += currentValue;
       if (state.window.length < length) {
@@ -15336,6 +18364,200 @@ ${code}
     }
   }
 
+  const PLOT_SIGNATURE = [
+    "series",
+    "title",
+    "color",
+    "linewidth",
+    "style",
+    "trackprice",
+    "histbase",
+    "offset",
+    "join",
+    "editable",
+    "show_last",
+    "display",
+    "format",
+    "precision",
+    "force_overlay"
+  ];
+  const PLOT_SHAPE_SIGNATURE = [
+    "series",
+    "title",
+    "style",
+    "location",
+    "color",
+    "offset",
+    "text",
+    "textcolor",
+    "editable",
+    "size",
+    "show_last",
+    "display",
+    "format",
+    "precision",
+    "force_overlay"
+  ];
+  const PLOT_ARROW_SIGNATURE = [
+    "series",
+    "title",
+    "colorup",
+    "colordown",
+    "offset",
+    "minheight",
+    "maxheight",
+    "editable",
+    "show_last",
+    "display",
+    "format",
+    "precision",
+    "force_overlay"
+  ];
+  const PLOT_ARGS_TYPES = {
+    series: "series",
+    title: "string",
+    color: "string",
+    linewidth: "number",
+    style: "string",
+    trackprice: "boolean",
+    histbase: "number",
+    offset: "number",
+    join: "bool",
+    editable: "boolean",
+    show_last: "number",
+    display: "string",
+    format: "string",
+    precision: "number",
+    force_overlay: "boolean"
+  };
+  const PLOT_SHAPE_ARGS_TYPES = {
+    series: "series",
+    title: "string",
+    style: "string",
+    location: "string",
+    color: "string",
+    offset: "number",
+    text: "string",
+    textcolor: "string",
+    editable: "boolean",
+    size: "string",
+    show_last: "number",
+    display: "string",
+    format: "string",
+    precision: "number",
+    force_overlay: "boolean"
+  };
+  const PLOT_ARROW_ARGS_TYPES = {
+    series: "series",
+    title: "string",
+    colorup: "string",
+    colordown: "string",
+    offset: "number",
+    minheight: "number",
+    maxheight: "number",
+    editable: "boolean",
+    show_last: "number",
+    display: "string",
+    format: "string",
+    precision: "number",
+    force_overlay: "boolean"
+  };
+  class PlotHelper {
+    constructor(context) {
+      this.context = context;
+    }
+    extractPlotOptions(options) {
+      const _options = {};
+      for (let key in options) {
+        _options[key] = Series.from(options[key]).get(0);
+      }
+      return _options;
+    }
+    //in the current implementation, plot functions are only used to collect data for the plots array and map it to the market data
+    plotchar(...args) {
+      this.plot(...args);
+    }
+    plot(...args) {
+      const _parsed = parseArgsForPineParams(args, PLOT_SIGNATURE, PLOT_ARGS_TYPES);
+      const { series, title, ...others } = _parsed;
+      const options = this.extractPlotOptions(others);
+      if (!this.context.plots[title]) {
+        this.context.plots[title] = { data: [], options, title };
+      }
+      const value = Series.from(series).get(0);
+      this.context.plots[title].data.push({
+        time: this.context.marketData[this.context.idx].openTime,
+        value,
+        options: { color: options.color, offset: options.offset }
+      });
+    }
+    plotshape(...args) {
+      const _parsed = parseArgsForPineParams(args, PLOT_SHAPE_SIGNATURE, PLOT_SHAPE_ARGS_TYPES);
+      const { series, title, ...others } = _parsed;
+      const options = this.extractPlotOptions(others);
+      if (!this.context.plots[title]) {
+        this.context.plots[title] = { data: [], options: { ...options, style: "shape", shape: options.style }, title };
+      }
+      const value = Series.from(series).get(0);
+      this.context.plots[title].data.push({
+        time: this.context.marketData[this.context.idx].openTime,
+        value,
+        options: options?.location === "absolute" || value ? {
+          text: options.text,
+          textcolor: options.textcolor,
+          color: options.color,
+          offset: options.offset,
+          shape: options.style,
+          location: options.location,
+          size: options.size
+        } : void 0
+      });
+    }
+    plotarrow(...args) {
+      const _parsed = parseArgsForPineParams(args, PLOT_ARROW_SIGNATURE, PLOT_ARROW_ARGS_TYPES);
+      const { series, title, ...others } = _parsed;
+      const value = Series.from(series).get(0);
+      const options = this.extractPlotOptions(others);
+      if (!this.context.plots[title]) {
+        this.context.plots[title] = { data: [], options: { ...options, style: "shape" }, title };
+      }
+      this.context.plots[title].data.push({
+        time: this.context.marketData[this.context.idx].openTime,
+        value,
+        options: value !== 0 ? {
+          text: void 0,
+          textcolor: void 0,
+          color: value > 0 ? options.colorup : options.colordown,
+          offset: options.offset,
+          shape: value > 0 ? "arrowup" : "arrowdown",
+          location: value > 0 ? "belowbar" : "abovebar",
+          height: options.maxheight
+        } : void 0
+      });
+    }
+  }
+  class HlineHelper {
+    constructor(context) {
+      this.context = context;
+    }
+    get style_dashed() {
+      return "dashed";
+    }
+    get style_solid() {
+      return "solid";
+    }
+    get style_dotted() {
+      return "dotted";
+    }
+    param(source, index = 0, name) {
+      return Series.from(source).get(index);
+    }
+    //this will map to hline()
+    any(price, title, color, linestyle, linewidth, editable, display) {
+      return this.context.pine.plot(price, { title, color, linestyle, linewidth, editable, display });
+    }
+  }
+
   var __defProp$2 = Object.defineProperty;
   var __defNormalProp$2 = (obj, key, value) => key in obj ? __defProp$2(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __publicField$2 = (obj, key, value) => __defNormalProp$2(obj, typeof key !== "symbol" ? key + "" : key, value);
@@ -15361,6 +18583,7 @@ ${code}
         ohlc4: new Series([]),
         hlcc4: new Series([])
       });
+      __publicField$2(this, "indicator");
       __publicField$2(this, "cache", {});
       __publicField$2(this, "taState", {});
       // State for incremental TA calculations
@@ -15396,11 +18619,17 @@ ${code}
       this.fullContext = fullContext || this;
       const core = new Core(this);
       const coreFunctions = {
-        plotchar: core.plotchar.bind(core),
+        // plot: core.plot.bind(core),
+        // plotchar: core.plotchar.bind(core),
+        // hline: core.hline.bind(core),
         na: core.na.bind(core),
         color: core.color,
-        plot: core.plot.bind(core),
-        nz: core.nz.bind(core)
+        nz: core.nz.bind(core),
+        indicator: core.indicator.bind(core),
+        fixnan: core.fixnan.bind(core),
+        alertcondition: core.alertcondition.bind(core),
+        //types
+        bool: core.bool.bind(core)
       };
       const _this = this;
       this.pine = {
@@ -15411,11 +18640,6 @@ ${code}
         array: new PineArray(this),
         map: new PineMap(this),
         matrix: new PineMatrix(this),
-        na: coreFunctions.na,
-        plotchar: coreFunctions.plotchar,
-        color: coreFunctions.color,
-        plot: coreFunctions.plot,
-        nz: coreFunctions.nz,
         syminfo: null,
         timeframe: new Timeframe(this),
         //FIXME : this is a temporary solution to get the barstate values,
@@ -15435,8 +18659,24 @@ ${code}
         },
         log: new Log(this),
         str: new Str(this),
+        ...coreFunctions,
         ...types
       };
+      const plotHelper = new PlotHelper(this);
+      const hlineHelper = new HlineHelper(this);
+      this.bindContextObject(plotHelper, ["plot", "plotchar", "plotshape", "plotarrow"]);
+      this.bindContextObject(hlineHelper, ["any", "style_dashed", "style_solid", "style_dotted", "param"], "hline");
+    }
+    bindContextObject(instance, entries, root = "") {
+      if (root && !this.pine[root]) this.pine[root] = {};
+      const target = root ? this.pine[root] : this.pine;
+      for (const entry of entries) {
+        if (typeof instance[entry] === "function") {
+          target[entry] = instance[entry].bind(instance);
+        } else {
+          target[entry] = instance[entry];
+        }
+      }
     }
     //#region [Runtime functions] ===========================
     /**
@@ -15619,6 +18859,8 @@ ${code}
       return {
         na: this.pine.na,
         plotchar: this.pine.plotchar,
+        plotshape: this.pine.plotshape,
+        plotarrow: this.pine.plotarrow,
         color: this.pine.color,
         plot: this.pine.plot,
         nz: this.pine.nz
@@ -16077,7 +19319,8 @@ ${code}
   var __defProp = Object.defineProperty;
   var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-  const BINANCE_API_URL = "https://api.binance.com/api/v3";
+  const BINANCE_API_URL_DEFAULT = "https://api.binance.com/api/v3";
+  const BINANCE_API_URL_US = "https://api.binance.us/api/v3";
   const timeframe_to_binance = {
     "1": "1m",
     // 1 minute
@@ -16155,9 +19398,44 @@ ${code}
     }
   }
   class BinanceProvider {
+    // Persist the working endpoint
     constructor() {
       __publicField(this, "cacheManager");
+      __publicField(this, "activeApiUrl", null);
       this.cacheManager = new CacheManager(5 * 60 * 1e3);
+    }
+    /**
+     * Resolves the working Binance API endpoint.
+     * Tries default first, then falls back to US endpoint.
+     * Caches the working endpoint for future calls.
+     */
+    async getBaseUrl() {
+      if (this.activeApiUrl) {
+        return this.activeApiUrl;
+      }
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5e3);
+        const response = await fetch(`${BINANCE_API_URL_DEFAULT}/ping`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (response.ok) {
+          this.activeApiUrl = BINANCE_API_URL_DEFAULT;
+          return this.activeApiUrl;
+        }
+      } catch (e) {
+      }
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5e3);
+        const response = await fetch(`${BINANCE_API_URL_US}/ping`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (response.ok) {
+          this.activeApiUrl = BINANCE_API_URL_US;
+          return this.activeApiUrl;
+        }
+      } catch (e) {
+      }
+      return BINANCE_API_URL_DEFAULT;
     }
     async getMarketDataInterval(tickerId, timeframe, sDate, eDate) {
       try {
@@ -16229,7 +19507,8 @@ ${code}
           this.cacheManager.set(cacheParams, result2);
           return result2;
         }
-        let url = `${BINANCE_API_URL}/klines?symbol=${tickerId}&interval=${interval}`;
+        const baseUrl = await this.getBaseUrl();
+        let url = `${baseUrl}/klines?symbol=${tickerId}&interval=${interval}`;
         if (limit) {
           url += `&limit=${Math.min(limit, 1e3)}`;
         }
@@ -16302,7 +19581,8 @@ ${code}
     async getSymbolInfo(tickerId) {
       try {
         let marketType = "crypto";
-        let apiUrl = BINANCE_API_URL;
+        const baseUrl = await this.getBaseUrl();
+        let apiUrl = baseUrl;
         let apiSymbol = tickerId;
         let contractType = "";
         if (tickerId.endsWith(".P")) {

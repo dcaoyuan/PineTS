@@ -166,7 +166,30 @@ export class Context {
 
         const plotHelper = new PlotHelper(this);
         const hlineHelper = new HlineHelper(this);
-        this.bindContextObject(plotHelper, ['plot', 'plotchar', 'plotshape', 'plotarrow']);
+        this.bindContextObject(plotHelper, ['plotchar', 'plotshape', 'plotarrow']);
+        this.bindContextObject(
+            plotHelper,
+            [
+                'any',
+                'param',
+                'linestyle_dashed',
+                'linestyle_dotted',
+                'linestyle_solid',
+                'style_area',
+                'style_areabr',
+                'style_circles',
+                'style_columns',
+                'style_cross',
+                'style_histogram',
+                'style_line',
+                'style_linebr',
+                'style_stepline',
+                'style_stepline_diamond',
+                'style_steplinebr',
+            ],
+            'plot'
+        );
+
         this.bindContextObject(hlineHelper, ['any', 'style_dashed', 'style_solid', 'style_dotted', 'param'], 'hline');
     }
 

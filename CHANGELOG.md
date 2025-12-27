@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.7.4] - 2025-12-27 - Plot styles fix + PineScript transpiler coverage
+
+### Added
+
+-   Unit-tests for PineToJS transpiler branch bringing the total coverage back to > 80%
+
+### Fixed
+
+-   plot styles were missing in the generated code (e.g plot.style_columns ...etc )
+
 ## [0.7.3] - 2025-12-24 - Plot Functions & PineScript Types Enhancement
 
 ### Added

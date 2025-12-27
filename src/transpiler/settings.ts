@@ -2,7 +2,7 @@
 export const KNOWN_NAMESPACES = ['ta', 'math', 'request', 'array', 'input'];
 
 // This is used to transform ns() calls to ns.any() calls
-export const NAMESPACES_LIKE = ['hline'];
+export const NAMESPACES_LIKE = ['hline', 'plot'];
 
 // Async methods that require await keyword (format: 'namespace.method')
 export const ASYNC_METHODS = ['request.security', 'request.security_lower_tf'];

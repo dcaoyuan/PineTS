@@ -408,15 +408,16 @@ let src_open = input.any({ title: 'Open Source', defval: open });
         const expected_code = `async $ => {
   const {ta, plot, na, bool} = $.pine;
   $.let.glb1_highUsePivot = $.init($.let.glb1_highUsePivot, 10);
-  const p0 = $.param($.let.glb1_highUsePivot, undefined, 'p0');
+  const p0 = plot.param($.let.glb1_highUsePivot, undefined, 'p0');
   const p1 = ta.param($.let.glb1_highUsePivot, undefined, 'p1');
   const temp_1 = ta.change(p1, "_ta0");
   const p2 = $.param(temp_1, undefined, 'p2');
-  const p3 = $.param(bool(p2) ? NaN : "#FF0000", undefined, 'p3');
-  const p4 = $.param({
+  const p3 = plot.param(bool(p2) ? NaN : "#FF0000", undefined, 'p3');
+  const p4 = plot.param({
     color: p3
   }, undefined, 'p4');
-  plot(p0, p4);
+  const temp_2 = plot.any(p0, p4);
+  temp_2;
 }`;
 
         expect(result).toBe(expected_code);
@@ -575,24 +576,27 @@ let src_open = input.any({ title: 'Open Source', defval: open });
   const {close, open} = $.data;
   const {plot} = $.core;
   $.const.glb1_res = $.init($.const.glb1_res, open);
-  const p0 = $.param(close && open ? 1 : $.get($.const.glb1_res, 0), undefined, 'p0');
-  const p1 = $.param("plot1", undefined, 'p1');
-  const p2 = $.param({
+  const p0 = plot.param(close && open ? 1 : $.get($.const.glb1_res, 0), undefined, 'p0');
+  const p1 = plot.param("plot1", undefined, 'p1');
+  const p2 = plot.param({
     color: "white"
   }, undefined, 'p2');
-  plot(p0, p1, p2);
-  const p3 = $.param($.get(close, 0) && $.get(open, 0), undefined, 'p3');
-  const p4 = $.param("plot2", undefined, 'p4');
-  const p5 = $.param({
+  const temp_1 = plot.any(p0, p1, p2);
+  temp_1;
+  const p3 = plot.param($.get(close, 0) && $.get(open, 0), undefined, 'p3');
+  const p4 = plot.param("plot2", undefined, 'p4');
+  const p5 = plot.param({
     color: "white"
   }, undefined, 'p5');
-  plot(p3, p4, p5);
-  const p6 = $.param(-$.get($.const.glb1_res, 0), undefined, 'p6');
-  const p7 = $.param("plot3", undefined, 'p7');
-  const p8 = $.param({
+  const temp_2 = plot.any(p3, p4, p5);
+  temp_2;
+  const p6 = plot.param(-$.get($.const.glb1_res, 0), undefined, 'p6');
+  const p7 = plot.param("plot3", undefined, 'p7');
+  const p8 = plot.param({
     color: "white"
   }, undefined, 'p8');
-  plot(p6, p7, p8);
+  const temp_3 = plot.any(p6, p7, p8);
+  temp_3;
 }`;
 
         expect(result).toBe(expected_code);

@@ -11,7 +11,7 @@ describe('Indicators', () => {
             const ta = context.ta;
 
             const { close, hl2 } = context.data;
-            const { na, nz, plot } = context.core;
+            const { na, nz, plot } = context.pine;
 
             function pine_supertrend(factor, atrPeriod) {
                 const src = hl2;

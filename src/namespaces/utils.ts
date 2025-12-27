@@ -1,7 +1,7 @@
 import { Series } from '../Series';
 
 const TYPE_CHECK = {
-    series: (arg) => arg instanceof Series || typeof arg === 'number',
+    series: (arg) => arg instanceof Series || typeof arg === 'number' || typeof arg === 'string' || typeof arg === 'boolean',
     string: (arg) => typeof arg === 'string',
     number: (arg) => typeof arg === 'number',
     boolean: (arg) => typeof arg === 'boolean',

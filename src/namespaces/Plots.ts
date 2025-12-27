@@ -53,6 +53,53 @@ export class PlotHelper {
         return _options;
     }
 
+    public get linestyle_dashed() {
+        return 'linestyle_dashed';
+    }
+    public get linestyle_dotted() {
+        return 'linestyle_dotted';
+    }
+    public get linestyle_solid() {
+        return 'linestyle_solid';
+    }
+    public get style_area() {
+        return 'style_area';
+    }
+    public get style_areabr() {
+        return 'style_areabr';
+    }
+    public get style_circles() {
+        return 'style_circles';
+    }
+    public get style_columns() {
+        return 'style_columns';
+    }
+    public get style_cross() {
+        return 'style_cross';
+    }
+    public get style_histogram() {
+        return 'style_histogram';
+    }
+    public get style_line() {
+        return 'style_line';
+    }
+    public get style_linebr() {
+        return 'style_linebr';
+    }
+    public get style_stepline() {
+        return 'style_stepline';
+    }
+    public get style_stepline_diamond() {
+        return 'style_stepline_diamond';
+    }
+    public get style_steplinebr() {
+        return 'style_steplinebr';
+    }
+
+    param(source: any, index: number = 0, name?: string) {
+        return Series.from(source).get(index);
+    }
+
     //in the current implementation, plot functions are only used to collect data for the plots array and map it to the market data
     plotchar(...args) {
         // if (!this.context.plots[title]) {
@@ -64,10 +111,12 @@ export class PlotHelper {
         //     value: value,
         //     options: { ...this.extractPlotOptions(options), style: 'char' },
         // });
-        this.plot(...args);
+        this.any(...args);
     }
 
-    plot(...args) {
+    //this will map to plot() - see README.md for more details
+
+    any(...args) {
         const _parsed = parseArgsForPineParams<PlotOptions>(args, PLOT_SIGNATURE, PLOT_ARGS_TYPES);
         const { series, title, ...others } = _parsed;
         const options = this.extractPlotOptions(others);
@@ -156,6 +205,7 @@ export class HlineHelper {
 
     //this will map to hline()
     any(price, title, color, linestyle, linewidth, editable, display) {
-        return this.context.pine.plot(price, { title, color, linestyle, linewidth, editable, display });
+        //plot.any is mapped to plot() at runtime
+        return this.context.pine.plot.any(price, { title, color, linestyle, linewidth, editable, display });
     }
 }

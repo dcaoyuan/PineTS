@@ -146,7 +146,6 @@ const types = {
     location,
     size,
     format,
-    plot,
 };
 
 export default types;

@@ -69,6 +69,54 @@ type PlotArrowOptions = {
     force_overlay?: boolean;
 };
 
+type PlotBarOptions = {
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    title?: string;
+    color?: string;
+    editable?: boolean;
+    show_last?: number;
+    display?: string;
+    format?: string;
+    precision?: number;
+    force_overlay?: boolean;
+};
+
+type BackgroundColorOptions = {
+    color?: string;
+    offset?: number;
+    editable?: boolean;
+    show_last?: number;
+    title?: string;
+    display?: string;
+    force_overlay?: boolean;
+};
+type BarColorOptions = {
+    color?: string;
+    offset?: number;
+    editable?: boolean;
+    show_last?: number;
+    title?: string;
+    display?: string;
+};
+type PlotCandleOptions = {
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    title?: string;
+    color?: string;
+    wickcolor?: string;
+    bordercolor?: string;
+    editable?: boolean;
+    show_last?: number;
+    display?: string;
+    format?: string;
+    precision?: number;
+    force_overlay?: boolean;
+};
 type IndicatorOptions = {
     title: string;
     shorttitle: string;

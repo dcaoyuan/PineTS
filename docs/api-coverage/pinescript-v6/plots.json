@@ -2,11 +2,11 @@
     "Plots": {
         "plot()": true,
         "plotarrow()": true,
-        "plotbar()": false,
-        "plotcandle()": false,
+        "plotbar()": true,
+        "plotcandle()": true,
         "plotchar()": true,
         "plotshape()": true,
-        "barcolor()": false,
+        "barcolor()": true,
         "bgcolor()": true
     }
 }

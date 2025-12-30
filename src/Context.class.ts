@@ -165,7 +165,7 @@ export class Context {
 
         const plotHelper = new PlotHelper(this);
         const hlineHelper = new HlineHelper(this);
-        this.bindContextObject(plotHelper, ['plotchar', 'plotshape', 'plotarrow']);
+        this.bindContextObject(plotHelper, ['plotchar', 'plotshape', 'plotarrow', 'plotbar', 'plotcandle', 'bgcolor', 'barcolor']);
         this.bindContextObject(
             plotHelper,
             [

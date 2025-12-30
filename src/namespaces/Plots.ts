@@ -20,6 +20,25 @@ const PLOT_ARROW_SIGNATURE = [
 ];
 
 //prettier-ignore
+const PLOTBAR_SIGNATURE = [
+    'open', 'high', 'low', 'close', 'title', 'color', 'editable', 'show_last', 'display', 'format', 'precision', 'force_overlay',
+];
+
+//prettier-ignore
+const PLOTCANDLE_SIGNATURE = [
+    'open', 'high', 'low', 'close', 'title', 'color', 'wickcolor', 'editable', 'show_last', 'bordercolor', 'display', 'format', 'precision', 'force_overlay',
+]
+//prettier-ignore
+const BGCOLOR_SIGNATURE = [
+    'color', 'offset', 'editable', 'show_last', 'title', 'display', 'force_overlay',
+];
+
+//prettier-ignore
+const BARCOLOR_SIGNATURE = [
+    'color', 'offset', 'editable', 'show_last', 'title', 'display'
+];
+
+//prettier-ignore
 const PLOT_ARGS_TYPES = {
     series: 'series', title: 'string', color: 'string', linewidth: 'number',
     style: 'string', trackprice: 'boolean', histbase: 'number', offset: 'number',
@@ -41,6 +60,33 @@ const PLOT_ARROW_ARGS_TYPES = {
     offset: 'number', minheight: 'number', maxheight: 'number',
     editable: 'boolean', show_last: 'number', display: 'string',
     format: 'string', precision: 'number', force_overlay: 'boolean',
+};
+
+//prettier-ignore
+const PLOTBAR_ARGS_TYPES = {
+    open: 'series', high: 'series', low: 'series', close: 'series',
+    title: 'string', color: 'string', editable: 'boolean', show_last: 'number', display: 'string',
+    format: 'string', precision: 'number', force_overlay: 'boolean',
+};
+
+//prettier-ignore
+const PLOTCANDLE_ARGS_TYPES = {
+    open: 'series', high: 'series', low: 'series', close: 'series',
+    title: 'string', color: 'string', wickcolor: 'string', bordercolor: 'string', 
+    editable: 'boolean', show_last: 'number', display: 'string',
+    format: 'string', precision: 'number', force_overlay: 'boolean',
+};
+
+//prettier-ignore
+const BGCOLOR_ARGS_TYPES = {
+    color: 'string', offset: 'number', editable: 'boolean', show_last: 'number', 
+    title: 'string', display: 'string', force_overlay: 'boolean',
+};
+
+//prettier-ignore
+const BARCOLOR_ARGS_TYPES = {
+    color: 'string', offset: 'number', editable: 'boolean', show_last: 'number', 
+    title: 'string', display: 'string',
 };
 
 export class PlotHelper {
@@ -102,16 +148,19 @@ export class PlotHelper {
 
     //in the current implementation, plot functions are only used to collect data for the plots array and map it to the market data
     plotchar(...args) {
-        // if (!this.context.plots[title]) {
-        //     this.context.plots[title] = { data: [], options: this.extractPlotOptions(options), title };
-        // }
-        // const value = Series.from(series).get(0);
-        // this.context.plots[title].data.push({
-        //     time: this.context.marketData[this.context.idx].openTime,
-        //     value: value,
-        //     options: { ...this.extractPlotOptions(options), style: 'char' },
-        // });
-        this.any(...args);
+        const _parsed = parseArgsForPineParams<PlotOptions>(args, PLOT_SIGNATURE, PLOT_ARGS_TYPES);
+        const { series, title, ...others } = _parsed;
+        const options = this.extractPlotOptions(others);
+        if (!this.context.plots[title]) {
+            this.context.plots[title] = { data: [], options: { ...options, style: 'char' }, title };
+        }
+
+        const value = Series.from(series).get(0);
+
+        this.context.plots[title].data.push({
+            time: this.context.marketData[this.context.idx].openTime,
+            value: value,
+        });
     }
 
     //this will map to plot() - see README.md for more details
@@ -182,6 +231,69 @@ export class PlotHelper {
                           height: options.maxheight,
                       }
                     : undefined,
+        });
+    }
+
+    plotbar(...args) {
+        const _parsed = parseArgsForPineParams<PlotBarOptions>(args, PLOTBAR_SIGNATURE, PLOTBAR_ARGS_TYPES);
+        const { open, high, low, close, title, ...others } = _parsed;
+        const options: PlotBarOptions = this.extractPlotOptions(others);
+        if (!this.context.plots[title]) {
+            this.context.plots[title] = { data: [], options: { ...options, style: 'bar' }, title };
+        }
+
+        const value = [Series.from(open).get(0), Series.from(high).get(0), Series.from(low).get(0), Series.from(close).get(0)];
+
+        this.context.plots[title].data.push({
+            time: this.context.marketData[this.context.idx].openTime,
+            value: value,
+            options: { color: options.color },
+        });
+    }
+
+    plotcandle(...args) {
+        const _parsed = parseArgsForPineParams<PlotCandleOptions>(args, PLOTCANDLE_SIGNATURE, PLOTCANDLE_ARGS_TYPES);
+        const { open, high, low, close, title, ...others } = _parsed;
+        const options: PlotCandleOptions = this.extractPlotOptions(others);
+        if (!this.context.plots[title]) {
+            this.context.plots[title] = { data: [], options: { ...options, style: 'candle' }, title };
+        }
+
+        const value = [Series.from(open).get(0), Series.from(high).get(0), Series.from(low).get(0), Series.from(close).get(0)];
+
+        this.context.plots[title].data.push({
+            time: this.context.marketData[this.context.idx].openTime,
+            value: value,
+            options: { color: options.color, wickcolor: options.wickcolor, bordercolor: options.bordercolor },
+        });
+    }
+
+    bgcolor(...args) {
+        const _parsed = parseArgsForPineParams<BackgroundColorOptions>(args, BGCOLOR_SIGNATURE, BGCOLOR_ARGS_TYPES);
+        const { title, ...others } = _parsed;
+        const options: BackgroundColorOptions = this.extractPlotOptions(others);
+        if (!this.context.plots[title]) {
+            this.context.plots[title] = { data: [], options: { ...options, style: 'background' }, title };
+        }
+
+        this.context.plots[title].data.push({
+            time: this.context.marketData[this.context.idx].openTime,
+            value: options.color && options.color !== 'na' && options?.color.toString() !== 'NaN',
+            options: { color: options.color },
+        });
+    }
+    barcolor(...args) {
+        const _parsed = parseArgsForPineParams<BarColorOptions>(args, BGCOLOR_SIGNATURE, BGCOLOR_ARGS_TYPES);
+        const { title, ...others } = _parsed;
+        const options: BarColorOptions = this.extractPlotOptions(others);
+        if (!this.context.plots[title]) {
+            this.context.plots[title] = { data: [], options: { ...options, style: 'barcolor' }, title };
+        }
+
+        this.context.plots[title].data.push({
+            time: this.context.marketData[this.context.idx].openTime,
+            value: options.color && options.color !== 'na' && options?.color.toString() !== 'NaN',
+            options: { color: options.color },
         });
     }
 }

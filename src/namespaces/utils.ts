@@ -38,7 +38,7 @@ export type PineTypeMap<T> = {
  * @param types - The types to parse, each type is a string representing the type of the argument.
  * @returns The parsed arguments, the arguments are parsed according to the signatures and types.
  */
-export function parseArgsForPineParams<T>(args: any[], signatures: any[], types: Record<string, string>) {
+export function parseArgsForPineParams<T>(args: any[], signatures: any[], types: Record<string, string>, override?: Record<string, any>) {
     if (Array.isArray(signatures) && typeof signatures[0] === 'string') {
         signatures = [signatures];
     }
@@ -73,5 +73,5 @@ export function parseArgsForPineParams<T>(args: any[], signatures: any[], types:
         }
     }
 
-    return { ...options_arg, ...options };
+    return { ...options_arg, ...options, ...override };
 }

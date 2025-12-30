@@ -1,5 +1,20 @@
 # Change Log
 
+## [0.7.6] - 2025-12-30 - Additional Plot Functions
+
+### Added
+
+-   **Plot Functions**: Added support for additional Pine Script plot functions:
+    -   `plotbar()` - Renders OHLC data as traditional bar charts with horizontal ticks
+    -   `plotcandle()` - Renders OHLC data as candlesticks with filled bodies and wicks
+    -   `bgcolor()` - Fills the chart background with colors based on conditions
+    -   `barcolor()` - Colors the main chart candlesticks based on indicator conditions
+
+### Changed
+
+-   Enhanced `Plots` namespace with support for OHLC array values and color application to main chart
+-   Updated API coverage documentation to reflect new plot functions
+
 ## [0.7.5] - 2025-12-29 - UDT Support
 
 ### Added

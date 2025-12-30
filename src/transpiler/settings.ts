@@ -18,7 +18,11 @@ export const CONTEXT_PINE_VARS = [
     'plotchar',
     'plotshape',
     'plotarrow',
+    'plotbar',
+    'plotcandle',
     'plot',
+    'bgcolor',
+    'barcolor',
     'hline',
 
     //declarations

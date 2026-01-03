@@ -169,6 +169,82 @@ export class PineTS {
     }
 
     /**
+     * Stream the results of the Pine Script code.
+     * Provides an event-based interface for handling streaming data.
+     * @param pineTSCode The Pine Script code to execute
+     * @param options Streaming options
+     * @returns Object with on(event, callback) and stop() methods
+     */
+    public stream(
+        pineTSCode: Function | String,
+        options: { pageSize?: number; live?: boolean; interval?: number } = {}
+    ): { on: (event: 'data' | 'error', callback: Function) => void; stop: () => void } {
+        const { live = true, interval = 1000 } = options;
+        const pageSize = options.pageSize || this.data.length; // Default pageSize to full data if not provided
+
+        const listeners: { [key: string]: Function[] } = { data: [], error: [] };
+        let stopped = false;
+
+        const emit = (event: string, ...args: any[]) => {
+            if (listeners[event]) {
+                listeners[event].forEach((cb) => cb(...args));
+            }
+        };
+
+        const on = (event: 'data' | 'error', callback: Function) => {
+            if (!listeners[event]) listeners[event] = [];
+            listeners[event].push(callback);
+        };
+
+        const stop = () => {
+            stopped = true;
+        };
+
+        // Start execution
+        (async () => {
+            try {
+                // Determine if live streaming is possible and requested
+                const isLiveCapable = typeof this.eDate === 'undefined' && !Array.isArray(this.source);
+                const enableLiveStream = isLiveCapable && live;
+
+                // Pass undefined for periods to include all data
+                // We use the generator version directly to control enableLiveStream
+                const iterator = this._runPaginated(pineTSCode, undefined, pageSize, enableLiveStream);
+
+                for await (const ctx of iterator) {
+                    if (stopped) break;
+
+                    if (ctx === null) {
+                        // No new data
+                        // This block is only reached if enableLiveStream is true and provider yields no data
+
+                        // Wait and retry
+                        await new Promise((resolve) => setTimeout(resolve, interval));
+                        continue;
+                    }
+
+                    emit('data', ctx);
+
+                    // If live streaming is enabled, wait for the interval before fetching next data
+                    // This prevents hammering the API when new data is available immediately or in rapid succession
+                    if (enableLiveStream && !stopped) {
+                        const currentCandle = ctx.marketData[ctx.idx];
+                        const isHistorical = currentCandle && currentCandle.closeTime < Date.now();
+
+                        if (!isHistorical) {
+                            await new Promise((resolve) => setTimeout(resolve, interval));
+                        }
+                    }
+                }
+            } catch (error) {
+                emit('error', error);
+            }
+        })();
+
+        return { on, stop };
+    }
+
+    /**
      * Run the script completely and return the final context (backward compatible behavior)
      * @private
      */
@@ -431,6 +507,19 @@ export class PineTS {
         context.data.openTime.data.pop();
         if (context.data.closeTime) {
             context.data.closeTime.data.pop();
+        }
+
+        // Fix: Rollback context variables (let, var, const, params)
+        const contextVarNames = ['const', 'var', 'let', 'params'];
+        for (let ctxVarName of contextVarNames) {
+            for (let key in context[ctxVarName]) {
+                const item = context[ctxVarName][key];
+                if (item instanceof Series) {
+                    item.data.pop();
+                } else if (Array.isArray(item)) {
+                    item.pop();
+                }
+            }
         }
     }
 

@@ -24,15 +24,42 @@ export function sar(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                result: NaN,
-                maxMin: NaN,
-                acceleration: NaN,
-                isBelow: false,
-                barIndex: 0, // Internal bar counter to match Pine's bar_index
+                lastIdx: -1,
+                // Committed state
+                prevResult: NaN,
+                prevMaxMin: NaN,
+                prevAcceleration: NaN,
+                prevIsBelow: false,
+                prevBarIndex: 0,
+                // Tentative state
+                currentResult: NaN,
+                currentMaxMin: NaN,
+                currentAcceleration: NaN,
+                currentIsBelow: false,
+                currentBarIndex: 0,
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevResult = state.currentResult;
+                state.prevMaxMin = state.currentMaxMin;
+                state.prevAcceleration = state.currentAcceleration;
+                state.prevIsBelow = state.currentIsBelow;
+                state.prevBarIndex = state.currentBarIndex;
+            }
+            state.lastIdx = context.idx;
+        }
+
+        // Use tentative state variables, initialized from committed state
+        let result = state.prevResult;
+        let maxMin = state.prevMaxMin;
+        let acceleration = state.prevAcceleration;
+        let isBelow = state.prevIsBelow;
+        let barIndex = state.prevBarIndex;
 
         // Get current OHLC
         const high = context.get(context.data.high, 0);
@@ -48,88 +75,101 @@ export function sar(context: any) {
 
         // Handle NaN inputs
         if (isNaN(high) || isNaN(low) || isNaN(close)) {
-            return NaN;
+             // Just propagate previous state if current bar is invalid
+             state.currentResult = result;
+             state.currentMaxMin = maxMin;
+             state.currentAcceleration = acceleration;
+             state.currentIsBelow = isBelow;
+             state.currentBarIndex = barIndex;
+             return NaN;
         }
 
         let isFirstTrendBar = false;
 
         // Initialize on second bar (bar_index 1)
         // Pine Script bar_index is 0-based. First bar is 0.
-        if (state.barIndex === 1) {
+        if (barIndex === 1) {
             if (close > prevClose) {
-                state.isBelow = true;
-                state.maxMin = high;
-                state.result = prevLow;
+                isBelow = true;
+                maxMin = high;
+                result = prevLow;
             } else {
-                state.isBelow = false;
-                state.maxMin = low;
-                state.result = prevHigh;
+                isBelow = false;
+                maxMin = low;
+                result = prevHigh;
             }
             isFirstTrendBar = true;
-            state.acceleration = start;
+            acceleration = start;
         }
 
         // Only calculate if initialized
-        if (state.barIndex >= 1) {
+        if (barIndex >= 1) {
             // Calculate SAR
             // result := result + acceleration * (maxMin - result)
-            state.result = state.result + state.acceleration * (state.maxMin - state.result);
+            result = result + acceleration * (maxMin - result);
 
             // Check for Reversal
-            if (state.isBelow) {
-                if (state.result > low) {
+            if (isBelow) {
+                if (result > low) {
                     isFirstTrendBar = true;
-                    state.isBelow = false;
-                    state.result = Math.max(high, state.maxMin);
-                    state.maxMin = low;
-                    state.acceleration = start;
+                    isBelow = false;
+                    result = Math.max(high, maxMin);
+                    maxMin = low;
+                    acceleration = start;
                 }
             } else {
-                if (state.result < high) {
+                if (result < high) {
                     isFirstTrendBar = true;
-                    state.isBelow = true;
-                    state.result = Math.min(low, state.maxMin);
-                    state.maxMin = high;
-                    state.acceleration = start;
+                    isBelow = true;
+                    result = Math.min(low, maxMin);
+                    maxMin = high;
+                    acceleration = start;
                 }
             }
 
             // Update Acceleration and MaxMin if not a reversal bar
             if (!isFirstTrendBar) {
-                if (state.isBelow) {
-                    if (high > state.maxMin) {
-                        state.maxMin = high;
-                        state.acceleration = Math.min(state.acceleration + inc, max);
+                if (isBelow) {
+                    if (high > maxMin) {
+                        maxMin = high;
+                        acceleration = Math.min(acceleration + inc, max);
                     }
                 } else {
-                    if (low < state.maxMin) {
-                        state.maxMin = low;
-                        state.acceleration = Math.min(state.acceleration + inc, max);
+                    if (low < maxMin) {
+                        maxMin = low;
+                        acceleration = Math.min(acceleration + inc, max);
                     }
                 }
             }
 
             // Ensure SAR doesn't penetrate recent prices
-            if (state.isBelow) {
-                state.result = Math.min(state.result, prevLow);
-                if (state.barIndex > 1) {
-                    state.result = Math.min(state.result, prevLow2);
+            if (isBelow) {
+                result = Math.min(result, prevLow);
+                if (barIndex > 1) {
+                    result = Math.min(result, prevLow2);
                 }
             } else {
-                state.result = Math.max(state.result, prevHigh);
-                if (state.barIndex > 1) {
-                    state.result = Math.max(state.result, prevHigh2);
+                result = Math.max(result, prevHigh);
+                if (barIndex > 1) {
+                    result = Math.max(result, prevHigh2);
                 }
             }
         }
 
         // Increment bar index for next call
-        state.barIndex++;
+        barIndex++;
 
-        if (state.barIndex <= 1) {
+        // Update tentative state
+        state.currentResult = result;
+        state.currentMaxMin = maxMin;
+        state.currentAcceleration = acceleration;
+        state.currentIsBelow = isBelow;
+        state.currentBarIndex = barIndex;
+
+        if (barIndex <= 1) {
             return NaN;
         }
 
-        return context.precision(state.result);
+        return context.precision(result);
     };
 }

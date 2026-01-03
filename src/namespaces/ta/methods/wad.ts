@@ -19,11 +19,23 @@ export function wad(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                cumulativeSum: 0,
+                lastIdx: -1,
+                // Committed state
+                prevCumulativeSum: 0,
+                // Tentative state
+                currentCumulativeSum: 0,
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevCumulativeSum = state.currentCumulativeSum;
+            }
+            state.lastIdx = context.idx;
+        }
 
         const close = context.get(context.data.close, 0);
         const high = context.get(context.data.high, 0);
@@ -31,7 +43,8 @@ export function wad(context: any) {
         const prevClose = context.get(context.data.close, 1);
 
         if (isNaN(close) || isNaN(high) || isNaN(low)) {
-            return context.precision(state.cumulativeSum);
+            state.currentCumulativeSum = state.prevCumulativeSum;
+            return context.precision(state.prevCumulativeSum);
         }
 
         let gain = 0;
@@ -48,9 +61,11 @@ export function wad(context: any) {
             }
         }
 
-        state.cumulativeSum += gain;
+        const currentSum = state.prevCumulativeSum + gain;
+        
+        // Update tentative state
+        state.currentCumulativeSum = currentSum;
 
-        return context.precision(state.cumulativeSum);
+        return context.precision(currentSum);
     };
 }
-

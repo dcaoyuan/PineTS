@@ -11,27 +11,44 @@ export function median(context: any) {
         const stateKey = _callId || `median_${length}`;
 
         if (!context.taState[stateKey]) {
-            context.taState[stateKey] = { window: [] };
+            context.taState[stateKey] = { 
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                // Tentative state
+                currentWindow: []
+            };
         }
 
         const state = context.taState[stateKey];
+        
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+            }
+            state.lastIdx = context.idx;
+        }
+
         const currentValue = Series.from(source).get(0);
 
-        state.window.unshift(currentValue);
+        const window = [...state.prevWindow];
+        window.unshift(currentValue);
 
-        if (state.window.length < length) {
+        if (window.length > length) {
+            window.pop();
+        }
+
+        state.currentWindow = window;
+
+        if (window.length < length) {
             return NaN;
         }
 
-        if (state.window.length > length) {
-            state.window.pop();
-        }
-
-        const sorted = state.window.slice().sort((a, b) => a - b);
+        const sorted = window.slice().sort((a, b) => a - b);
         const mid = Math.floor(length / 2);
         const median = length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 
         return context.precision(median);
     };
 }
-

@@ -14,14 +14,33 @@ export function atr(context: any): //
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
+                lastIdx: -1,
+                // Committed state
                 prevAtr: null,
-                initSum: 0,
-                initCount: 0,
-                prevClose: null,
+                prevInitSum: 0,
+                prevInitCount: 0,
+                prevPrevClose: null, // "Previous" of the previous close
+                // Tentative state
+                currentAtr: null,
+                currentInitSum: 0,
+                currentInitCount: 0,
+                currentPrevClose: null,
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevAtr = state.currentAtr;
+                state.prevInitSum = state.currentInitSum;
+                state.prevInitCount = state.currentInitCount;
+                state.prevPrevClose = state.currentPrevClose;
+            }
+            state.lastIdx = context.idx;
+        }
+
         const high = context.get(context.data.high, 0);
         const low = context.get(context.data.low, 0);
         const close = context.get(context.data.close, 0);
@@ -31,34 +50,49 @@ export function atr(context: any): //
             return NaN;
         }
 
+        // Use committed state
+        const prevClose = state.prevPrevClose;
+
         // Calculate True Range
         let tr;
-        if (state.prevClose !== null) {
+        if (prevClose !== null) {
             const hl = high - low;
-            const hc = Math.abs(high - state.prevClose);
-            const lc = Math.abs(low - state.prevClose);
+            const hc = Math.abs(high - prevClose);
+            const lc = Math.abs(low - prevClose);
             tr = Math.max(hl, hc, lc);
         } else {
             tr = high - low;
         }
 
-        state.prevClose = close;
+        // Store tentative prevClose for NEXT bar
+        state.currentPrevClose = close;
 
-        if (state.initCount < period) {
+        let initCount = state.prevInitCount;
+        let initSum = state.prevInitSum;
+        let prevAtr = state.prevAtr;
+
+        if (initCount < period) {
             // Accumulate TR for SMA initialization
-            state.initSum += tr;
-            state.initCount++;
+            initSum += tr;
+            initCount++;
 
-            if (state.initCount === period) {
-                state.prevAtr = state.initSum / period;
-                return context.precision(state.prevAtr);
+            // Store tentative state
+            state.currentInitSum = initSum;
+            state.currentInitCount = initCount;
+
+            if (initCount === period) {
+                const atr = initSum / period;
+                state.currentAtr = atr;
+                return context.precision(atr);
             }
             return NaN;
         }
 
         // Calculate ATR using RMA formula
-        const atr = (state.prevAtr * (period - 1) + tr) / period;
-        state.prevAtr = atr;
+        const atr = (prevAtr * (period - 1) + tr) / period;
+
+        // Store tentative result
+        state.currentAtr = atr;
 
         return context.precision(atr);
     };

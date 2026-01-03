@@ -19,6 +19,7 @@ export function pivotlow(context: any) {
         const leftbars = Series.from(_leftbars).get(0);
         const rightbars = Series.from(_rightbars).get(0);
 
+        // Stateless calculation using full array history
         const sourceArray = Series.from(source).toArray();
         const result = pivotlowUtil(sourceArray, leftbars, rightbars);
         const idx = context.idx;

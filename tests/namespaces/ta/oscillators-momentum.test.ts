@@ -550,4 +550,61 @@ describe('Technical Analysis - Oscillators & Momentum', () => {
         console.log('plotdata_str', plotdata_str);
         expect(plotdata_str.trim()).toEqual(expected_plot.trim());
     });
+
+    it('MOM - Momentum', async () => {
+        const pineTS = new PineTS(Provider.Mock, 'BTCUSDC', 'W', null, new Date('2018-12-10').getTime(), new Date('2020-01-27').getTime());
+
+        const sourceCode = (context) => {
+            const { close, high, low, volume } = context.data;
+            const { ta, plotchar, math } = context.pine;
+
+            const _close = close;
+            const res = ta.mom(_close, 9);
+            plotchar(res, '_plot');
+
+            return { res };
+        };
+
+        const { result, plots } = await pineTS.run(sourceCode);
+
+        let _plotdata = plots['_plot']?.data;
+        const startDate = new Date('2018-12-10').getTime();
+        const endDate = new Date('2019-04-18').getTime();
+
+        let plotdata_str = '';
+        for (let i = 0; i < _plotdata.length; i++) {
+            const time = _plotdata[i].time;
+            if (time < startDate || time > endDate) {
+                continue;
+            }
+
+            const str_time = new Date(time).toISOString().slice(0, -1) + '-00:00';
+            const res = _plotdata[i].value;
+            plotdata_str += `[${str_time}]: ${res}\n`;
+        }
+
+        const expected_plot = `[2018-12-10T00:00:00.000-00:00]: NaN
+[2018-12-17T00:00:00.000-00:00]: NaN
+[2018-12-24T00:00:00.000-00:00]: NaN
+[2018-12-31T00:00:00.000-00:00]: NaN
+[2019-01-07T00:00:00.000-00:00]: NaN
+[2019-01-14T00:00:00.000-00:00]: NaN
+[2019-01-21T00:00:00.000-00:00]: NaN
+[2019-01-28T00:00:00.000-00:00]: NaN
+[2019-02-04T00:00:00.000-00:00]: NaN
+[2019-02-11T00:00:00.000-00:00]: 429.27
+[2019-02-18T00:00:00.000-00:00]: -231.85
+[2019-02-25T00:00:00.000-00:00]: -37.03
+[2019-03-04T00:00:00.000-00:00]: -141.58
+[2019-03-11T00:00:00.000-00:00]: 457.8
+[2019-03-18T00:00:00.000-00:00]: 437.27
+[2019-03-25T00:00:00.000-00:00]: 561.76
+[2019-04-01T00:00:00.000-00:00]: 1778.84
+[2019-04-08T00:00:00.000-00:00]: 1509.99
+[2019-04-15T00:00:00.000-00:00]: 1668.46`;
+
+        console.log('expected_plot', expected_plot);
+        console.log('plotdata_str', plotdata_str);
+        expect(plotdata_str.trim()).toEqual(expected_plot.trim());
+    });
 });

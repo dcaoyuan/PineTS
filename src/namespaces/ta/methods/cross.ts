@@ -21,6 +21,8 @@ export function cross(context: any) {
         const series1 = Series.from(source1);
         const series2 = Series.from(source2);
 
+        // Stateless calculation (accesses past data via Series)
+        
         const current1 = series1.get(0);
         const current2 = series2.get(0);
         const prev1 = series1.get(1);
@@ -40,4 +42,3 @@ export function cross(context: any) {
         return crossedOver || crossedUnder;
     };
 }
-

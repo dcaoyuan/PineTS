@@ -49,35 +49,69 @@ export function kc(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
+                lastIdx: -1,
+                // Committed state
                 basisState: { prevEma: null, initSum: 0, initCount: 0 },
                 rangeState: { prevEma: null, initSum: 0, initCount: 0 },
+                // Tentative state
+                currentBasisState: { prevEma: null, initSum: 0, initCount: 0 },
+                currentRangeState: { prevEma: null, initSum: 0, initCount: 0 },
             };
         }
 
         const state = context.taState[stateKey];
 
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                // Commit tentative states to committed states
+                state.basisState = { ...state.currentBasisState };
+                state.rangeState = { ...state.currentRangeState };
+            }
+            state.lastIdx = context.idx;
+        }
+
         // Helper to update EMA state
-        const updateEma = (emaState: any, value: number, period: number) => {
-            if (isNaN(value)) return NaN;
+        // We read from 'prev' state and write to 'current' state (tentative)
+        const updateEma = (committedState: any, tentativeState: any, value: number, period: number) => {
+            if (isNaN(value)) {
+                 // Propagate previous state
+                 Object.assign(tentativeState, committedState);
+                 return tentativeState.prevEma !== null ? tentativeState.prevEma : NaN;
+            }
 
-            if (emaState.initCount < period) {
-                emaState.initSum += value;
-                emaState.initCount++;
+            let initCount = committedState.initCount;
+            let initSum = committedState.initSum;
+            let prevEma = committedState.prevEma;
 
-                if (emaState.initCount === period) {
-                    emaState.prevEma = emaState.initSum / period;
-                    return emaState.prevEma;
+            if (initCount < period) {
+                initSum += value;
+                initCount++;
+
+                tentativeState.initSum = initSum;
+                tentativeState.initCount = initCount;
+                tentativeState.prevEma = prevEma; // Unchanged until initialized
+
+                if (initCount === period) {
+                    const ema = initSum / period;
+                    tentativeState.prevEma = ema;
+                    return ema;
                 }
                 return NaN;
             }
 
             const alpha = 2 / (period + 1);
-            emaState.prevEma = value * alpha + emaState.prevEma * (1 - alpha);
-            return emaState.prevEma;
+            const ema = value * alpha + prevEma * (1 - alpha);
+            
+            tentativeState.prevEma = ema;
+            tentativeState.initSum = initSum;
+            tentativeState.initCount = initCount;
+
+            return ema;
         };
 
-        const basis = updateEma(state.basisState, currentValue, length);
-        const rangeEma = updateEma(state.rangeState, span, length);
+        const basis = updateEma(state.basisState, state.currentBasisState, currentValue, length);
+        const rangeEma = updateEma(state.rangeState, state.currentRangeState, span, length);
 
         if (isNaN(basis) || isNaN(rangeEma)) {
             return [[NaN, NaN, NaN]];

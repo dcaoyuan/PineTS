@@ -32,12 +32,26 @@ export function stoch(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                highWindow: [],
-                lowWindow: [],
+                lastIdx: -1,
+                // Committed state
+                prevHighWindow: [],
+                prevLowWindow: [],
+                // Tentative state
+                currentHighWindow: [],
+                currentLowWindow: [],
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevHighWindow = [...state.currentHighWindow];
+                state.prevLowWindow = [...state.currentLowWindow];
+            }
+            state.lastIdx = context.idx;
+        }
         
         // Get current values
         const currentSource = Series.from(source).get(0);
@@ -46,34 +60,44 @@ export function stoch(context: any) {
 
         // Handle NaN inputs - skip this bar
         if (isNaN(currentSource) || isNaN(currentHigh) || isNaN(currentLow)) {
+            // Propagate state
+            state.currentHighWindow = [...state.prevHighWindow];
+            state.currentLowWindow = [...state.prevLowWindow];
             return NaN;
         }
+
+        const highWindow = [...state.prevHighWindow];
+        const lowWindow = [...state.prevLowWindow];
 
         // Add current values to windows
-        state.highWindow.unshift(currentHigh);
-        state.lowWindow.unshift(currentLow);
-
-        // Not enough data yet
-        if (state.highWindow.length < length) {
-            return NaN;
-        }
+        highWindow.unshift(currentHigh);
+        lowWindow.unshift(currentLow);
 
         // Remove oldest values if window exceeds length
-        if (state.highWindow.length > length) {
-            state.highWindow.pop();
-            state.lowWindow.pop();
+        if (highWindow.length > length) {
+            highWindow.pop();
+            lowWindow.pop();
+        }
+        
+        // Update tentative state
+        state.currentHighWindow = highWindow;
+        state.currentLowWindow = lowWindow;
+
+        // Not enough data yet
+        if (highWindow.length < length) {
+            return NaN;
         }
 
         // Calculate highest high and lowest low over the period
-        let highest = state.highWindow[0];
-        let lowest = state.lowWindow[0];
+        let highest = highWindow[0];
+        let lowest = lowWindow[0];
 
         for (let i = 1; i < length; i++) {
-            if (state.highWindow[i] > highest) {
-                highest = state.highWindow[i];
+            if (highWindow[i] > highest) {
+                highest = highWindow[i];
             }
-            if (state.lowWindow[i] < lowest) {
-                lowest = state.lowWindow[i];
+            if (lowWindow[i] < lowest) {
+                lowest = lowWindow[i];
             }
         }
 
@@ -90,4 +114,3 @@ export function stoch(context: any) {
         return context.precision(stochastic);
     };
 }
-

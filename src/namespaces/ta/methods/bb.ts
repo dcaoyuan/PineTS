@@ -29,41 +29,66 @@ export function bb(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                window: [],
-                sum: 0,
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                prevSum: 0,
+                // Tentative state
+                currentWindow: [],
+                currentSum: 0,
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+                state.prevSum = state.currentSum;
+            }
+            state.lastIdx = context.idx;
+        }
+
         const currentValue = Series.from(source).get(0);
 
         // Handle NaN input
         if (isNaN(currentValue)) {
+            state.currentWindow = [...state.prevWindow];
+            state.currentSum = state.prevSum;
             return [[NaN, NaN, NaN]];
         }
+
+        // Use committed state to calculate current state
+        const window = [...state.prevWindow];
+        let sum = state.prevSum;
 
         // Add current value to window
-        state.window.unshift(currentValue);
-        state.sum += currentValue;
-
-        // Not enough data yet
-        if (state.window.length < length) {
-            return [[NaN, NaN, NaN]];
-        }
+        window.unshift(currentValue);
+        sum += currentValue;
 
         // Remove oldest value if window exceeds length
-        if (state.window.length > length) {
-            const oldValue = state.window.pop();
-            state.sum -= oldValue;
+        if (window.length > length) {
+            const oldValue = window.pop();
+            sum -= oldValue;
+        }
+
+        // Update tentative state
+        state.currentWindow = window;
+        state.currentSum = sum;
+
+        // Not enough data yet
+        if (window.length < length) {
+            return [[NaN, NaN, NaN]];
         }
 
         // Calculate middle band (SMA)
-        const middle = state.sum / length;
+        const middle = sum / length;
 
         // Calculate standard deviation
         let sumSquaredDiff = 0;
         for (let i = 0; i < length; i++) {
-            sumSquaredDiff += Math.pow(state.window[i] - middle, 2);
+            sumSquaredDiff += Math.pow(window[i] - middle, 2);
         }
         const stdev = Math.sqrt(sumSquaredDiff / length);
 
@@ -75,4 +100,3 @@ export function bb(context: any) {
         return [[context.precision(upper), context.precision(middle), context.precision(lower)]];
     };
 }
-

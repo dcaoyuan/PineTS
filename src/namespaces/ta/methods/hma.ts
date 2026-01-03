@@ -28,34 +28,79 @@ export function hma(context: any) {
         const stateKey = _callId || `hma_raw_${period}`;
 
         if (!context.taState[stateKey]) {
-            context.taState[stateKey] = [];
+            context.taState[stateKey] = {
+                lastIdx: -1,
+                // Committed state
+                prevValues: [],
+                // Tentative state
+                currentValues: [],
+            };
+        }
+
+        const rawState = context.taState[stateKey];
+
+        // Commit logic for raw values
+        if (context.idx > rawState.lastIdx) {
+            if (rawState.lastIdx >= 0) {
+                rawState.prevValues = [...rawState.currentValues];
+            }
+            rawState.lastIdx = context.idx;
         }
 
         const rawHma = 2 * wma1 - wma2;
-        context.taState[stateKey].unshift(rawHma); // Native array used for state
+        
+        // Use committed values as base
+        const values = [...rawState.prevValues];
+        values.unshift(rawHma);
+        
+        // Keep history manageable (though not strictly necessary for simple series, but helps debugging/memory)
+        if (values.length > sqrtPeriod + 1) values.pop();
+        
+        rawState.currentValues = values;
 
         // Apply WMA to the raw HMA values
         const hmaStateKey = _callId ? `${_callId}_hma_final` : `hma_final_${period}`;
+        
         if (!context.taState[hmaStateKey]) {
-            context.taState[hmaStateKey] = { window: [] };
+            context.taState[hmaStateKey] = {
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                // Tentative state
+                currentWindow: [],
+            };
         }
 
         const state = context.taState[hmaStateKey];
-        state.window.unshift(rawHma); // Native array used for state
 
-        if (state.window.length < sqrtPeriod) {
+        // Commit logic for final WMA
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+            }
+            state.lastIdx = context.idx;
+        }
+
+        // Use committed window
+        const window = [...state.prevWindow];
+        window.unshift(rawHma);
+
+        if (window.length < sqrtPeriod) {
+            state.currentWindow = window;
             return NaN;
         }
 
-        if (state.window.length > sqrtPeriod) {
-            state.window.pop();
+        if (window.length > sqrtPeriod) {
+            window.pop();
         }
+
+        state.currentWindow = window;
 
         let numerator = 0;
         let denominator = 0;
         for (let i = 0; i < sqrtPeriod; i++) {
             const weight = sqrtPeriod - i;
-            numerator += state.window[i] * weight;
+            numerator += window[i] * weight;
             denominator += weight;
         }
 
@@ -63,4 +108,3 @@ export function hma(context: any) {
         return context.precision(hma);
     };
 }
-

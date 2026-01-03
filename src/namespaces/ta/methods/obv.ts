@@ -21,11 +21,23 @@ export function obv(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                prevOBV: 0,
+                lastIdx: -1,
+                // Committed OBV (value at end of lastIdx)
+                committedOBV: 0,
+                // Tentative OBV (current value)
+                tentativeOBV: 0,
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.committedOBV = state.tentativeOBV;
+            }
+            state.lastIdx = context.idx;
+        }
 
         // Get current close and volume using context.get() for Pine Script semantics
         const close0 = context.get(context.data.close, 0);
@@ -36,27 +48,27 @@ export function obv(context: any) {
 
         // First bar (no previous close): OBV starts at 0
         if (isNaN(close1)) {
-            state.prevOBV = 0;
+            state.tentativeOBV = 0;
             return context.precision(0);
         }
 
+        // Use committed OBV as previous OBV
+        let currentOBV = state.committedOBV;
+
         // Calculate OBV based on price direction
-        let currentOBV;
         if (close0 > close1) {
             // Price up: add volume
-            currentOBV = state.prevOBV + volume0;
+            currentOBV += volume0;
         } else if (close0 < close1) {
             // Price down: subtract volume
-            currentOBV = state.prevOBV - volume0;
+            currentOBV -= volume0;
         } else {
             // Price unchanged: keep previous OBV
-            currentOBV = state.prevOBV;
         }
 
-        // Update state for next iteration
-        state.prevOBV = currentOBV;
+        // Update tentative state
+        state.tentativeOBV = currentOBV;
 
         return context.precision(currentOBV);
     };
 }
-

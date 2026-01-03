@@ -20,22 +20,38 @@ export function pvt(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                cumulativeSum: 0,
+                lastIdx: -1,
+                // Committed state
+                prevCumulativeSum: 0,
+                // Tentative state
+                currentCumulativeSum: 0,
             };
         }
 
         const state = context.taState[stateKey];
 
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevCumulativeSum = state.currentCumulativeSum;
+            }
+            state.lastIdx = context.idx;
+        }
+
         const close = context.get(context.data.close, 0);
         const prevClose = context.get(context.data.close, 1);
         const volume = context.get(context.data.volume, 0);
 
+        let currentSum = state.prevCumulativeSum;
+
         if (!isNaN(close) && !isNaN(prevClose) && !isNaN(volume) && prevClose !== 0) {
             const term = ((close - prevClose) / prevClose) * volume;
-            state.cumulativeSum += term;
+            currentSum += term;
         }
 
-        return context.precision(state.cumulativeSum);
+        // Update tentative state
+        state.currentCumulativeSum = currentSum;
+
+        return context.precision(currentSum);
     };
 }
-

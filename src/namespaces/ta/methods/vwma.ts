@@ -11,34 +11,57 @@ export function vwma(context: any) {
         const stateKey = _callId || `vwma_${period}`;
 
         if (!context.taState[stateKey]) {
-            context.taState[stateKey] = { window: [], volumeWindow: [] };
+            context.taState[stateKey] = {
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                prevVolumeWindow: [],
+                // Tentative state
+                currentWindow: [],
+                currentVolumeWindow: [],
+            };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+                state.prevVolumeWindow = [...state.currentVolumeWindow];
+            }
+            state.lastIdx = context.idx;
+        }
+
         const currentValue = Series.from(source).get(0);
         const currentVolume = context.get(context.data.volume, 0);
 
-        state.window.unshift(currentValue);
-        state.volumeWindow.unshift(currentVolume);
+        const window = [...state.prevWindow];
+        const volumeWindow = [...state.prevVolumeWindow];
 
-        if (state.window.length < period) {
-            return NaN;
+        window.unshift(currentValue);
+        volumeWindow.unshift(currentVolume);
+
+        if (window.length > period) {
+            window.pop();
+            volumeWindow.pop();
         }
 
-        if (state.window.length > period) {
-            state.window.pop();
-            state.volumeWindow.pop();
+        state.currentWindow = window;
+        state.currentVolumeWindow = volumeWindow;
+
+        if (window.length < period) {
+            return NaN;
         }
 
         let sumVolPrice = 0;
         let sumVol = 0;
         for (let i = 0; i < period; i++) {
-            sumVolPrice += state.window[i] * state.volumeWindow[i];
-            sumVol += state.volumeWindow[i];
+            sumVolPrice += window[i] * volumeWindow[i];
+            sumVol += volumeWindow[i];
         }
 
         const vwma = sumVolPrice / sumVol;
         return context.precision(vwma);
     };
 }
-

@@ -48,25 +48,45 @@ export function alma(context: any) {
             }
 
             context.taState[stateKey] = { 
-                window: [],
-                weights: weights
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                // Tentative state (working window)
+                currentWindow: [],
+                weights: weights // weights are constant
             };
         }
 
         const state = context.taState[stateKey];
-        const currentValue = Series.from(source).get(0);
 
-        // Add current value to window (most recent at front)
-        state.window.unshift(currentValue);
-
-        if (state.window.length < period) {
-            // Not enough data yet
-            return NaN;
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                // Commit the tentative window to prevWindow
+                state.prevWindow = [...state.currentWindow];
+            }
+            state.lastIdx = context.idx;
         }
 
-        if (state.window.length > period) {
+        const currentValue = Series.from(source).get(0);
+
+        // Start with the committed window
+        const window = [...state.prevWindow];
+
+        // Add current value to window (most recent at front)
+        window.unshift(currentValue);
+
+        if (window.length > period) {
             // Remove oldest value
-            state.window.pop();
+            window.pop();
+        }
+
+        // Update tentative state
+        state.currentWindow = window;
+
+        if (window.length < period) {
+            // Not enough data yet
+            return NaN;
         }
 
         // Calculate weighted average
@@ -77,10 +97,9 @@ export function alma(context: any) {
             // weights[0] = oldest, weights[period-1] = newest
             // window[0] = newest, window[period-1] = oldest
             // So weights[i] should multiply window[period-1-i]
-            alma += state.weights[i] * state.window[period - 1 - i];
+            alma += state.weights[i] * window[period - 1 - i];
         }
 
         return context.precision(alma);
     };
 }
-

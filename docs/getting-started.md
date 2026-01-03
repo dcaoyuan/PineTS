@@ -127,44 +127,50 @@ const { result } = await pineTS.run((context) => {
 });
 ```
 
-## Using Pagination for Large Datasets
+## Streaming Data and Pagination
 
-For processing large datasets efficiently or streaming live market data, use pagination:
+For processing large datasets efficiently or handling live data streams, use the `stream()` method:
 
 ```javascript
 import { PineTS, Provider } from 'pinets';
 
-// Initialize with a provider for live streaming capability
-const pineTS = new PineTS(Provider.Binance, 'BTCUSDT', '1h');
+// Initialize with a provider
+const pineTS = new PineTS(Provider.Binance, 'BTCUSDT', '1m', 100);
 
-// Process 200 candles in pages of 50
-const iterator = pineTS.run(
+// Start streaming
+const evt = pineTS.stream(
     (context) => {
-        const ta = context.ta;
         const { close } = context.data;
-
-        const sma = ta.sma(close, 20);
-        return { sma };
+        const sma = context.ta.sma(close, 14);
+        return { close, sma };
     },
-    200,
-    50
+    {
+        pageSize: 50, // Process in chunks of 50
+        live: true, // Continue with live data
+        interval: 2000, // Poll every 2 seconds
+    }
 );
 
-// Process each page as it becomes available
-for await (const page of iterator) {
-    console.log(`Received ${page.result.sma.length} results`);
-    // With a provider and no end date, automatically continues with live data
-}
+// Listen for updates
+evt.on('data', (ctx) => {
+    const { close, sma } = ctx.result;
+    console.log(`Update: Close=${close[close.length - 1]}, SMA=${sma[sma.length - 1]}`);
+});
+
+evt.on('error', (err) => console.error(err));
+
+// To stop streaming later
+// evt.stop();
 ```
 
 **Benefits:**
 
 -   Memory efficient for large datasets
--   Shows progress during processing
--   Automatically streams live market data when using a provider
+-   Event-based interface is easier to integrate
+-   Automatically streams live market data
 -   Perfect for real-time trading bots and dashboards
 
-📖 **For complete pagination documentation and advanced examples, see [Pagination & Live Streaming](../pagination/).**
+📖 **For complete pagination and streaming documentation, see [Pagination & Live Streaming](../pagination/).**
 
 ## Key Differences: PineTS Syntax vs Native Pine Script
 

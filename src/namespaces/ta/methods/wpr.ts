@@ -27,12 +27,26 @@ export function wpr(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                highWindow: [],
-                lowWindow: [],
+                lastIdx: -1,
+                // Committed state
+                prevHighWindow: [],
+                prevLowWindow: [],
+                // Tentative state
+                currentHighWindow: [],
+                currentLowWindow: [],
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevHighWindow = [...state.currentHighWindow];
+                state.prevLowWindow = [...state.currentLowWindow];
+            }
+            state.lastIdx = context.idx;
+        }
 
         // Get current values from context.data
         const high = context.get(context.data.high, 0);
@@ -41,34 +55,42 @@ export function wpr(context: any) {
 
         // Handle NaN inputs
         if (isNaN(high) || isNaN(low) || isNaN(close)) {
+            // Propagate state
+            state.currentHighWindow = [...state.prevHighWindow];
+            state.currentLowWindow = [...state.prevLowWindow];
             return NaN;
         }
+
+        const highWindow = [...state.prevHighWindow];
+        const lowWindow = [...state.prevLowWindow];
 
         // Add to windows
-        state.highWindow.unshift(high);
-        state.lowWindow.unshift(low);
+        highWindow.unshift(high);
+        lowWindow.unshift(low);
 
-        // Not enough data yet
-        if (state.highWindow.length < length) {
-            return NaN;
+        if (highWindow.length > length) {
+            highWindow.pop();
+            lowWindow.pop();
         }
 
-        // Remove oldest values if window exceeds length
-        if (state.highWindow.length > length) {
-            state.highWindow.pop();
-            state.lowWindow.pop();
+        state.currentHighWindow = highWindow;
+        state.currentLowWindow = lowWindow;
+
+        // Not enough data yet
+        if (highWindow.length < length) {
+            return NaN;
         }
 
         // Find highest high and lowest low in the window
-        let highestHigh = state.highWindow[0];
-        let lowestLow = state.lowWindow[0];
+        let highestHigh = highWindow[0];
+        let lowestLow = lowWindow[0];
 
         for (let i = 1; i < length; i++) {
-            if (state.highWindow[i] > highestHigh) {
-                highestHigh = state.highWindow[i];
+            if (highWindow[i] > highestHigh) {
+                highestHigh = highWindow[i];
             }
-            if (state.lowWindow[i] < lowestLow) {
-                lowestLow = state.lowWindow[i];
+            if (lowWindow[i] < lowestLow) {
+                lowestLow = lowWindow[i];
             }
         }
 

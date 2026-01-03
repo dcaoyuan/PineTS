@@ -7,6 +7,8 @@ export function crossover(context: any) {
         const s1 = Series.from(source1);
         const s2 = Series.from(source2);
 
+        // Stateless calculation (accesses past data via Series)
+
         // Get current values
         const current1 = s1.get(0);
         const current2 = s2.get(0);

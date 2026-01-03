@@ -20,35 +20,58 @@ export function bbw(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                window: [],
-                sum: 0,
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                prevSum: 0,
+                // Tentative state
+                currentWindow: [],
+                currentSum: 0,
             };
         }
 
         const state = context.taState[stateKey];
+        
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+                state.prevSum = state.currentSum;
+            }
+            state.lastIdx = context.idx;
+        }
+
         const currentValue = Series.from(source).get(0);
 
         if (isNaN(currentValue)) {
+            state.currentWindow = [...state.prevWindow];
+            state.currentSum = state.prevSum;
             return NaN;
         }
 
-        state.window.unshift(currentValue);
-        state.sum += currentValue;
+        const window = [...state.prevWindow];
+        let sum = state.prevSum;
 
-        if (state.window.length < length) {
+        window.unshift(currentValue);
+        sum += currentValue;
+
+        if (window.length > length) {
+            const removed = window.pop();
+            sum -= removed;
+        }
+
+        state.currentWindow = window;
+        state.currentSum = sum;
+
+        if (window.length < length) {
             return NaN;
         }
 
-        if (state.window.length > length) {
-            const removed = state.window.pop();
-            state.sum -= removed;
-        }
-
-        const basis = state.sum / length;
+        const basis = sum / length;
 
         let sumSqDiff = 0;
         for (let i = 0; i < length; i++) {
-            const diff = state.window[i] - basis;
+            const diff = window[i] - basis;
             sumSqDiff += diff * diff;
         }
         const variance = sumSqDiff / length;
@@ -64,4 +87,3 @@ export function bbw(context: any) {
         return context.precision(bbw);
     };
 }
-

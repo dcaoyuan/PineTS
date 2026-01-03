@@ -16,11 +16,23 @@ export function pvi(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                pvi: 1.0,
+                lastIdx: -1,
+                // Committed PVI
+                committedPVI: 1.0,
+                // Tentative PVI
+                tentativePVI: 1.0,
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.committedPVI = state.tentativePVI;
+            }
+            state.lastIdx = context.idx;
+        }
 
         const close = context.get(context.data.close, 0);
         const prevClose = context.get(context.data.close, 1);
@@ -33,17 +45,21 @@ export function pvi(context: any) {
         const v0 = isNaN(volume) ? 0 : volume;
         const v1 = isNaN(prevVolume) ? 0 : prevVolume;
 
+        let currentPVI = state.committedPVI;
+
         if (c0 === 0 || c1 === 0) {
-            // pvi remains the same (state.pvi)
+            // pvi remains the same
         } else {
             if (v0 > v1) {
                 const change = (c0 - c1) / c1;
-                state.pvi = state.pvi + change * state.pvi;
+                currentPVI = currentPVI + change * currentPVI;
             }
             // else pvi remains the same
         }
 
-        return context.precision(state.pvi);
+        // Update tentative state
+        state.tentativePVI = currentPVI;
+
+        return context.precision(currentPVI);
     };
 }
-

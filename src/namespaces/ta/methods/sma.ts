@@ -11,28 +11,56 @@ export function sma(context: any) {
         const stateKey = _callId || `sma_${period}`;
 
         if (!context.taState[stateKey]) {
-            context.taState[stateKey] = { window: [], sum: 0 };
+            context.taState[stateKey] = {
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                prevSum: 0,
+                // Tentative state
+                currentWindow: [],
+                currentSum: 0,
+            };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+                state.prevSum = state.currentSum;
+            }
+            state.lastIdx = context.idx;
+        }
+
         const currentValue = Series.from(source).get(0) || 0;
 
-        // Add current value to window
-        state.window.unshift(currentValue);
-        state.sum += currentValue;
+        // Use committed state
+        const window = [...state.prevWindow];
+        let sum = state.prevSum;
 
-        if (state.window.length < period) {
-            // Not enough data yet
+        // Add current value to window
+        window.unshift(currentValue);
+        sum += currentValue;
+
+        if (window.length < period) {
+            // Update tentative state
+            state.currentWindow = window;
+            state.currentSum = sum;
             return NaN;
         }
 
-        if (state.window.length > period) {
+        if (window.length > period) {
             // Remove oldest value from sum
-            const oldValue = state.window.pop();
-            state.sum -= oldValue;
+            const oldValue = window.pop();
+            sum -= oldValue;
         }
 
-        const sma = state.sum / period;
+        // Update tentative state
+        state.currentWindow = window;
+        state.currentSum = sum;
+
+        const sma = sum / period;
         return context.precision(sma);
     };
 }

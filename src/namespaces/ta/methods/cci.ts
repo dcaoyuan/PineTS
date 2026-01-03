@@ -31,41 +31,69 @@ export function cci(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                window: [],
-                sum: 0,
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                prevSum: 0,
+                // Tentative state
+                currentWindow: [],
+                currentSum: 0,
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+                state.prevSum = state.currentSum;
+            }
+            state.lastIdx = context.idx;
+        }
+
         const currentValue = Series.from(source).get(0);
 
         // Handle NaN input
         if (isNaN(currentValue)) {
+            // Update tentative state with previous values (no change effectively, or should we reset?)
+            // Standard Pine behavior usually propagates NaN. For rolling window, we probably skip or push NaN?
+            // If input is NaN, CCI is usually NaN.
             return NaN;
         }
 
+        // Use committed state
+        const window = [...state.prevWindow];
+        let sum = state.prevSum;
+
         // Add current value to window
-        state.window.unshift(currentValue);
-        state.sum += currentValue;
+        window.unshift(currentValue);
+        sum += currentValue;
 
         // Not enough data yet
-        if (state.window.length < length) {
+        if (window.length < length) {
+            state.currentWindow = window;
+            state.currentSum = sum;
             return NaN;
         }
 
         // Remove oldest value if window exceeds length
-        if (state.window.length > length) {
-            const oldValue = state.window.pop();
-            state.sum -= oldValue;
+        if (window.length > length) {
+            const oldValue = window.pop();
+            sum -= oldValue;
         }
 
+        // Update tentative state
+        state.currentWindow = window;
+        state.currentSum = sum;
+
         // Calculate SMA (mean)
-        const sma = state.sum / length;
+        const sma = sum / length;
 
         // Calculate Mean Deviation
         let sumAbsoluteDeviations = 0;
         for (let i = 0; i < length; i++) {
-            sumAbsoluteDeviations += Math.abs(state.window[i] - sma);
+            sumAbsoluteDeviations += Math.abs(window[i] - sma);
         }
         const meanDeviation = sumAbsoluteDeviations / length;
 
@@ -80,4 +108,3 @@ export function cci(context: any) {
         return context.precision(cci);
     };
 }
-

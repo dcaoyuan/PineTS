@@ -11,32 +11,55 @@ export function dev(context: any) {
         const stateKey = _callId || `dev_${length}`;
 
         if (!context.taState[stateKey]) {
-            context.taState[stateKey] = { window: [], sum: 0 };
+            context.taState[stateKey] = { 
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [], 
+                prevSum: 0,
+                // Tentative state
+                currentWindow: [],
+                currentSum: 0,
+            };
         }
 
         const state = context.taState[stateKey];
+        
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+                state.prevSum = state.currentSum;
+            }
+            state.lastIdx = context.idx;
+        }
+
         const currentValue = Series.from(source).get(0) || 0;
 
-        state.window.unshift(currentValue);
-        state.sum += currentValue;
+        const window = [...state.prevWindow];
+        let sum = state.prevSum;
 
-        if (state.window.length < length) {
+        window.unshift(currentValue);
+        sum += currentValue;
+
+        if (window.length > length) {
+            const oldValue = window.pop();
+            sum -= oldValue;
+        }
+
+        state.currentWindow = window;
+        state.currentSum = sum;
+
+        if (window.length < length) {
             return NaN;
         }
 
-        if (state.window.length > length) {
-            const oldValue = state.window.pop();
-            state.sum -= oldValue;
-        }
-
-        const mean = state.sum / length;
+        const mean = sum / length;
         let sumDeviation = 0;
         for (let i = 0; i < length; i++) {
-            sumDeviation += Math.abs(state.window[i] - mean);
+            sumDeviation += Math.abs(window[i] - mean);
         }
 
         const dev = sumDeviation / length;
         return context.precision(dev);
     };
 }
-

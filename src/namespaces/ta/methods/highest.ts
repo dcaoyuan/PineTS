@@ -11,24 +11,51 @@ export function highest(context: any) {
         const stateKey = _callId || `highest_${length}`;
 
         if (!context.taState[stateKey]) {
-            context.taState[stateKey] = { window: [] };
+            context.taState[stateKey] = {
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                // Tentative state
+                currentWindow: [],
+            };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+            }
+            state.lastIdx = context.idx;
+        }
+
         const currentValue = Series.from(source).get(0);
 
-        state.window.unshift(currentValue);
+        // Use committed state
+        const window = [...state.prevWindow];
 
-        if (state.window.length < length) {
+        window.unshift(currentValue);
+
+        if (window.length < length) {
+            // Update tentative state
+            state.currentWindow = window;
             return NaN;
         }
 
-        if (state.window.length > length) {
-            state.window.pop();
+        if (window.length > length) {
+            window.pop();
         }
 
-        const max = Math.max(...state.window.filter((v) => !isNaN(v)));
+        // Update tentative state
+        state.currentWindow = window;
+
+        const validValues = window.filter((v) => !isNaN(v) && v !== undefined);
+        if (validValues.length === 0) {
+            return NaN;
+        }
+
+        const max = Math.max(...validValues);
         return context.precision(max);
     };
 }
-

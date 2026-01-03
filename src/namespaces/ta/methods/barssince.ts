@@ -14,22 +14,39 @@ export function barssince(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                lastTrueIndex: null,
+                lastIdx: -1,
+                // Committed state
+                prevLastTrueIndex: null,
+                // Tentative state
+                currentLastTrueIndex: null,
             };
         }
         const state = context.taState[stateKey];
 
-        const cond = Series.from(condition).get(0);
-
-        if (cond) {
-            state.lastTrueIndex = context.idx;
-            return 0;
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevLastTrueIndex = state.currentLastTrueIndex;
+            }
+            state.lastIdx = context.idx;
         }
 
-        if (state.lastTrueIndex === null) {
+        const cond = Series.from(condition).get(0);
+
+        // Use committed previous last true index as base
+        let lastTrueIndex = state.prevLastTrueIndex;
+
+        if (cond) {
+            lastTrueIndex = context.idx;
+        }
+
+        // Update tentative state
+        state.currentLastTrueIndex = lastTrueIndex;
+
+        if (lastTrueIndex === null) {
             return NaN;
         }
 
-        return context.idx - state.lastTrueIndex;
+        return context.idx - lastTrueIndex;
     };
 }

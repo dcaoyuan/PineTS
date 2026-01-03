@@ -15,6 +15,7 @@ This guide explains how to initialize PineTS and run indicators or strategies wi
 -   [PineTS Constructor](#pinets-constructor)
 -   [Initialization Options](#initialization-options)
 -   [The run() Method](#the-run-method)
+-   [The stream() Method](#the-stream-method)
 -   [Context Object](#context-object)
 -   [Return Values](#return-values)
 -   [Complete Examples](#complete-examples)
@@ -278,6 +279,56 @@ Returns a `Promise<Context>` object containing:
 -   `data`: Market data arrays (open, high, low, close, volume, etc.)
 -   `plots`: Any plot data generated
 -   Additional context properties
+
+---
+
+## The stream() Method
+
+The `stream()` method provides an event-based interface for handling live data streams, making it easy to integrate with real-time applications.
+
+### Syntax
+
+```typescript
+const evt = pineTS.stream(
+    pineTSCode: Function | String,
+    options?: {
+        pageSize?: number,
+        live?: boolean,
+        interval?: number
+    }
+);
+```
+
+### Options
+
+| Option     | Type      | Default           | Description                                                                                    |
+| ---------- | --------- | ----------------- | ---------------------------------------------------------------------------------------------- |
+| `pageSize` | `number`  | `undefined` (all) | Number of bars per chunk. If not specified, processes all available historical data in one go. |
+| `live`     | `boolean` | `true`            | Whether to continue fetching live data after processing historical data.                       |
+| `interval` | `number`  | `1000`            | Polling interval in milliseconds for live data.                                                |
+
+### Usage
+
+The method returns an object with `on()` and `stop()` methods:
+
+```typescript
+// Start streaming
+const evt = pineTS.stream(indicator, { pageSize: 1, live: true, interval: 2000 });
+
+// Handle data updates
+evt.on('data', (context) => {
+    // Process new data
+    console.log('New data:', context.result);
+});
+
+// Handle errors
+evt.on('error', (error) => {
+    console.error('Stream error:', error);
+});
+
+// Stop streaming
+// evt.stop();
+```
 
 ---
 

@@ -23,13 +23,29 @@ export function vwap(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                cumulativePV: 0, // Cumulative price * volume
-                cumulativeVolume: 0, // Cumulative volume
-                lastSessionDate: null, // Track last session date
+                lastIdx: -1,
+                // Committed state
+                prevCumulativePV: 0, // Cumulative price * volume
+                prevCumulativeVolume: 0, // Cumulative volume
+                prevLastSessionDate: null, // Track last session date
+                // Tentative state
+                currentCumulativePV: 0,
+                currentCumulativeVolume: 0,
+                currentLastSessionDate: null,
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevCumulativePV = state.currentCumulativePV;
+                state.prevCumulativeVolume = state.currentCumulativeVolume;
+                state.prevLastSessionDate = state.currentLastSessionDate;
+            }
+            state.lastIdx = context.idx;
+        }
 
         // Get current values
         const currentPrice = Series.from(source).get(0);
@@ -42,23 +58,33 @@ export function vwap(context: any) {
         const currentDate = new Date(currentOpenTime);
         const currentSessionDate = currentDate.toISOString().slice(0, 10); // YYYY-MM-DD
 
+        // Use committed state
+        let cumulativePV = state.prevCumulativePV;
+        let cumulativeVolume = state.prevCumulativeVolume;
+        let lastSessionDate = state.prevLastSessionDate;
+
         // Reset VWAP at the start of a new session
-        if (state.lastSessionDate !== currentSessionDate) {
-            state.cumulativePV = 0;
-            state.cumulativeVolume = 0;
-            state.lastSessionDate = currentSessionDate;
+        if (lastSessionDate !== currentSessionDate) {
+            cumulativePV = 0;
+            cumulativeVolume = 0;
+            lastSessionDate = currentSessionDate;
         }
 
         // Update cumulative values
-        state.cumulativePV += currentPrice * currentVolume;
-        state.cumulativeVolume += currentVolume;
+        cumulativePV += currentPrice * currentVolume;
+        cumulativeVolume += currentVolume;
+
+        // Store tentative state
+        state.currentCumulativePV = cumulativePV;
+        state.currentCumulativeVolume = cumulativeVolume;
+        state.currentLastSessionDate = lastSessionDate;
 
         // Calculate VWAP
-        if (state.cumulativeVolume === 0) {
+        if (cumulativeVolume === 0) {
             return NaN;
         }
 
-        const vwap = state.cumulativePV / state.cumulativeVolume;
+        const vwap = cumulativePV / cumulativeVolume;
         return context.precision(vwap);
     };
 }

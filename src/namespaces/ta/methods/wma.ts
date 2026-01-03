@@ -11,27 +11,49 @@ export function wma(context: any) {
         const stateKey = _callId || `wma_${period}`;
 
         if (!context.taState[stateKey]) {
-            context.taState[stateKey] = { window: [] };
+            context.taState[stateKey] = {
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                // Tentative state
+                currentWindow: [],
+            };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+            }
+            state.lastIdx = context.idx;
+        }
+
         const currentValue = Series.from(source).get(0);
 
-        state.window.unshift(currentValue);
+        // Use committed state
+        const window = [...state.prevWindow];
 
-        if (state.window.length < period) {
+        window.unshift(currentValue);
+
+        if (window.length < period) {
+            state.currentWindow = window;
             return NaN;
         }
 
-        if (state.window.length > period) {
-            state.window.pop();
+        if (window.length > period) {
+            window.pop();
         }
+
+        // Update tentative state
+        state.currentWindow = window;
 
         let numerator = 0;
         let denominator = 0;
         for (let i = 0; i < period; i++) {
             const weight = period - i;
-            numerator += state.window[i] * weight;
+            numerator += window[i] * weight;
             denominator += weight;
         }
 
@@ -39,4 +61,3 @@ export function wma(context: any) {
         return context.precision(wma);
     };
 }
-

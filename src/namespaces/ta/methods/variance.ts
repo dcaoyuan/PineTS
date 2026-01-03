@@ -11,27 +11,45 @@ export function variance(context: any) {
         const stateKey = _callId || `variance_${length}`;
 
         if (!context.taState[stateKey]) {
-            context.taState[stateKey] = { window: [] };
+            context.taState[stateKey] = { 
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                // Tentative state
+                currentWindow: []
+            };
         }
 
         const state = context.taState[stateKey];
-        const currentValue = Series.from(source).get(0);
 
-        state.window.unshift(currentValue);
-
-        if (state.window.length < length) {
-            return NaN;
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+            }
+            state.lastIdx = context.idx;
         }
 
-        if (state.window.length > length) {
-            state.window.pop();
+        const currentValue = Series.from(source).get(0);
+        
+        const window = [...state.prevWindow];
+        window.unshift(currentValue);
+
+        if (window.length > length) {
+            window.pop();
+        }
+
+        state.currentWindow = window;
+
+        if (window.length < length) {
+            return NaN;
         }
 
         let sum = 0;
         let sumSquares = 0;
         for (let i = 0; i < length; i++) {
-            sum += state.window[i];
-            sumSquares += state.window[i] * state.window[i];
+            sum += window[i];
+            sumSquares += window[i] * window[i];
         }
 
         const mean = sum / length;
@@ -40,4 +58,3 @@ export function variance(context: any) {
         return context.precision(variance);
     };
 }
-

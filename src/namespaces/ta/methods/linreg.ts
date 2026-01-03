@@ -12,20 +12,38 @@ export function linreg(context: any) {
         const stateKey = _callId || `linreg_${length}_${offset}`;
 
         if (!context.taState[stateKey]) {
-            context.taState[stateKey] = { window: [] };
+            context.taState[stateKey] = { 
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                // Tentative state
+                currentWindow: []
+            };
         }
 
         const state = context.taState[stateKey];
-        const currentValue = Series.from(source).get(0);
-
-        state.window.unshift(currentValue);
-
-        if (state.window.length < length) {
-            return NaN;
+        
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+            }
+            state.lastIdx = context.idx;
         }
 
-        if (state.window.length > length) {
-            state.window.pop();
+        const currentValue = Series.from(source).get(0);
+
+        const window = [...state.prevWindow];
+        window.unshift(currentValue);
+
+        if (window.length > length) {
+            window.pop();
+        }
+
+        state.currentWindow = window;
+
+        if (window.length < length) {
+            return NaN;
         }
 
         let sumX = 0;
@@ -38,7 +56,7 @@ export function linreg(context: any) {
         // window[0] is most recent (x = length - 1), window[length-1] is oldest (x = 0)
         for (let j = 0; j < length; j++) {
             const x = length - 1 - j; // Most recent bar has highest x value
-            const y = state.window[j];
+            const y = window[j];
             sumX += x;
             sumY += y;
             sumXY += x * y;
@@ -59,4 +77,3 @@ export function linreg(context: any) {
         return context.precision(linRegValue);
     };
 }
-

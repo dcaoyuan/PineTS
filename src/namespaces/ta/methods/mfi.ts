@@ -25,14 +25,32 @@ export function mfi(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                upperWindow: [],
-                lowerWindow: [],
-                upperSum: 0,
-                lowerSum: 0,
+                lastIdx: -1,
+                // Committed state
+                prevUpperWindow: [],
+                prevLowerWindow: [],
+                prevUpperSum: 0,
+                prevLowerSum: 0,
+                // Tentative state
+                currentUpperWindow: [],
+                currentLowerWindow: [],
+                currentUpperSum: 0,
+                currentLowerSum: 0,
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevUpperWindow = [...state.currentUpperWindow];
+                state.prevLowerWindow = [...state.currentLowerWindow];
+                state.prevUpperSum = state.currentUpperSum;
+                state.prevLowerSum = state.currentLowerSum;
+            }
+            state.lastIdx = context.idx;
+        }
 
         // Get current values
         const currentSrc = Series.from(source).get(0);
@@ -41,57 +59,69 @@ export function mfi(context: any) {
 
         // Handle NaN inputs
         if (isNaN(currentSrc) || isNaN(volume)) {
+            // Can't update properly, return NaN but maintain window?
+            // If we skip update, sum lags.
+            // Assuming NaN src means no flow.
             return NaN;
         }
 
         // Calculate change
         const change = isNaN(previousSrc) ? NaN : currentSrc - previousSrc;
 
-        // Calculate upper and lower based on Pine Script formula
-        // upper component: volume * (change <= 0 ? 0 : src)
-        // lower component: volume * (change >= 0 ? 0 : src)
-        let upperComponent = 0;
-        let lowerComponent = 0;
-
-        // Calculate components following Pine Script logic exactly
-        // When change is NaN, comparisons return false, so we use src
+        // Calculate components
         // upper: if change <= 0, use 0, else use src
-        upperComponent = volume * (change <= 0 ? 0 : currentSrc);
+        const upperComponent = volume * (change <= 0 ? 0 : currentSrc);
         // lower: if change >= 0, use 0, else use src
-        lowerComponent = volume * (change >= 0 ? 0 : currentSrc);
+        const lowerComponent = volume * (change >= 0 ? 0 : currentSrc);
+
+        // Use committed state
+        const upperWindow = [...state.prevUpperWindow];
+        const lowerWindow = [...state.prevLowerWindow];
+        let upperSum = state.prevUpperSum;
+        let lowerSum = state.prevLowerSum;
 
         // Add to windows
-        state.upperWindow.unshift(upperComponent);
-        state.lowerWindow.unshift(lowerComponent);
-        state.upperSum += upperComponent;
-        state.lowerSum += lowerComponent;
+        upperWindow.unshift(upperComponent);
+        lowerWindow.unshift(lowerComponent);
+        upperSum += upperComponent;
+        lowerSum += lowerComponent;
 
         // Not enough data yet
-        if (state.upperWindow.length < length) {
+        if (upperWindow.length < length) {
+            state.currentUpperWindow = upperWindow;
+            state.currentLowerWindow = lowerWindow;
+            state.currentUpperSum = upperSum;
+            state.currentLowerSum = lowerSum;
             return NaN;
         }
 
         // Remove oldest values if window exceeds length
-        if (state.upperWindow.length > length) {
-            const oldUpper = state.upperWindow.pop();
-            const oldLower = state.lowerWindow.pop();
-            state.upperSum -= oldUpper;
-            state.lowerSum -= oldLower;
+        if (upperWindow.length > length) {
+            const oldUpper = upperWindow.pop();
+            const oldLower = lowerWindow.pop();
+            upperSum -= oldUpper;
+            lowerSum -= oldLower;
         }
+
+        // Update tentative state
+        state.currentUpperWindow = upperWindow;
+        state.currentLowerWindow = lowerWindow;
+        state.currentUpperSum = upperSum;
+        state.currentLowerSum = lowerSum;
 
         // Calculate MFI
-        if (state.lowerSum === 0) {
-            if (state.upperSum === 0) {
-                return context.precision(100); // No change = bullish (Pine Script behavior)
+        if (lowerSum === 0) {
+            if (upperSum === 0) {
+                return context.precision(100); 
             }
-            return context.precision(100); // All positive money flow
+            return context.precision(100); 
         }
 
-        if (state.upperSum === 0) {
-            return context.precision(0); // All negative money flow
+        if (upperSum === 0) {
+            return context.precision(0); 
         }
 
-        const mfi = 100.0 - 100.0 / (1.0 + state.upperSum / state.lowerSum);
+        const mfi = 100.0 - 100.0 / (1.0 + upperSum / lowerSum);
 
         return context.precision(mfi);
     };

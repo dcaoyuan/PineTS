@@ -14,30 +14,48 @@ export function valuewhen(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                values: [],
+                lastIdx: -1,
+                // Committed state
+                prevValues: [],
+                // Tentative state
+                currentValues: [],
             };
         }
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevValues = [...state.currentValues];
+            }
+            state.lastIdx = context.idx;
+        }
 
         const cond = Series.from(condition).get(0);
         const val = Series.from(source).get(0);
         const occurrence = Series.from(_occurrence).get(0);
 
+        // Use committed values as base
+        const values = [...state.prevValues];
+
         if (cond) {
-            state.values.push(val);
+            values.push(val);
         }
+
+        // Update tentative state
+        state.currentValues = values;
 
         if (isNaN(occurrence) || occurrence < 0) {
             return NaN;
         }
 
-        const index = state.values.length - 1 - occurrence;
+        const index = values.length - 1 - occurrence;
 
         if (index < 0) {
             return NaN;
         }
 
-        const result = state.values[index];
+        const result = values[index];
 
         // Check if result is a number to apply precision, else return as is (e.g. boolean/color)
         if (typeof result === 'number') {

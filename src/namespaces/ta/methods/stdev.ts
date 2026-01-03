@@ -12,10 +12,28 @@ export function stdev(context: any) {
         const stateKey = _callId || `stdev_${length}_${bias}`;
 
         if (!context.taState[stateKey]) {
-            context.taState[stateKey] = { window: [], sum: 0 };
+            context.taState[stateKey] = {
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                prevSum: 0,
+                // Tentative state
+                currentWindow: [],
+                currentSum: 0,
+            };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+                state.prevSum = state.currentSum;
+            }
+            state.lastIdx = context.idx;
+        }
+
         const currentValue = Series.from(source).get(0);
 
         // Fix: Handle NaN/null values by skipping them
@@ -23,22 +41,32 @@ export function stdev(context: any) {
             return NaN;
         }
 
-        state.window.unshift(currentValue);
-        state.sum += currentValue;
+        // Use committed state
+        const window = [...state.prevWindow];
+        let sum = state.prevSum;
 
-        if (state.window.length < length) {
+        window.unshift(currentValue);
+        sum += currentValue;
+
+        if (window.length < length) {
+            state.currentWindow = window;
+            state.currentSum = sum;
             return NaN;
         }
 
-        if (state.window.length > length) {
-            const oldValue = state.window.pop();
-            state.sum -= oldValue;
+        if (window.length > length) {
+            const oldValue = window.pop();
+            sum -= oldValue;
         }
 
-        const mean = state.sum / length;
+        // Update tentative state
+        state.currentWindow = window;
+        state.currentSum = sum;
+
+        const mean = sum / length;
         let sumSquaredDiff = 0;
         for (let i = 0; i < length; i++) {
-            sumSquaredDiff += Math.pow(state.window[i] - mean, 2);
+            sumSquaredDiff += Math.pow(window[i] - mean, 2);
         }
 
         const divisor = bias ? length : length - 1;

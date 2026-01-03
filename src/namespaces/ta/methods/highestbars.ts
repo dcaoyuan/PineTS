@@ -13,6 +13,9 @@ export function highestbars(context: any) {
         const length = Series.from(_length).get(0);
         const series = Series.from(source);
 
+        // Stateless calculation (accesses past data via Series),
+        // but result depends on historical data availability.
+
         if (context.idx < length - 1) {
             return NaN;
         }
@@ -22,7 +25,7 @@ export function highestbars(context: any) {
 
         for (let i = 0; i < length; i++) {
             const val = series.get(i);
-            
+
             if (isNaN(val)) continue;
 
             if (isNaN(maxOffset) || val > maxVal) {
@@ -34,4 +37,3 @@ export function highestbars(context: any) {
         return maxOffset;
     };
 }
-

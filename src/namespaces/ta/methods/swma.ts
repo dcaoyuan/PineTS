@@ -27,36 +27,49 @@ export function swma(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                window: [],
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                // Tentative state
+                currentWindow: [],
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+            }
+            state.lastIdx = context.idx;
+        }
+
         const currentValue = Series.from(source).get(0);
 
-        // Add current value to window (most recent at front)
-        state.window.unshift(currentValue);
+        // Use committed state
+        const window = [...state.prevWindow];
 
-        if (state.window.length < period) {
-            // Not enough data yet
+        // Add current value to window (most recent at front)
+        window.unshift(currentValue);
+
+        if (window.length < period) {
+            state.currentWindow = window;
             return NaN;
         }
 
-        if (state.window.length > period) {
+        if (window.length > period) {
             // Remove oldest value
-            state.window.pop();
+            window.pop();
         }
 
+        // Update tentative state
+        state.currentWindow = window;
+
         // Calculate symmetrically weighted average
-        // Window is [newest, ..., oldest]
-        // Weights are [1, 2, 2, 1] for [oldest, ..., newest]
-        // So we apply weights in reverse order
         let swma = 0;
         for (let i = 0; i < period; i++) {
-            // weights[0] = oldest (weight 1), weights[3] = newest (weight 1)
-            // window[0] = newest, window[3] = oldest
-            // So weights[i] should multiply window[period-1-i]
-            swma += weights[i] * state.window[period - 1 - i];
+            swma += weights[i] * window[period - 1 - i];
         }
         swma /= weightSum;
 

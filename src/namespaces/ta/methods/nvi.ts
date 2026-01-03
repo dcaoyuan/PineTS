@@ -16,11 +16,23 @@ export function nvi(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                nvi: 1.0,
+                lastIdx: -1,
+                // Committed NVI
+                committedNVI: 1.0,
+                // Tentative NVI
+                tentativeNVI: 1.0,
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.committedNVI = state.tentativeNVI;
+            }
+            state.lastIdx = context.idx;
+        }
 
         const close = context.get(context.data.close, 0);
         const prevClose = context.get(context.data.close, 1);
@@ -33,17 +45,21 @@ export function nvi(context: any) {
         const v0 = isNaN(volume) ? 0 : volume;
         const v1 = isNaN(prevVolume) ? 0 : prevVolume;
 
+        let currentNVI = state.committedNVI;
+
         if (c0 === 0 || c1 === 0) {
-            // nvi remains the same (state.nvi)
+            // nvi remains the same
         } else {
             if (v0 < v1) {
                 const change = (c0 - c1) / c1;
-                state.nvi = state.nvi + change * state.nvi;
+                currentNVI = currentNVI + change * currentNVI;
             }
             // else nvi remains the same
         }
 
-        return context.precision(state.nvi);
+        // Update tentative state
+        state.tentativeNVI = currentNVI;
+
+        return context.precision(currentNVI);
     };
 }
-

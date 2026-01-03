@@ -11,25 +11,47 @@ export function roc(context: any) {
         const stateKey = _callId || `roc_${length}`;
 
         if (!context.taState[stateKey]) {
-            context.taState[stateKey] = { window: [] };
+            context.taState[stateKey] = {
+                lastIdx: -1,
+                // Committed state
+                prevWindow: [],
+                // Tentative state
+                currentWindow: [],
+            };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevWindow = [...state.currentWindow];
+            }
+            state.lastIdx = context.idx;
+        }
+
         const currentValue = Series.from(source).get(0);
 
-        state.window.unshift(currentValue);
+        // Use committed state as base
+        const window = [...state.prevWindow];
 
-        if (state.window.length <= length) {
+        window.unshift(currentValue);
+
+        if (window.length <= length) {
+            // Update tentative state
+            state.currentWindow = window;
             return NaN;
         }
 
-        if (state.window.length > length + 1) {
-            state.window.pop();
+        if (window.length > length + 1) {
+            window.pop();
         }
 
-        const prevValue = state.window[length];
+        // Update tentative state
+        state.currentWindow = window;
+
+        const prevValue = window[length];
         const roc = ((currentValue - prevValue) / prevValue) * 100;
         return context.precision(roc);
     };
 }
-

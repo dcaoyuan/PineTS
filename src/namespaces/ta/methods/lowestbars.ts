@@ -13,6 +13,8 @@ export function lowestbars(context: any) {
         const length = Series.from(_length).get(0);
         const series = Series.from(source);
 
+        // Stateless calculation (accesses past data via Series)
+        
         if (context.idx < length - 1) {
             return NaN;
         }
@@ -34,4 +36,3 @@ export function lowestbars(context: any) {
         return minOffset;
     };
 }
-

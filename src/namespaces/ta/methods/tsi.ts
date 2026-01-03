@@ -28,32 +28,73 @@ export function tsi(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                // For price change (pc)
+                lastIdx: -1,
+                // Committed state
                 prevSource: NaN,
-                // For first EMA of pc (long)
-                ema1_pc_multiplier: 2 / (longLength + 1),
-                ema1_pc_value: NaN,
-                ema1_pc_count: 0,
-                ema1_pc_sum: 0,
-                // For second EMA of pc (short) - double smoothed
-                ema2_pc_multiplier: 2 / (shortLength + 1),
-                ema2_pc_value: NaN,
-                ema2_pc_count: 0,
-                ema2_pc_sum: 0,
-                // For first EMA of abs(pc) (long)
-                ema1_abs_multiplier: 2 / (longLength + 1),
-                ema1_abs_value: NaN,
-                ema1_abs_count: 0,
-                ema1_abs_sum: 0,
-                // For second EMA of abs(pc) (short) - double smoothed
-                ema2_abs_multiplier: 2 / (shortLength + 1),
-                ema2_abs_value: NaN,
-                ema2_abs_count: 0,
-                ema2_abs_sum: 0,
+                
+                prevEma1PcValue: NaN,
+                prevEma1PcCount: 0,
+                prevEma1PcSum: 0,
+
+                prevEma2PcValue: NaN,
+                prevEma2PcCount: 0,
+                prevEma2PcSum: 0,
+
+                prevEma1AbsValue: NaN,
+                prevEma1AbsCount: 0,
+                prevEma1AbsSum: 0,
+
+                prevEma2AbsValue: NaN,
+                prevEma2AbsCount: 0,
+                prevEma2AbsSum: 0,
+
+                // Tentative state
+                currentSource: NaN,
+
+                currentEma1PcValue: NaN,
+                currentEma1PcCount: 0,
+                currentEma1PcSum: 0,
+
+                currentEma2PcValue: NaN,
+                currentEma2PcCount: 0,
+                currentEma2PcSum: 0,
+
+                currentEma1AbsValue: NaN,
+                currentEma1AbsCount: 0,
+                currentEma1AbsSum: 0,
+
+                currentEma2AbsValue: NaN,
+                currentEma2AbsCount: 0,
+                currentEma2AbsSum: 0,
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevSource = state.currentSource;
+
+                state.prevEma1PcValue = state.currentEma1PcValue;
+                state.prevEma1PcCount = state.currentEma1PcCount;
+                state.prevEma1PcSum = state.currentEma1PcSum;
+
+                state.prevEma2PcValue = state.currentEma2PcValue;
+                state.prevEma2PcCount = state.currentEma2PcCount;
+                state.prevEma2PcSum = state.currentEma2PcSum;
+
+                state.prevEma1AbsValue = state.currentEma1AbsValue;
+                state.prevEma1AbsCount = state.currentEma1AbsCount;
+                state.prevEma1AbsSum = state.currentEma1AbsSum;
+
+                state.prevEma2AbsValue = state.currentEma2AbsValue;
+                state.prevEma2AbsCount = state.currentEma2AbsCount;
+                state.prevEma2AbsSum = state.currentEma2AbsSum;
+            }
+            state.lastIdx = context.idx;
+        }
+
         const currentSource = Series.from(source).get(0);
 
         // Handle NaN input
@@ -63,7 +104,9 @@ export function tsi(context: any) {
 
         // Calculate price change
         const pc = isNaN(state.prevSource) ? NaN : currentSource - state.prevSource;
-        state.prevSource = currentSource;
+        
+        // Update tentative previous source for next bar
+        state.currentSource = currentSource;
 
         if (isNaN(pc)) {
             return NaN;
@@ -71,69 +114,116 @@ export function tsi(context: any) {
 
         const absPC = Math.abs(pc);
 
-        // First EMA of pc (long length)
-        state.ema1_pc_count++;
-        if (state.ema1_pc_count <= longLength) {
-            state.ema1_pc_sum += pc;
-            if (state.ema1_pc_count === longLength) {
-                state.ema1_pc_value = state.ema1_pc_sum / longLength;
+        const ema1PcMultiplier = 2 / (longLength + 1);
+        const ema2PcMultiplier = 2 / (shortLength + 1);
+        const ema1AbsMultiplier = 2 / (longLength + 1);
+        const ema2AbsMultiplier = 2 / (shortLength + 1);
+
+        // --- Calculate EMAs using committed state ---
+
+        // 1. EMA of pc (long length)
+        let ema1PcCount = state.prevEma1PcCount;
+        let ema1PcSum = state.prevEma1PcSum;
+        let ema1PcValue = state.prevEma1PcValue;
+
+        ema1PcCount++;
+        if (ema1PcCount <= longLength) {
+            ema1PcSum += pc;
+            if (ema1PcCount === longLength) {
+                ema1PcValue = ema1PcSum / longLength;
             }
         } else {
-            state.ema1_pc_value = pc * state.ema1_pc_multiplier + state.ema1_pc_value * (1 - state.ema1_pc_multiplier);
+            ema1PcValue = pc * ema1PcMultiplier + ema1PcValue * (1 - ema1PcMultiplier);
         }
 
-        // First EMA of abs(pc) (long length)
-        state.ema1_abs_count++;
-        if (state.ema1_abs_count <= longLength) {
-            state.ema1_abs_sum += absPC;
-            if (state.ema1_abs_count === longLength) {
-                state.ema1_abs_value = state.ema1_abs_sum / longLength;
+        // 2. EMA of abs(pc) (long length)
+        let ema1AbsCount = state.prevEma1AbsCount;
+        let ema1AbsSum = state.prevEma1AbsSum;
+        let ema1AbsValue = state.prevEma1AbsValue;
+
+        ema1AbsCount++;
+        if (ema1AbsCount <= longLength) {
+            ema1AbsSum += absPC;
+            if (ema1AbsCount === longLength) {
+                ema1AbsValue = ema1AbsSum / longLength;
             }
         } else {
-            state.ema1_abs_value = absPC * state.ema1_abs_multiplier + state.ema1_abs_value * (1 - state.ema1_abs_multiplier);
+            ema1AbsValue = absPC * ema1AbsMultiplier + ema1AbsValue * (1 - ema1AbsMultiplier);
         }
 
-        // Check if first EMA is ready
-        if (isNaN(state.ema1_pc_value) || isNaN(state.ema1_abs_value)) {
+        // Check if first EMAs are ready
+        if (isNaN(ema1PcValue) || isNaN(ema1AbsValue)) {
+            // Save tentative state
+            state.currentEma1PcCount = ema1PcCount;
+            state.currentEma1PcSum = ema1PcSum;
+            state.currentEma1PcValue = ema1PcValue;
+            
+            state.currentEma1AbsCount = ema1AbsCount;
+            state.currentEma1AbsSum = ema1AbsSum;
+            state.currentEma1AbsValue = ema1AbsValue;
             return NaN;
         }
 
-        // Second EMA of pc (short length) - double smoothed
-        state.ema2_pc_count++;
-        if (state.ema2_pc_count <= shortLength) {
-            state.ema2_pc_sum += state.ema1_pc_value;
-            if (state.ema2_pc_count === shortLength) {
-                state.ema2_pc_value = state.ema2_pc_sum / shortLength;
+        // 3. Second EMA of pc (short length) - double smoothed
+        let ema2PcCount = state.prevEma2PcCount;
+        let ema2PcSum = state.prevEma2PcSum;
+        let ema2PcValue = state.prevEma2PcValue;
+
+        ema2PcCount++;
+        if (ema2PcCount <= shortLength) {
+            ema2PcSum += ema1PcValue;
+            if (ema2PcCount === shortLength) {
+                ema2PcValue = ema2PcSum / shortLength;
             }
         } else {
-            state.ema2_pc_value = state.ema1_pc_value * state.ema2_pc_multiplier + state.ema2_pc_value * (1 - state.ema2_pc_multiplier);
+            ema2PcValue = ema1PcValue * ema2PcMultiplier + ema2PcValue * (1 - ema2PcMultiplier);
         }
 
-        // Second EMA of abs(pc) (short length) - double smoothed
-        state.ema2_abs_count++;
-        if (state.ema2_abs_count <= shortLength) {
-            state.ema2_abs_sum += state.ema1_abs_value;
-            if (state.ema2_abs_count === shortLength) {
-                state.ema2_abs_value = state.ema2_abs_sum / shortLength;
+        // 4. Second EMA of abs(pc) (short length) - double smoothed
+        let ema2AbsCount = state.prevEma2AbsCount;
+        let ema2AbsSum = state.prevEma2AbsSum;
+        let ema2AbsValue = state.prevEma2AbsValue;
+
+        ema2AbsCount++;
+        if (ema2AbsCount <= shortLength) {
+            ema2AbsSum += ema1AbsValue;
+            if (ema2AbsCount === shortLength) {
+                ema2AbsValue = ema2AbsSum / shortLength;
             }
         } else {
-            state.ema2_abs_value = state.ema1_abs_value * state.ema2_abs_multiplier + state.ema2_abs_value * (1 - state.ema2_abs_multiplier);
+            ema2AbsValue = ema1AbsValue * ema2AbsMultiplier + ema2AbsValue * (1 - ema2AbsMultiplier);
         }
 
-        // Check if second EMA is ready
-        if (isNaN(state.ema2_pc_value) || isNaN(state.ema2_abs_value)) {
+        // Save ALL tentative state
+        state.currentEma1PcCount = ema1PcCount;
+        state.currentEma1PcSum = ema1PcSum;
+        state.currentEma1PcValue = ema1PcValue;
+
+        state.currentEma1AbsCount = ema1AbsCount;
+        state.currentEma1AbsSum = ema1AbsSum;
+        state.currentEma1AbsValue = ema1AbsValue;
+
+        state.currentEma2PcCount = ema2PcCount;
+        state.currentEma2PcSum = ema2PcSum;
+        state.currentEma2PcValue = ema2PcValue;
+
+        state.currentEma2AbsCount = ema2AbsCount;
+        state.currentEma2AbsSum = ema2AbsSum;
+        state.currentEma2AbsValue = ema2AbsValue;
+
+        // Check if second EMAs are ready
+        if (isNaN(ema2PcValue) || isNaN(ema2AbsValue)) {
             return NaN;
         }
 
         // Avoid division by zero
-        if (state.ema2_abs_value === 0) {
+        if (ema2AbsValue === 0) {
             return context.precision(0);
         }
 
         // Calculate TSI
-        const tsi = state.ema2_pc_value / state.ema2_abs_value;
+        const tsi = ema2PcValue / ema2AbsValue;
 
         return context.precision(tsi);
     };
 }
-

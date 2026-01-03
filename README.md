@@ -71,6 +71,33 @@ npm install pinets
 
 ## Usage Examples
 
+### Streaming Data
+
+PineTS provides a convenient event-based interface for streaming live data:
+
+```javascript
+import { PineTS, Provider } from 'pinets';
+
+const pineTS = new PineTS(Provider.Binance, 'BTCUSDT', '1m');
+
+// Start streaming with 1 second interval
+const evt = pineTS.stream(
+    indicator,
+    //assuming that indicator is a pine source code or pineTS function
+    {
+        pageSize: 10,
+        live: true,
+        interval: 1000,
+    }
+);
+
+evt.on('data', (ctx) => {
+    console.log('Update:', ctx.result.close);
+});
+
+// See documentation for full details
+```
+
 ### Option 1: Run Native Pine Script Directly _(Experimental)_
 
 Starting with v0.7.0, you can run original Pine Script code directly:

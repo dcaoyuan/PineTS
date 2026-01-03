@@ -1,5 +1,16 @@
 # Change Log
 
+## [0.7.7] - 2025-01-03 - Live Streaming Support
+
+### Added
+
+-   **PineTS.stream() Method**: Event-driven wrapper of `PineTS.run()` to simplify handling live data and real-time updates
+-   Documentation updates for streaming functionality
+
+### Fixed
+
+-   **Critical Fix**: Live data processing was producing wrong values in `ta.*` functions due to incorrect handling of current vs committed candles
+
 ## [0.7.6] - 2025-12-30 - Additional Plot Functions
 
 ### Added

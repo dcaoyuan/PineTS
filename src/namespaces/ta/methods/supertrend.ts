@@ -35,21 +35,44 @@ export function supertrend(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                // For ATR calculation (using RMA)
-                trWindow: [],
-                trSum: 0,
-                atrValue: NaN,
-                atrCount: 0,
-                // For SuperTrend
+                lastIdx: -1,
+                // Committed state
+                prevTrSum: 0,
+                prevAtrValue: NaN,
+                prevAtrCount: 0,
                 prevLowerBand: NaN,
                 prevUpperBand: NaN,
                 prevSuperTrend: NaN,
                 prevDirection: NaN,
                 prevClose: NaN,
+                // Tentative state
+                currentTrSum: 0,
+                currentAtrValue: NaN,
+                currentAtrCount: 0,
+                currentLowerBand: NaN,
+                currentUpperBand: NaN,
+                currentSuperTrend: NaN,
+                currentDirection: NaN,
+                currentClose: NaN,
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevTrSum = state.currentTrSum;
+                state.prevAtrValue = state.currentAtrValue;
+                state.prevAtrCount = state.currentAtrCount;
+                state.prevLowerBand = state.currentLowerBand;
+                state.prevUpperBand = state.currentUpperBand;
+                state.prevSuperTrend = state.currentSuperTrend;
+                state.prevDirection = state.currentDirection;
+                state.prevClose = state.currentClose;
+            }
+            state.lastIdx = context.idx;
+        }
 
         // Get current OHLC values
         const high = context.get(context.data.high, 0);
@@ -64,32 +87,40 @@ export function supertrend(context: any) {
         // Calculate hl2 (source)
         const hl2 = (high + low) / 2;
 
+        // Use committed previous close
+        const prevClose = state.prevClose;
+
         // Calculate True Range
         let tr;
-        if (isNaN(state.prevClose)) {
+        if (isNaN(prevClose)) {
             tr = high - low;
         } else {
-            tr = Math.max(high - low, Math.abs(high - state.prevClose), Math.abs(low - state.prevClose));
+            tr = Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
         }
 
-        // Calculate ATR using RMA (same as ta.atr)
-        state.atrCount++;
-        if (state.atrCount <= atrPeriod) {
-            state.trWindow.push(tr);
-            state.trSum += tr;
-            if (state.atrCount === atrPeriod) {
-                state.atrValue = state.trSum / atrPeriod;
+        // Calculate ATR using RMA (using committed state)
+        let atrCount = state.prevAtrCount;
+        let trSum = state.prevTrSum;
+        let atrValue = state.prevAtrValue;
+
+        atrCount++;
+        if (atrCount <= atrPeriod) {
+            trSum += tr;
+            if (atrCount === atrPeriod) {
+                atrValue = trSum / atrPeriod;
             }
         } else {
             // RMA formula: rma = (prev_rma * (length - 1) + current) / length
-            state.atrValue = (state.atrValue * (atrPeriod - 1) + tr) / atrPeriod;
+            atrValue = (atrValue * (atrPeriod - 1) + tr) / atrPeriod;
         }
 
-        const atr = state.atrValue;
+        const atr = atrValue;
 
-        // Store current close for next bar's TR calculation
-        const prevClose = state.prevClose;
-        state.prevClose = close;
+        // Store tentative state for ATR & Close
+        state.currentAtrCount = atrCount;
+        state.currentTrSum = trSum;
+        state.currentAtrValue = atrValue;
+        state.currentClose = close;
 
         // Not enough data for ATR yet
         if (isNaN(atr)) {
@@ -101,6 +132,7 @@ export function supertrend(context: any) {
         let lowerBand = hl2 - factor * atr;
 
         // Get previous bands (use 0 if NaN - nz() behavior)
+        // Use committed previous bands
         const prevLowerBand = isNaN(state.prevLowerBand) ? 0 : state.prevLowerBand;
         const prevUpperBand = isNaN(state.prevUpperBand) ? 0 : state.prevUpperBand;
 
@@ -130,7 +162,7 @@ export function supertrend(context: any) {
 
         const prevSuperTrend = state.prevSuperTrend;
 
-        if (state.atrCount === atrPeriod) {
+        if (atrCount === atrPeriod) {
             // First bar with ATR - initialize direction
             direction = 1;
         } else if (prevSuperTrend === state.prevUpperBand) {
@@ -144,11 +176,11 @@ export function supertrend(context: any) {
         // Set supertrend based on direction
         superTrend = direction === -1 ? lowerBand : upperBand;
 
-        // Store state for next bar
-        state.prevLowerBand = lowerBand;
-        state.prevUpperBand = upperBand;
-        state.prevSuperTrend = superTrend;
-        state.prevDirection = direction;
+        // Store tentative state for bands & supertrend
+        state.currentLowerBand = lowerBand;
+        state.currentUpperBand = upperBand;
+        state.currentSuperTrend = superTrend;
+        state.currentDirection = direction;
 
         return [[context.precision(superTrend), direction]];
     };

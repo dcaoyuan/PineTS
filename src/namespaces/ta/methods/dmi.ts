@@ -35,30 +35,72 @@ export function dmi(context: any) {
 
         if (!context.taState[stateKey]) {
             context.taState[stateKey] = {
-                // Previous bar values
+                lastIdx: -1,
+                
+                // Committed state
                 prevHigh: NaN,
                 prevLow: NaN,
                 prevClose: NaN,
 
-                // RMA states for TR, +DM, -DM (using diLength)
-                // We track initSum and initCount for the SMA initialization phase
-                trInitSum: 0,
-                plusInitSum: 0,
-                minusInitSum: 0,
-                initCount: 0, // Counts valid bars for DI initialization
+                // RMA states for TR, +DM, -DM
+                prevTrInitSum: 0,
+                prevPlusInitSum: 0,
+                prevMinusInitSum: 0,
+                prevInitCount: 0,
 
                 prevSmoothedTR: NaN,
                 prevSmoothedPlus: NaN,
                 prevSmoothedMinus: NaN,
 
-                // RMA state for ADX (using adxSmoothing)
-                dxInitSum: 0,
-                adxInitCount: 0,
+                // RMA state for ADX
+                prevDxInitSum: 0,
+                prevAdxInitCount: 0,
                 prevADX: NaN,
+
+                // Tentative state (current)
+                currentHigh: NaN,
+                currentLow: NaN,
+                currentClose: NaN,
+
+                currentTrInitSum: 0,
+                currentPlusInitSum: 0,
+                currentMinusInitSum: 0,
+                currentInitCount: 0,
+
+                currentSmoothedTR: NaN,
+                currentSmoothedPlus: NaN,
+                currentSmoothedMinus: NaN,
+
+                currentDxInitSum: 0,
+                currentAdxInitCount: 0,
+                currentADX: NaN,
             };
         }
 
         const state = context.taState[stateKey];
+
+        // Commit logic
+        if (context.idx > state.lastIdx) {
+            if (state.lastIdx >= 0) {
+                state.prevHigh = state.currentHigh;
+                state.prevLow = state.currentLow;
+                state.prevClose = state.currentClose;
+
+                state.prevTrInitSum = state.currentTrInitSum;
+                state.prevPlusInitSum = state.currentPlusInitSum;
+                state.prevMinusInitSum = state.currentMinusInitSum;
+                state.prevInitCount = state.currentInitCount;
+
+                state.prevSmoothedTR = state.currentSmoothedTR;
+                state.prevSmoothedPlus = state.currentSmoothedPlus;
+                state.prevSmoothedMinus = state.currentSmoothedMinus;
+
+                state.prevDxInitSum = state.currentDxInitSum;
+                state.prevAdxInitCount = state.currentAdxInitCount;
+                state.prevADX = state.currentADX;
+            }
+            state.lastIdx = context.idx;
+        }
 
         const high = context.get(context.data.high, 0);
         const low = context.get(context.data.low, 0);
@@ -68,16 +110,18 @@ export function dmi(context: any) {
             return [[NaN, NaN, NaN]];
         }
 
-        // Need previous values to calculate DM and TR
+        // Store current bars as tentative "previous" for the NEXT bar
+        state.currentHigh = high;
+        state.currentLow = low;
+        state.currentClose = close;
+
+        // Use committed previous values to calculate DM and TR for CURRENT bar
         if (isNaN(state.prevHigh)) {
-            state.prevHigh = high;
-            state.prevLow = low;
-            state.prevClose = close;
+            // First bar
             return [[NaN, NaN, NaN]];
         }
 
         // Calculate TR
-        // tr = max(high - low, abs(high - prevClose), abs(low - prevClose))
         const tr = Math.max(high - low, Math.abs(high - state.prevClose), Math.abs(low - state.prevClose));
 
         // Calculate Directional Movement
@@ -87,50 +131,50 @@ export function dmi(context: any) {
         const plusDM = (up > down && up > 0) ? up : 0;
         const minusDM = (down > up && down > 0) ? down : 0;
 
-        // Update prev values for next time
-        state.prevHigh = high;
-        state.prevLow = low;
-        state.prevClose = close;
-
         // --- Calculate Smoothed TR, +DM, -DM (RMA with diLength) ---
-        // RMA logic:
-        // If initCount < length: accumulate
-        // If initCount == length: initial value is SMA (sum / length)
-        // If initCount > length: alpha * current + (1-alpha) * prev
+        let initCount = state.prevInitCount;
+        let trInitSum = state.prevTrInitSum;
+        let plusInitSum = state.prevPlusInitSum;
+        let minusInitSum = state.prevMinusInitSum;
+        let smoothedTR = state.prevSmoothedTR;
+        let smoothedPlus = state.prevSmoothedPlus;
+        let smoothedMinus = state.prevSmoothedMinus;
 
-        let smoothedTR, smoothedPlus, smoothedMinus;
+        initCount++;
 
-        state.initCount++;
+        if (initCount <= diLength) {
+            trInitSum += tr;
+            plusInitSum += plusDM;
+            minusInitSum += minusDM;
 
-        if (state.initCount <= diLength) {
-            state.trInitSum += tr;
-            state.plusInitSum += plusDM;
-            state.minusInitSum += minusDM;
-
-            if (state.initCount === diLength) {
-                state.prevSmoothedTR = state.trInitSum / diLength;
-                state.prevSmoothedPlus = state.plusInitSum / diLength;
-                state.prevSmoothedMinus = state.minusInitSum / diLength;
+            if (initCount === diLength) {
+                smoothedTR = trInitSum / diLength;
+                smoothedPlus = plusInitSum / diLength;
+                smoothedMinus = minusInitSum / diLength;
             }
         } else {
             // Incremental RMA
             const alpha = 1 / diLength;
-            state.prevSmoothedTR = alpha * tr + (1 - alpha) * state.prevSmoothedTR;
-            state.prevSmoothedPlus = alpha * plusDM + (1 - alpha) * state.prevSmoothedPlus;
-            state.prevSmoothedMinus = alpha * minusDM + (1 - alpha) * state.prevSmoothedMinus;
+            smoothedTR = alpha * tr + (1 - alpha) * smoothedTR;
+            smoothedPlus = alpha * plusDM + (1 - alpha) * smoothedPlus;
+            smoothedMinus = alpha * minusDM + (1 - alpha) * smoothedMinus;
         }
 
-        smoothedTR = state.prevSmoothedTR;
-        smoothedPlus = state.prevSmoothedPlus;
-        smoothedMinus = state.prevSmoothedMinus;
+        // Save tentative state
+        state.currentInitCount = initCount;
+        state.currentTrInitSum = trInitSum;
+        state.currentPlusInitSum = plusInitSum;
+        state.currentMinusInitSum = minusInitSum;
+        state.currentSmoothedTR = smoothedTR;
+        state.currentSmoothedPlus = smoothedPlus;
+        state.currentSmoothedMinus = smoothedMinus;
 
         // If not enough data for DI, return NaNs
-        if (state.initCount < diLength) {
+        if (initCount < diLength) {
             return [[NaN, NaN, NaN]];
         }
 
         // Calculate DI
-        // Avoid division by zero
         const plusDI = smoothedTR === 0 ? 0 : (100 * smoothedPlus / smoothedTR);
         const minusDI = smoothedTR === 0 ? 0 : (100 * smoothedMinus / smoothedTR);
 
@@ -139,24 +183,31 @@ export function dmi(context: any) {
         const dx = sumDI === 0 ? 0 : (100 * Math.abs(plusDI - minusDI) / sumDI);
 
         // --- Calculate ADX (RMA of DX with adxSmoothing) ---
+        let adxInitCount = state.prevAdxInitCount;
+        let dxInitSum = state.prevDxInitSum;
+        let prevADX = state.prevADX;
         let adx = NaN;
 
-        state.adxInitCount++;
+        adxInitCount++;
 
-        if (state.adxInitCount <= adxSmoothing) {
-            state.dxInitSum += dx;
+        if (adxInitCount <= adxSmoothing) {
+            dxInitSum += dx;
 
-            if (state.adxInitCount === adxSmoothing) {
-                state.prevADX = state.dxInitSum / adxSmoothing;
-                adx = state.prevADX;
+            if (adxInitCount === adxSmoothing) {
+                prevADX = dxInitSum / adxSmoothing;
+                adx = prevADX;
             }
         } else {
             const alphaAdx = 1 / adxSmoothing;
-            state.prevADX = alphaAdx * dx + (1 - alphaAdx) * state.prevADX;
-            adx = state.prevADX;
+            prevADX = alphaAdx * dx + (1 - alphaAdx) * prevADX;
+            adx = prevADX;
         }
+
+        // Save tentative state
+        state.currentAdxInitCount = adxInitCount;
+        state.currentDxInitSum = dxInitSum;
+        state.currentADX = prevADX;
 
         return [[context.precision(plusDI), context.precision(minusDI), context.precision(adx)]];
     };
 }
-

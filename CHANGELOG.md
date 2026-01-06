@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.7.9] - 2026-01-06 - User Function Call ID Fix
+
+### Fixed
+
+-   **Critical Transpiler Fix**: Resolved cache collision bug in user-defined functions containing `ta.*` calls. Implemented context stack mechanism (`$.pushId()`, `$.peekId()`, `$.popId()`) to manage unique call IDs without explicit arguments, preventing state corruption and argument shifting issues with default parameters.
+
 ## [0.7.7] - 2025-01-03 - Live Streaming Support
 
 ### Added

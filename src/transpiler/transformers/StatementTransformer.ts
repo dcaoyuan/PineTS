@@ -739,8 +739,16 @@ export function transformReturnStatement(node: any, scopeManager: ScopeManager):
                     MemberExpression(node: any) {
                         transformMemberExpression(node, '', scopeManager);
                     },
-                    CallExpression(node: any, state: ScopeManager) {
+                    // c is the callback function for recursion (acorn-walk)
+                    CallExpression(node: any, state: ScopeManager, c: any) {
                         transformCallExpression(node, state);
+                        if (node.type === 'CallExpression') {
+                            node.arguments.forEach((arg: any) => c(arg, state));
+                        }
+                    },
+                    BinaryExpression(node: any, state: any, c: any) {
+                        c(node.left, state);
+                        c(node.right, state);
                     },
                 });
             }
@@ -757,8 +765,24 @@ export function transformReturnStatement(node: any, scopeManager: ScopeManager):
 export function transformFunctionDeclaration(node: any, scopeManager: ScopeManager, c: any): void {
     // Note: We don't register parameters here anymore, that's done in the AnalysisPass.
 
+    // Inject callId parameter for user-defined functions to allow unique state per call
+    // CHANGED: Instead of adding a parameter, we inject a variable declaration at the start of the function body
+    // which retrieves the current callId from the context stack.
+    // node.params.push(ASTFactory.createIdentifier('_callId'));
+
+    const callIdDecl = ASTFactory.createVariableDeclaration(
+        '_callId',
+        ASTFactory.createCallExpression(
+            ASTFactory.createMemberExpression(ASTFactory.createContextIdentifier(), ASTFactory.createIdentifier('peekId')),
+            []
+        )
+    );
+
     // Transform the function body
     if (node.body && node.body.type === 'BlockStatement') {
+        // Inject the _callId declaration at the start of the body
+        node.body.body.unshift(callIdDecl);
+
         scopeManager.pushScope('fn');
         // Just delegate to the callback to continue the recursion
         c(node.body, scopeManager);

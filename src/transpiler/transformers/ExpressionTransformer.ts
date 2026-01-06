@@ -109,16 +109,22 @@ export function transformIdentifier(node: any, scopeManager: ScopeManager): void
         if (node.parent && node.parent.type === 'CallExpression' && node.parent.arguments.includes(node)) {
             const callee = node.parent.callee;
 
-            // Check for context methods $.get, $.set, $.init, $.param
+            // Check for context methods $.get, $.set, $.init, $.param, $.call
             const isContextMethod =
                 callee.type === 'MemberExpression' &&
                 callee.object &&
                 callee.object.name === CONTEXT_NAME &&
-                ['get', 'set', 'init', 'param'].includes(callee.property.name);
+                ['get', 'set', 'init', 'param', 'call'].includes(callee.property.name);
 
             if (isContextMethod) {
                 const argIndex = node.parent.arguments.indexOf(node);
-                if (argIndex === 0) {
+                if (callee.property.name === 'call') {
+                    // For .call(fn, id, ...args), arguments starting from index 2 are the function arguments
+                    // and should be passed as Series objects (isSeriesFunctionArg = true)
+                    if (argIndex >= 2) {
+                        isSeriesFunctionArg = true;
+                    }
+                } else if (argIndex === 0) {
                     isSeriesFunctionArg = true;
                 }
             } else {
@@ -900,7 +906,34 @@ export function transformCallExpression(node: any, scopeManager: ScopeManager, n
 
         // Inject unique call ID for TA functions to enable proper state management
         if (namespace === 'ta') {
-            node.arguments.push(scopeManager.getNextTACallId());
+            if (scopeManager.getCurrentScopeType() === 'fn') {
+                // If inside a function, combine _callId param with the static ID
+                const staticId = scopeManager.getNextTACallId();
+
+                // Manually resolve _callId from scope to ensure it uses the scoped variable name
+                const [scopedName, kind] = scopeManager.getVariable('_callId');
+
+                let leftOperand;
+                if (scopedName !== '_callId') {
+                    // It was found in scope (e.g. fn1__callId), create context variable reference
+                    // _callId is a Series (from $.init/VariableDeclaration), so we must get current value
+                    const contextVar = ASTFactory.createContextVariableReference(kind, scopedName);
+                    leftOperand = ASTFactory.createGetCall(contextVar, 0);
+                } else {
+                    // Fallback to identifier if not found (should not happen in valid PineTS)
+                    leftOperand = ASTFactory.createIdentifier('_callId');
+                }
+
+                const callIdArg = {
+                    type: 'BinaryExpression',
+                    operator: '+',
+                    left: leftOperand,
+                    right: staticId,
+                };
+                node.arguments.push(callIdArg);
+            } else {
+                node.arguments.push(scopeManager.getNextTACallId());
+            }
         }
 
         // Check if this is an async method call that needs await
@@ -960,6 +993,24 @@ export function transformCallExpression(node: any, scopeManager: ScopeManager, n
             }
             return transformFunctionArgument(arg, CONTEXT_NAME, scopeManager);
         });
+
+        // Inject unique call ID for the function call only if it is a user-defined function
+        // Built-in functions (like na, nz, bool) are context-bound and should not receive a call ID
+        if (!scopeManager.isContextBound(node.callee.name)) {
+            // Use $.call(fn, id, ...args) pattern
+            const callId = scopeManager.getNextUserCallId();
+
+            // Create $.call access
+            const contextCall = ASTFactory.createMemberExpression(ASTFactory.createContextIdentifier(), ASTFactory.createIdentifier('call'));
+
+            // Construct new arguments list: [originalFn, callId, ...originalArgs]
+            const newArgs = [node.callee, callId, ...node.arguments];
+
+            // Update node
+            node.callee = contextCall;
+            node.arguments = newArgs;
+        }
+
         node._transformed = true;
     }
 

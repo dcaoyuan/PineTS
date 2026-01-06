@@ -902,15 +902,19 @@ let src_open = input.any({ title: 'Open Source', defval: open });
   $.const.glb1__cc = $.init($.const.glb1__cc, close);
   $.const.glb1_aa = $.init($.const.glb1_aa, 1);
   function angle(src) {
+    const temp_1 = $.peekId();
+    $.const.fn1__callId = $.init($.const.fn1__callId, temp_1);
     $.const.fn1_rad2degree = $.init($.const.fn1_rad2degree, 180 / Math.PI);
     const p0 = ta.param(14, undefined, 'p0');
-    const temp_1 = ta.atr(p0, "_ta0");
-    const p1 = math.param(($.get(src, 0) - $.get(src, 1)) / temp_1, undefined, 'p1');
-    const temp_2 = math.atan(p1);
-    $.const.fn1_ang = $.init($.const.fn1_ang, $.get($.const.fn1_rad2degree, 0) * temp_2);
+    const temp_2 = ta.atr(p0, $.get($.const.fn1__callId, 0) + "_ta0");
+    const p1 = math.param(($.get(src, 0) - $.get(src, 1)) / temp_2, undefined, 'p1');
+    const temp_3 = math.atan(p1);
+    $.const.fn1_ang = $.init($.const.fn1_ang, $.get($.const.fn1_rad2degree, 0) * temp_3);
     return $.precision($.get($.const.fn1_ang, 0));
   }
   function get_average(avg_src, avg_len) {
+    const temp_4 = $.peekId();
+    $.const.fn2__callId = $.init($.const.fn2__callId, temp_4);
     $.let.fn2_bb = $.init($.let.fn2_bb, 1);
     $.let.fn2_cc = $.init($.let.fn2_cc, close);
     $.set($.let.fn2_cc, $.get(close, 1));
@@ -930,24 +934,24 @@ let src_open = input.any({ title: 'Open Source', defval: open });
     if ($.math.__eq($.get(avg_len, 0), 0)) {
       $.set($.let.fn2_ret_val, $.get($.let.fn2_cc, 1));
     }
-    return $.precision($.get($.let.fn2_ret_val, 0) / $.get(avg_len, 0));
+    return $.precision($.get($.let.fn2_ret_val, 0) / $.get($.get(avg_len, 0), 0));
   }
   const p2 = $.param(close, undefined, 'p2');
   const p3 = $.param(14, undefined, 'p3');
-  $.const.glb1_r1 = $.init($.const.glb1_r1, get_average(p2, p3));
+  $.const.glb1_r1 = $.init($.const.glb1_r1, $.call(get_average, "_fn0", p2, p3));
   const p4 = $.param(close, 1, 'p4');
   const p5 = $.param(14, undefined, 'p5');
-  $.const.glb1_r2 = $.init($.const.glb1_r2, get_average(p4, p5));
+  $.const.glb1_r2 = $.init($.const.glb1_r2, $.call(get_average, "_fn1", p4, p5));
   const p6 = $.param($.const.glb1__cc, undefined, 'p6');
   const p7 = $.param(14, undefined, 'p7');
-  $.const.glb1_r3 = $.init($.const.glb1_r3, get_average(p6, p7));
+  $.const.glb1_r3 = $.init($.const.glb1_r3, $.call(get_average, "_fn2", p6, p7));
   const p8 = $.param($.const.glb1__cc, 1, 'p8');
   const p9 = $.param(14, undefined, 'p9');
-  $.const.glb1_r4 = $.init($.const.glb1_r4, get_average(p8, p9));
+  $.const.glb1_r4 = $.init($.const.glb1_r4, $.call(get_average, "_fn3", p8, p9));
   $.let.glb1_ra = $.init($.let.glb1_ra, 0);
   const p10 = $.param(close, undefined, 'p10');
   const p11 = $.param(14, undefined, 'p11');
-  $.set($.let.glb1_ra, get_average(p10, p11));
+  $.set($.let.glb1_ra, $.call(get_average, "_fn4", p10, p11));
 }`;
 
         expect(result).toBe(expected_code);
@@ -1022,12 +1026,14 @@ let src_open = input.any({ title: 'Open Source', defval: open });
   const {close, open} = $.data;
   const {plot, plotchar, request, ta} = $.pine;
   function foo() {
+    const temp_2 = $.peekId();
+    $.const.fn1__callId = $.init($.const.fn1__callId, temp_2);
     $.const.fn1_oo = $.init($.const.fn1_oo, open);
     $.const.fn1_cc = $.init($.const.fn1_cc, close);
     return $.precision([[$.get($.const.fn1_oo, 0), $.get($.const.fn1_cc, 0)]]);
   }
   {
-    $.const.glb1_temp_1 = $.init($.const.glb1_temp_1, foo());
+    $.const.glb1_temp_1 = $.init($.const.glb1_temp_1, $.call(foo, "_fn0"));
     $.const.glb1_res = $.init($.const.glb1_res, $.get($.const.glb1_temp_1, 0)[0]);
     $.const.glb1_data = $.init($.const.glb1_data, $.get($.const.glb1_temp_1, 0)[1]);
   }
@@ -1100,6 +1106,8 @@ let src_open = input.any({ title: 'Open Source', defval: open });
   $.const.glb1__cc = $.init($.const.glb1__cc, close);
   $.const.glb1_aa = $.init($.const.glb1_aa, 1);
   function get_average(avg_src, avg_len) {
+    const temp_1 = $.peekId();
+    $.const.fn1__callId = $.init($.const.fn1__callId, temp_1);
     $.let.fn1_bb = $.init($.let.fn1_bb, 1);
     $.let.fn1_cc = $.init($.let.fn1_cc, close);
     $.set($.let.fn1_cc, $.get(close, 1));
@@ -1119,24 +1127,24 @@ let src_open = input.any({ title: 'Open Source', defval: open });
     if ($.math.__eq($.get(avg_len, 0), 0)) {
       $.set($.let.fn1_ret_val, $.get($.let.fn1_cc, 1));
     }
-    return $.precision($.get($.let.fn1_ret_val, 0) / $.get(avg_len, 0));
+    return $.precision($.get($.let.fn1_ret_val, 0) / $.get($.get(avg_len, 0), 0));
   }
   const p0 = $.param(close, undefined, 'p0');
   const p1 = $.param(14, undefined, 'p1');
-  $.const.glb1_r1 = $.init($.const.glb1_r1, get_average(p0, p1));
+  $.const.glb1_r1 = $.init($.const.glb1_r1, $.call(get_average, "_fn0", p0, p1));
   const p2 = $.param(close, 1, 'p2');
   const p3 = $.param(14, undefined, 'p3');
-  $.const.glb1_r2 = $.init($.const.glb1_r2, get_average(p2, p3));
+  $.const.glb1_r2 = $.init($.const.glb1_r2, $.call(get_average, "_fn1", p2, p3));
   const p4 = $.param($.const.glb1__cc, undefined, 'p4');
   const p5 = $.param(14, undefined, 'p5');
-  $.const.glb1_r3 = $.init($.const.glb1_r3, get_average(p4, p5));
+  $.const.glb1_r3 = $.init($.const.glb1_r3, $.call(get_average, "_fn2", p4, p5));
   const p6 = $.param($.const.glb1__cc, 1, 'p6');
   const p7 = $.param(14, undefined, 'p7');
-  $.const.glb1_r4 = $.init($.const.glb1_r4, get_average(p6, p7));
+  $.const.glb1_r4 = $.init($.const.glb1_r4, $.call(get_average, "_fn3", p6, p7));
   $.let.glb1_ra = $.init($.let.glb1_ra, 0);
   const p8 = $.param(close, undefined, 'p8');
   const p9 = $.param(14, undefined, 'p9');
-  $.set($.let.glb1_ra, get_average(p8, p9));
+  $.set($.let.glb1_ra, $.call(get_average, "_fn4", p8, p9));
 }`;
 
         expect(result).toBe(expected_code);

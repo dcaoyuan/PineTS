@@ -379,6 +379,49 @@ export class Context {
         }
     }
 
+    //#region [Call Stack Management] ===========================
+
+    private _callStack: string[] = [];
+
+    /**
+     * Pushes a call ID onto the stack
+     * @param id - The call ID
+     */
+    public pushId(id: string) {
+        this._callStack.push(id);
+    }
+
+    /**
+     * Pops a call ID from the stack
+     */
+    public popId() {
+        this._callStack.pop();
+    }
+
+    /**
+     * Returns the current call ID from the top of the stack
+     */
+    public peekId() {
+        return this._callStack.length > 0 ? this._callStack[this._callStack.length - 1] : '';
+    }
+
+    /**
+     * Calls a function with a specific call ID context
+     * @param fn - The function to call
+     * @param id - The call ID to use
+     * @param args - Arguments to pass to the function
+     */
+    public call(fn: Function, id: string, ...args: any[]) {
+        this.pushId(id);
+        try {
+            return fn(...args);
+        } finally {
+            this.popId();
+        }
+    }
+
+    //#endregion
+
     //#region [Deprecated getters] ===========================
 
     /**

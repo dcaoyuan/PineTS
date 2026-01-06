@@ -228,6 +228,8 @@ plot(result)
         const jsCode = result.toString();
 
         expect(jsCode).toContain('function calculate(x, y)');
+        // Expect _callId to be retrieved from context stack, not passed as argument
+        expect(jsCode).toContain('$.peekId()');
         expect(jsCode).toContain('$.let.fn');
     });
 

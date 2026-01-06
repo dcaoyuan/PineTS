@@ -170,7 +170,7 @@ export class PlotHelper {
         const { series, title, ...others } = _parsed;
         const options = this.extractPlotOptions(others);
         if (!this.context.plots[title]) {
-            const overlay = options.force_overlay ?? this.context.indicator.overlay;
+            const overlay = options.force_overlay ?? (this.context?.indicator?.overlay || false);
             this.context.plots[title] = { data: [], options: { ...options, overlay }, title };
         }
 
@@ -187,7 +187,7 @@ export class PlotHelper {
         const { series, title, ...others } = _parsed;
         const options: PlotShapeOptions = this.extractPlotOptions(others);
         if (!this.context.plots[title]) {
-            const overlay = options.force_overlay ?? this.context.indicator.overlay;
+            const overlay = options.force_overlay ?? (this.context?.indicator?.overlay || false);
             this.context.plots[title] = {
                 data: [],
                 options: { ...options, style: 'shape', shape: options.style, overlay },
@@ -219,7 +219,7 @@ export class PlotHelper {
         const value = Series.from(series).get(0);
         const options: PlotArrowOptions = this.extractPlotOptions(others);
         if (!this.context.plots[title]) {
-            const overlay = options.force_overlay ?? this.context.indicator.overlay;
+            const overlay = options.force_overlay ?? (this.context?.indicator?.overlay || false);
             this.context.plots[title] = { data: [], options: { ...options, style: 'shape', overlay }, title };
         }
 
@@ -246,7 +246,7 @@ export class PlotHelper {
         const { open, high, low, close, title, ...others } = _parsed;
         const options: PlotBarOptions = this.extractPlotOptions(others);
         if (!this.context.plots[title]) {
-            const overlay = options.force_overlay ?? this.context.indicator.overlay;
+            const overlay = options.force_overlay ?? (this.context?.indicator?.overlay || false);
             this.context.plots[title] = { data: [], options: { ...options, style: 'bar', overlay }, title };
         }
 
@@ -264,7 +264,7 @@ export class PlotHelper {
         const { open, high, low, close, title, ...others } = _parsed;
         const options: PlotCandleOptions = this.extractPlotOptions(others);
         if (!this.context.plots[title]) {
-            const overlay = options.force_overlay ?? this.context.indicator.overlay;
+            const overlay = options.force_overlay ?? (this.context?.indicator?.overlay || false);
             this.context.plots[title] = { data: [], options: { ...options, style: 'candle', overlay }, title };
         }
 
@@ -282,7 +282,7 @@ export class PlotHelper {
         const { title, ...others } = _parsed;
         const options: BackgroundColorOptions = this.extractPlotOptions(others);
         if (!this.context.plots[title]) {
-            const overlay = options.force_overlay ?? this.context.indicator.overlay;
+            const overlay = options.force_overlay ?? (this.context?.indicator?.overlay || false);
             this.context.plots[title] = { data: [], options: { ...options, style: 'background', overlay }, title };
         }
 

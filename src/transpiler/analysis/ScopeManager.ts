@@ -55,6 +55,7 @@ export class ScopeManager {
     private cacheIdCounter: number = 0;
     private tempVarCounter: number = 0;
     private taCallIdCounter: number = 0;
+    private userCallIdCounter: number = 0;
     private hoistingStack: any[][] = [];
     private suppressHoisting: boolean = false;
 
@@ -76,6 +77,13 @@ export class ScopeManager {
         return {
             type: 'Literal',
             value: `_ta${this.taCallIdCounter++}`,
+        };
+    }
+
+    public getNextUserCallId(): any {
+        return {
+            type: 'Literal',
+            value: `_fn${this.userCallIdCounter++}`,
         };
     }
     constructor() {

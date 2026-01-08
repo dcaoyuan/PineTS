@@ -2,12 +2,16 @@
 
 ## Project Overview
 
-**PineTS** is a JavaScript/TypeScript library that enables the execution of Pine Script-like indicator code in a JavaScript environment. It is a sophisticated runtime transpiler that converts PineTS code (which closely resembles Pine Script) into executable JavaScript for processing financial time-series data.
+**PineTS** is a JavaScript/TypeScript library that enables the execution of Pine Script indicators in a JavaScript environment. It consists of two main components:
+
+1. **Pine Script Transpiler**: Converts native Pine Script v5+ code to PineTS syntax
+2. **PineTS Runtime Transpiler**: Transforms PineTS syntax into executable JavaScript with proper time-series semantics
 
 ### Key Characteristics
 
+-   **Dual Input Support**: Accepts both native Pine Script v5+ and PineTS syntax
 -   **Runtime Transpilation**: Transforms code at runtime without requiring pre-compilation
--   **Pine Script v5+ Compatibility**: Mimics Pine Script behavior and semantics
+-   **Pine Script v5+ Compatibility**: Full syntax support for TradingView's Pine Script
 -   **Time-Series Processing**: Handles historical data with proper lookback capabilities
 -   **Stateful Calculations**: Supports incremental technical analysis calculations
 -   **Series-Based Architecture**: Everything is a time-series with forward storage and reverse access
@@ -36,7 +40,120 @@ Before making changes, familiarize yourself with the architecture:
 
 ## Critical Concepts
 
-### 1. Forward Storage, Reverse Access
+### 1. Input Types: Pine Script vs PineTS Syntax
+
+**CRITICAL**: PineTS accepts TWO different input formats. Understanding the difference is essential.
+
+#### Detection Logic
+
+```
+Input Source
+    │
+    ├─ Is Function? ──────────────────→ Convert to string, treat as PineTS
+    │
+    └─ Is String?
+           │
+           ├─ Has //@version=X marker?
+           │       │
+           │       ├─ X >= 5 ──────────→ Pine Script → pineToJS pipeline
+           │       └─ X < 5 ───────────→ Error (unsupported)
+           │
+           └─ No version marker ───────→ PineTS syntax (use as-is)
+```
+
+#### Pine Script v5+ (Native TradingView Syntax)
+
+Detected by the `//@version=5` (or higher) marker. Goes through the `pineToJS` pipeline first.
+
+```pinescript
+//@version=5
+indicator("EMA Cross")
+fast = ta.ema(close, 9)
+slow = ta.ema(close, 21)
+plot(fast, "Fast EMA")
+plot(slow, "Slow EMA")
+```
+
+#### PineTS Syntax (JavaScript-like)
+
+No version marker. Uses JavaScript syntax with the `$` context object.
+
+```javascript
+($) => {
+    const { close } = $.data;
+    const { ta, plot } = $.pine;
+
+    const fast = ta.ema(close, 9);
+    const slow = ta.ema(close, 21);
+    plot(fast, 'Fast EMA');
+    plot(slow, 'Slow EMA');
+
+    return { fast, slow };
+};
+```
+
+#### JavaScript Function (Direct)
+
+Functions are converted to string and treated as PineTS syntax.
+
+```javascript
+pineTS.run(($) => {
+    const { close } = $.data;
+    const { ta } = $.pine;
+    return ta.sma(close, 20);
+});
+```
+
+### 2. Transpiler Pipeline
+
+The transpiler operates in two stages depending on input type:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        STAGE 1: Pine Script → PineTS                    │
+│                    (Only for Pine Script input)                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  Pine Script Input          pineToJS Pipeline           PineTS Output   │
+│  ──────────────────    ─────────────────────────    ─────────────────   │
+│  //@version=5          │ Lexer (tokenize)       │                       │
+│  indicator("Test")     │ Parser (build AST)     │    ($) => {           │
+│  sma = ta.sma(close,20)│ CodeGen (emit JS)      │      const {close}... │
+│  plot(sma)             └─────────────────────────┘      ...             │
+│                                                       }                 │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     STAGE 2: PineTS → Executable JS                     │
+│                    (Both input types converge here)                     │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  1. Wrap in async context function                                      │
+│  2. Parse to JavaScript AST (Acorn)                                     │
+│  3. Pre-processing passes:                                              │
+│     - Transform nested arrow functions to declarations                  │
+│     - Normalize native imports (preserve Math, Array, etc.)             │
+│     - Inject implicit imports (close, ta, etc. from context)            │
+│     - Pre-process context-bound variables                               │
+│  4. Analysis pass (ScopeManager):                                       │
+│     - Build scope hierarchy                                             │
+│     - Rename variables: x → glb1_x, if2_y, fn3_z                        │
+│     - Generate TA call IDs: _ta0, _ta1, _ta2...                         │
+│     - Track variable kinds (const/let/var)                              │
+│  5. Transformation pass:                                                │
+│     - let x = val    →  $.let.glb1_x = $.init($.let.glb1_x, val)        │
+│     - x = val        →  $.set($.let.glb1_x, val)                        │
+│     - close[1]       →  $.get(close, 1)                                 │
+│     - ta.ema(c, 9)   →  ta.ema(p0, p1, '_ta0')  (with param wrapping)   │
+│  6. Post-process: a == b → $.pine.math.__eq(a, b)                       │
+│  7. Generate code (astring)                                             │
+│  8. Create executable function                                          │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 3. Forward Storage, Reverse Access
 
 **CRITICAL**: PineTS stores arrays in forward chronological order (oldest→newest) but provides Pine Script's reverse indexing semantics (0=current, 1=previous).
 
@@ -64,21 +181,12 @@ close[0]  // Returns 104 (current/newest)
 close[1]  // Returns 103 (previous)
 close[4]  // Returns 100 (oldest)
 
-// ❌ WRONG: Direct array access in your code
-const current = close[close.length - 1]; // Don't do this!
-
-// ✅ CORRECT: Let transpiler handle it, or use $.get() / Series
-// User writes (transpiler converts):
-const current = close[0];  // Transpiled to: $.get(close, 0)
-
-// Or in TA functions, use Series:
-const current = Series.from(close).get(0);  // Current bar
-const previous = Series.from(close).get(1); // Previous bar
+// In TA functions, use Series.from():
+const current = Series.from(source).get(0);   // Current bar
+const previous = Series.from(source).get(1);  // Previous bar
 ```
 
-**Key Point**: The transpiler automatically converts Pine Script array notation (`close[0]`) into the correct internal access pattern. You don't need to think about array indices when writing user code - just use Pine Script syntax.
-
-### 2. Series Class
+### 4. Series Class
 
 The `Series` class wraps arrays to provide Pine Script indexing. Always use `Series.from()` in TA functions:
 
@@ -87,7 +195,7 @@ const currentValue = Series.from(source).get(0); // Current bar
 const previousValue = Series.from(source).get(1); // Previous bar
 ```
 
-### 3. Incremental Calculation
+### 5. Incremental Calculation
 
 TA functions MUST use incremental calculation with state, not recalculation:
 
@@ -105,7 +213,7 @@ export function sma(context: any) {
 }
 ```
 
-### 4. Unique Call IDs
+### 6. Unique Call IDs
 
 Always use `_callId` parameter to isolate state between multiple calls:
 
@@ -118,7 +226,9 @@ export function myIndicator(context: any) {
 }
 ```
 
-### 5. Tuple Returns
+The transpiler automatically generates unique call IDs (`_ta0`, `_ta1`, etc.) for each TA function call to ensure state isolation.
+
+### 7. Tuple Returns
 
 Functions returning tuples MUST use double bracket convention:
 
@@ -130,7 +240,7 @@ return [[value1, value2, value3]];
 return [value1, value2, value3];
 ```
 
-### 6. Precision
+### 8. Precision
 
 Always use `context.precision()` for numeric outputs:
 
@@ -142,18 +252,21 @@ return context.precision(result); // Rounds to 10 decimals
 
 ### Running Tests
 
-**IMPORTANT**: Always run tests in non-interactive mode to avoid blocking:
+**IMPORTANT**: PineTS uses **vitest**, not Jest. Use the correct flags:
 
 ```bash
-# ✅ CORRECT: Non-interactive
-npm test -- --no-watch
-npm test -- --watchAll=false
+# ✅ CORRECT: Run tests once (non-interactive)
+npm test -- --run
 
-# For specific test files
-npm test -- ta.test.ts --no-watch
+# ✅ CORRECT: Run specific test file
+npm test -- ta-stress.test.ts --run
 
-# ❌ WRONG: Interactive mode (will block)
-npm test
+# ✅ CORRECT: Run with coverage
+npm run test:coverage
+
+# ❌ WRONG: These are Jest flags, not vitest
+npm test -- --no-watch        # Won't work
+npm test -- --watchAll=false  # Won't work
 ```
 
 ### Adding New TA Functions
@@ -163,33 +276,84 @@ npm test
 3. Use incremental calculation with `context.taState`
 4. Return `NaN` during initialization period
 5. Use `context.precision()` for output
-6. Add unit tests in `tests/namespaces/ta.yourfunction.test.ts`
+6. Add tests in `tests/compatibility/namespace/ta/methods/indicators/yourfunction.pine.ts`
 7. **Regenerate barrel file**: `npm run generate:ta-index`
 
 ### File Structure
 
 ```
 src/
-├── transpiler/           # AST parsing and transformation
-│   ├── transformers/     # Code transformers
-│   └── ScopeManager.ts   # Variable scoping
-├── namespaces/           # Pine Script namespaces
-│   ├── ta/               # Technical Analysis
-│   │   └── methods/      # Individual TA functions
-│   ├── math/             # Mathematical operations
-│   ├── array/            # Array operations
-│   ├── request/          # Multi-timeframe analysis
-│   └── input/            # User inputs
-├── Context.class.ts      # Runtime context
-├── Series.ts             # Series wrapper class
-└── PineTS.class.ts       # Main orchestrator
+├── index.ts                  # Main entry point
+├── PineTS.class.ts           # Main execution engine
+├── Context.class.ts          # Runtime context ($.data, $.pine, $.let, etc.)
+├── Series.ts                 # Series wrapper for reverse indexing
+├── transpiler/
+│   ├── index.ts              # Main transpiler entry point
+│   ├── settings.ts           # Configuration and known namespaces
+│   ├── pineToJS/             # Pine Script → PineTS converter
+│   │   ├── lexer.ts          # Tokenization with indentation tracking
+│   │   ├── parser.ts         # AST generation from tokens
+│   │   ├── codegen.ts        # JavaScript code generation
+│   │   ├── ast.ts            # AST node type definitions
+│   │   └── tokens.ts         # Token type definitions
+│   ├── analysis/             # Code analysis
+│   │   ├── ScopeManager.ts   # Variable scoping and renaming
+│   │   └── AnalysisPass.ts   # Pre-processing analysis
+│   ├── transformers/         # AST transformers
+│   │   ├── MainTransformer.ts
+│   │   ├── ExpressionTransformer.ts
+│   │   ├── StatementTransformer.ts
+│   │   ├── WrapperTransformer.ts
+│   │   ├── InjectionTransformer.ts
+│   │   └── NormalizationTransformer.ts
+│   └── utils/
+│       └── ASTFactory.ts     # AST node factory utilities
+├── namespaces/               # Pine Script built-in functions
+│   ├── Core.ts               # Core functions (na, nz, color, indicator)
+│   ├── Barstate.ts           # Bar state information
+│   ├── Log.ts                # Logging functions
+│   ├── Str.ts                # String utilities
+│   ├── Timeframe.ts          # Timeframe utilities
+│   ├── Plots.ts              # Plotting functions
+│   ├── ta/                   # Technical Analysis
+│   │   └── methods/          # Individual TA functions
+│   ├── math/                 # Mathematical operations
+│   │   └── methods/
+│   ├── array/                # Array operations
+│   │   └── methods/
+│   ├── map/                  # Map collection type
+│   ├── matrix/               # Matrix collection type
+│   ├── input/                # User inputs
+│   │   └── methods/
+│   └── request/              # Multi-timeframe (request.security)
+│       └── methods/
+├── marketData/               # Data providers
+│   ├── IProvider.ts          # Provider interface
+│   ├── Provider.class.ts     # Base provider
+│   ├── Binance/              # Binance exchange provider
+│   └── Mock/                 # Mock provider for testing
+└── utils/                    # Utility functions
 
 tests/
-├── namespaces/           # Namespace tests
-└── transpiler/           # Transpiler tests
+├── compatibility/            # Main test suite
+│   ├── namespace/            # Namespace compatibility tests
+│   │   ├── ta/methods/indicators/    # TA function tests
+│   │   ├── math/methods/indicators/  # Math function tests
+│   │   └── array/methods/indicators/ # Array function tests
+│   └── misc/indicators/      # Miscellaneous indicator tests
+├── namespaces/               # Additional namespace tests
+│   └── ta/                   # TA-specific tests
+├── transpiler/               # Transpiler tests
+├── core/                     # Core functionality tests
+└── _local/                   # Local development tests (gitignored)
 
 docs/
-└── architecture/         # Architecture documentation
+├── architecture/             # Architecture documentation
+│   ├── transpiler/
+│   ├── runtime/
+│   ├── namespaces/
+│   └── specifics/            # Special topics (tuples, request.security)
+└── api-coverage/             # Pine Script API coverage tracking
 ```
 
 ## Common Mistakes to Avoid
@@ -254,6 +418,20 @@ return [macd, signal, hist];
 
 **Fix**: `return [[macd, signal, hist]];`
 
+### ❌ Mistake 7: Confusing Pine Script with PineTS Syntax
+
+```javascript
+// WRONG: Mixing syntaxes
+pineTS.run(`
+//@version=5
+($) => {  // Can't have both!
+    ...
+}
+`);
+```
+
+**Fix**: Use either Pine Script (with `//@version=5`) OR PineTS syntax (with `($) => {}`), never both.
+
 ## Transpiler Rules
 
 ### DO NOT modify transpiler unless absolutely necessary
@@ -265,10 +443,27 @@ return [macd, signal, hist];
 
 ### Variable Transformation
 
--   `let x = value` → `$.let.glb1_x = $.init($.let.glb1_x, value)`
--   `x = value` → `$.set($.let.glb1_x, value)`
--   `x[1]` → `$.get(x, 1)`
--   `func(arg)` → `func(ns.param(arg, undefined, 'p0'), '_id')`
+| Original Pattern       | Transformed Pattern                            | Purpose                |
+| ---------------------- | ---------------------------------------------- | ---------------------- |
+| `let x = value`        | `$.let.glb1_x = $.init($.let.glb1_x, value)`   | State persistence      |
+| `const x = value`      | `$.const.glb1_x = $.init($.const.glb1_x, val)` | Constant series        |
+| `var x = value`        | `$.var.glb1_x = $.initVar($.var.glb1_x, val)`  | Persistent state       |
+| `x = value`            | `$.set($.let.glb1_x, value)`                   | Update current value   |
+| `x[1]`                 | `$.get(x, 1)`                                  | Pine Script indexing   |
+| `ta.func(arg)`         | `ta.func(p0, '_ta0')` with param wrapping      | State isolation        |
+| `a == b`               | `$.pine.math.__eq(a, b)`                       | NaN-safe comparison    |
+| `const [a, b] = f()`   | Split into individual inits                    | Tuple destructuring    |
+
+### Scope Prefixes
+
+Variables are renamed based on their scope:
+
+| Scope Type   | Prefix Example | Description                    |
+| ------------ | -------------- | ------------------------------ |
+| Global       | `glb1_`        | Top-level scope                |
+| If block     | `if2_`         | Inside if statements           |
+| Function     | `fn3_`         | Inside function declarations   |
+| For loop     | `for4_`        | Inside for loops               |
 
 ## Testing Requirements
 
@@ -283,18 +478,36 @@ return [macd, signal, hist];
 ### Test Pattern
 
 ```typescript
-it('should calculate correctly', async () => {
-    const pineTS = new PineTS(Provider.Mock, 'BTCUSDC', 'D', null, startDate, endDate);
+import { describe, it, expect } from 'vitest';
+import { PineTS } from '../../../src/PineTS.class';
+import { Provider } from '@pinets/marketData/Provider.class';
 
-    const sourceCode = (context) => {
-        const { close } = context.data;
-        const { ta } = context.pine;
-        const result = ta.myFunc(close, 14);
-        return { result };
-    };
+describe('My TA Function', () => {
+    it('should calculate correctly', async () => {
+        const pineTS = new PineTS(
+            Provider.Mock,
+            'BTCUSDC',
+            '60',
+            null,
+            new Date('2024-01-01').getTime(),
+            new Date('2024-01-10').getTime()
+        );
 
-    const { result } = await pineTS.run(sourceCode);
-    expect(result.myFunc[result.myFunc.length - 1]).toBeCloseTo(expected);
+        const { plots } = await pineTS.run(($) => {
+            const { close } = $.data;
+            const { ta, plotchar } = $.pine;
+
+            const result = ta.myFunc(close, 14);
+            plotchar(result, 'result');
+        });
+
+        expect(plots['result']).toBeDefined();
+        expect(plots['result'].data.length).toBeGreaterThan(0);
+
+        // Check specific values
+        const lastValue = plots['result'].data[plots['result'].data.length - 1].value;
+        expect(lastValue).toBeCloseTo(expectedValue, 8);
+    });
 });
 ```
 
@@ -338,7 +551,7 @@ it('should calculate correctly', async () => {
 -   Include test coverage
 -   Update documentation if needed
 -   Regenerate barrel files if adding namespace methods
--   Ensure all tests pass in non-interactive mode
+-   Ensure all tests pass: `npm test -- --run`
 
 ## Performance Considerations
 
@@ -360,8 +573,15 @@ console.log(`[${_callId}] State:`, state);
 ### View Transpiled Code
 
 ```javascript
-const transformer = transpile.bind(context);
-const transpiledFn = transformer(userCode);
+import { transpile } from './src/transpiler';
+
+const userCode = ($) => {
+    const { close } = $.data;
+    const { ta } = $.pine;
+    return ta.sma(close, 20);
+};
+
+const transpiledFn = transpile(userCode, { debug: true });
 console.log(transpiledFn.toString());
 ```
 
@@ -389,20 +609,23 @@ When in doubt:
 1. Read the [Architecture Guide](docs/architecture/index.md)
 2. Check [Best Practices](docs/architecture/best-practices.md)
 3. Look at existing implementations in `src/namespaces/ta/methods/`
-4. Run tests in non-interactive mode: `npm test -- --no-watch`
+4. Run tests: `npm test -- --run`
 
 ## Summary
 
 **Key Takeaways for AI Agents:**
 
--   ✅ Forward storage, reverse access (use `$.get()` or `Series`)
+-   ✅ Understand the two input types: Pine Script (with `//@version=5`) vs PineTS syntax
+-   ✅ Pine Script goes through pineToJS first, then both paths merge in main transpiler
+-   ✅ Forward storage, reverse access (use `$.get()` or `Series.from()`)
 -   ✅ Incremental calculation with state (not recalculation)
 -   ✅ Always use `_callId` parameter for state isolation
 -   ✅ Return tuples as `[[...]]` (double brackets)
 -   ✅ Use `context.precision()` for numeric outputs
 -   ✅ Handle NaN inputs gracefully
--   ✅ Run tests with `--no-watch` flag
+-   ✅ Run tests with `npm test -- --run`
 -   ✅ Regenerate barrel files after adding methods
 -   ❌ Don't modify transpiler without deep understanding
 -   ❌ Don't use direct array access for time-series data
 -   ❌ Don't share state between function calls
+-   ❌ Don't mix Pine Script and PineTS syntax in the same input

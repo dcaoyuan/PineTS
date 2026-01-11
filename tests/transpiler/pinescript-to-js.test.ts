@@ -382,6 +382,30 @@ plot(sum)
         expect(jsCode).toContain('/');
         expect(jsCode).toContain('%');
     });
+
+    it('should preserve parentheses in arithmetic precedence', () => {
+        const code = `
+//@version=6
+indicator("Precedence Test")
+
+x = 10
+y = 20
+z = 30
+res = (x + y) * z
+res2 = 100 * (x - y) / z
+
+plot(res)
+        `;
+
+        const result = transpile(code);
+        const jsCode = result.toString();
+
+        // (x + y) * z -> should have parens around addition
+        expect(jsCode).toMatch(/(\(.*\+.*\))\s*\*/);
+
+        // 100 * (x - y) / z -> should have parens around subtraction
+        expect(jsCode).toMatch(/100\s*\*\s*\(.*-.*\)\s*\//);
+    });
 });
 
 describe('Pine Script Transpilation - Series and Arrays', () => {

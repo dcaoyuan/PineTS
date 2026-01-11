@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.8.1] - 2026-01-11 - Transpiler hotfix
+
+### Fixed
+
+-   **Transpiler Math Operations**: Fixed operator precedence issue where parentheses were lost in complex arithmetic expressions (e.g., `(a + b) * c` becoming `a + b * c`).
+
 ## [0.8.0] - 2026-01-10 - Runtime Inputs & UDT Transpiler Fix
 
 ### Added

@@ -747,11 +747,18 @@ export class CodeGenerator {
 
     // Generate BinaryExpression
     generateBinaryExpression(node) {
-        const needsParens = this.needsParentheses(node);
+        const currentPrecedence = this.getPrecedence(node);
 
-        if (needsParens) this.write('(');
+        // Left child
+        const leftPrecedence = this.getPrecedence(node.left);
+        if (leftPrecedence < currentPrecedence) {
+            this.write('(');
+            this.generateExpression(node.left);
+            this.write(')');
+        } else {
+            this.generateExpression(node.left);
+        }
 
-        this.generateExpression(node.left);
         this.write(' ');
 
         // Convert PineScript operators to JavaScript
@@ -761,9 +768,27 @@ export class CodeGenerator {
 
         this.write(op);
         this.write(' ');
-        this.generateExpression(node.right);
 
-        if (needsParens) this.write(')');
+        // Right child
+        const rightPrecedence = this.getPrecedence(node.right);
+        let needsRightParens = rightPrecedence < currentPrecedence;
+
+        // Handle associativity for same precedence
+        if (rightPrecedence === currentPrecedence) {
+            // Subtraction, division, modulo are non-associative (left-associative)
+            // so we need parens for right operand
+            if (op === '-' || op === '/' || op === '%') {
+                needsRightParens = true;
+            }
+        }
+
+        if (needsRightParens) {
+            this.write('(');
+            this.generateExpression(node.right);
+            this.write(')');
+        } else {
+            this.generateExpression(node.right);
+        }
     }
 
     // Generate UnaryExpression
@@ -772,7 +797,16 @@ export class CodeGenerator {
         if (op === 'not') op = '!';
 
         this.write(op);
-        this.generateExpression(node.argument);
+        
+        const argPrecedence = this.getPrecedence(node.argument);
+        // Unary is 15. If arg < 15, wrap.
+        if (argPrecedence < 15) {
+            this.write('(');
+            this.generateExpression(node.argument);
+            this.write(')');
+        } else {
+            this.generateExpression(node.argument);
+        }
     }
 
     // Generate AssignmentExpression
@@ -802,7 +836,15 @@ export class CodeGenerator {
 
     // Generate CallExpression
     generateCallExpression(node) {
-        this.generateExpression(node.callee);
+        const calleePrecedence = this.getPrecedence(node.callee);
+        if (calleePrecedence < 19) {
+            this.write('(');
+            this.generateExpression(node.callee);
+            this.write(')');
+        } else {
+            this.generateExpression(node.callee);
+        }
+
         this.write('(');
 
         for (let i = 0; i < node.arguments.length; i++) {
@@ -827,7 +869,14 @@ export class CodeGenerator {
 
     // Generate MemberExpression
     generateMemberExpression(node) {
-        this.generateExpression(node.object);
+        const objPrecedence = this.getPrecedence(node.object);
+        if (objPrecedence < 19) {
+            this.write('(');
+            this.generateExpression(node.object);
+            this.write(')');
+        } else {
+            this.generateExpression(node.object);
+        }
 
         if (node.computed) {
             this.write('[');
@@ -1288,10 +1337,56 @@ export class CodeGenerator {
         this.write(')');
     }
 
-    // Helper: determine if expression needs parentheses
-    needsParentheses(node) {
-        // For now, only add parens for nested binary expressions
-        // This could be enhanced with proper precedence checking
-        return false;
+    // Get operator precedence
+    getPrecedence(node) {
+        switch (node.type) {
+            case 'Literal':
+            case 'Identifier':
+            case 'ArrayExpression':
+            case 'ObjectExpression':
+                return 20;
+            case 'CallExpression':
+            case 'MemberExpression':
+                return 19;
+            case 'UnaryExpression':
+            case 'UpdateExpression':
+                return 15; // !, +, -, ++, --
+            case 'BinaryExpression':
+            case 'LogicalExpression':
+                switch (node.operator) {
+                    case '*':
+                    case '/':
+                    case '%':
+                        return 13;
+                    case '+':
+                    case '-':
+                        return 12;
+                    case '<':
+                    case '<=':
+                    case '>':
+                    case '>=':
+                        return 10;
+                    case '==':
+                    case '!=':
+                        return 9;
+                    case 'and': // PineScript 'and'
+                    case '&&':
+                        return 5;
+                    case 'or': // PineScript 'or'
+                    case '||':
+                        return 4;
+                    default:
+                        return 0;
+                }
+            case 'ConditionalExpression':
+                return 3;
+            case 'AssignmentExpression':
+            case 'AssignmentPattern':
+                return 2;
+            case 'SequenceExpression':
+                return 1;
+            default:
+                return 0;
+        }
     }
 }

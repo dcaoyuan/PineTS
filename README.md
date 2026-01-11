@@ -28,7 +28,7 @@
 
 ## What is PineTS?
 
-**PineTS** is an open-source transpiler and runtime that brings Pine Script to JavaScript. Write indicators once, run them anywhere : on your own servers, in the browser, or embedded in your trading applications.
+**PineTS** is an open-source transpiler and runtime that brings Pine Script to JavaScript ecosystem. Write indicators once, run them anywhere : on your own servers, in the browser, or embedded in your trading applications.
 
 ```javascript
 import { PineTS, Provider } from 'pinets';
@@ -43,6 +43,9 @@ plot(ta.ema(close, 9), "Fast", color.blue)
 plot(ta.ema(close, 21), "Slow", color.red)
 `);
 ```
+
+> **What is Pine Script?**  
+> [Pine Script](https://www.tradingview.com/pine-script-docs/welcome/) is a domain-specific programming language created by TradingView for writing custom technical analysis indicators and strategies.
 
 > _**Disclaimer** : PineTS is an independent project and is not affiliated with, endorsed by, or associated with TradingView or Pine Script™. All trademarks and registered trademarks mentioned belong to their respective owners._
 

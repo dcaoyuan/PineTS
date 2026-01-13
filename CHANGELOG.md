@@ -1,5 +1,16 @@
 # Change Log
 
+## [0.8.2] - 2026-01-13 - Plot Fill Method & Transpiler Fixes
+
+### Added
+
+-   **Plot Fill Method**: Implemented `plot.fill()` method to fill the area between two plot lines with customizable colors and transparency.
+
+### Fixed
+
+-   **Transpiler Variable Names Collision**: Fixed variable name collision issues in the transpiler that could cause incorrect variable renaming and scope conflicts.
+-   **Logical Expressions in Function Arguments**: Fixed handling of logical expressions (e.g., `&&`, `||`) when passed as arguments to functions, ensuring proper evaluation and transpilation.
+
 ## [0.8.1] - 2026-01-11 - Transpiler hotfix
 
 ### Fixed

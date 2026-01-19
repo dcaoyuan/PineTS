@@ -71,6 +71,7 @@ export class Context {
     public const: any = {};
     public var: any = {};
     public let: any = {};
+    public lctx: Map<string, any> = new Map();
 
     public result: any = undefined;
     public plots: any = {};
@@ -414,6 +415,27 @@ export class Context {
      */
     public peekId() {
         return this._callStack.length > 0 ? this._callStack[this._callStack.length - 1] : '';
+    }
+
+    /**
+     * Returns the local context object for the current call ID.
+     * Creates it if it doesn't exist.
+     */
+    public peekCtx() {
+        const id = this.peekId();
+        if (!id) return this; // Fallback to global context if not in a function call
+
+        let ctx = this.lctx.get(id);
+        if (!ctx) {
+            ctx = {
+                id: id,
+                let: {},
+                const: {},
+                var: {},
+            };
+            this.lctx.set(id, ctx);
+        }
+        return ctx;
     }
 
     /**

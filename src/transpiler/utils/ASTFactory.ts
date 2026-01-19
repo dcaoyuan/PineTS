@@ -31,6 +31,10 @@ export const ASTFactory = {
         return this.createIdentifier(CONTEXT_NAME);
     },
 
+    createLocalContextIdentifier(): any {
+        return this.createIdentifier('$$');
+    },
+
     // Create $.kind.name
     createContextVariableReference(kind: string, name: string): any {
         const context = this.createContextIdentifier();
@@ -40,9 +44,32 @@ export const ASTFactory = {
         return this.createMemberExpression(this.createMemberExpression(context, kindId, false), nameId, false);
     },
 
+    // Create $$.kind.name
+    createLocalContextVariableReference(kind: string, name: string): any {
+        const context = this.createLocalContextIdentifier();
+        const kindId = this.createIdentifier(kind);
+        const nameId = this.createIdentifier(name);
+
+        return this.createMemberExpression(this.createMemberExpression(context, kindId, false), nameId, false);
+    },
+
+    // Create $.kind[dynamicKey]
+    createDynamicContextVariableReference(kind: string, dynamicKey: any): any {
+        const context = this.createContextIdentifier();
+        const kindId = this.createIdentifier(kind);
+        
+        return this.createMemberExpression(this.createMemberExpression(context, kindId, false), dynamicKey, true);
+    },
+
     // Create $.get($.kind.name, 0)
     createContextVariableAccess0(kind: string, name: string): any {
         const varRef = this.createContextVariableReference(kind, name);
+        return this.createGetCall(varRef, 0);
+    },
+
+    // Create $.get($.kind[dynamicKey], 0)
+    createDynamicContextVariableAccess0(kind: string, dynamicKey: any): any {
+        const varRef = this.createDynamicContextVariableReference(kind, dynamicKey);
         return this.createGetCall(varRef, 0);
     },
 

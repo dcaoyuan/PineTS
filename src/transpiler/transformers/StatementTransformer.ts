@@ -10,14 +10,15 @@ import {
     transformMemberExpression,
     transformArrayIndex,
     addArrayAccess,
+    createScopedVariableReference,
+    createScopedVariableAccess,
 } from './ExpressionTransformer';
 
 export function transformAssignmentExpression(node: any, scopeManager: ScopeManager): void {
     let targetVarRef = null;
     // Transform assignment expressions to use the context object
     if (node.left.type === 'Identifier') {
-        const [varName, kind] = scopeManager.getVariable(node.left.name);
-        targetVarRef = ASTFactory.createContextVariableReference(kind, varName);
+        targetVarRef = createScopedVariableReference(node.left.name, scopeManager);
     } else if (node.left.type === 'MemberExpression' && node.left.computed) {
         // Assignment to array element: series[0] = val
         if (node.left.object.type === 'Identifier') {
@@ -29,7 +30,7 @@ export function transformAssignmentExpression(node: any, scopeManager: ScopeMana
             if ((isRenamed || isContextBound) && !scopeManager.isLoopVariable(name)) {
                 // If index is 0 (literal), transform to $.set(target, value)
                 if (node.left.property.type === 'Literal' && node.left.property.value === 0) {
-                    targetVarRef = ASTFactory.createContextVariableReference(kind, varName);
+                    targetVarRef = createScopedVariableReference(name, scopeManager);
                 }
             }
         }
@@ -46,7 +47,7 @@ export function transformAssignmentExpression(node: any, scopeManager: ScopeMana
             if (isRenamed && !scopeManager.isLoopVariable(name)) {
                 // Transform object to scoped variable reference with [0] access
                 // trade2.active = false  ->  $.get($.let.glb1_trade2, 0).active = false
-                const contextVarRef = ASTFactory.createContextVariableReference(kind, varName);
+                const contextVarRef = createScopedVariableReference(name, scopeManager);
                 const getCall = ASTFactory.createGetCall(contextVarRef, 0);
                 node.left.object = getCall;
             }
@@ -150,6 +151,8 @@ export function transformAssignmentExpression(node: any, scopeManager: ScopeMana
 }
 
 export function transformVariableDeclaration(varNode: any, scopeManager: ScopeManager): void {
+    if (varNode._skipTransformation) return;
+
     varNode.declarations.forEach((decl: any) => {
         //special case for na
         if (decl.init.name == 'na') {
@@ -332,7 +335,7 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
         }
 
         // Create the target variable reference using ASTFactory
-        const targetVarRef = ASTFactory.createContextVariableReference(kind, newName);
+        const targetVarRef = createScopedVariableReference(decl.id.name, scopeManager);
 
         // Check if initialization is from array access
         const isArrayInit =
@@ -378,8 +381,7 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
 
             // We skipped transformation for decl.init, so it's still a MemberExpression (temp[index])
             const tempVarName = decl.init.object.name;
-            const [scopedTempName, tempKind] = scopeManager.getVariable(tempVarName);
-            const tempVarRef = ASTFactory.createContextVariableReference(tempKind, scopedTempName);
+            const tempVarRef = createScopedVariableReference(tempVarName, scopeManager);
             const arrayIndex = decl.init.property.value;
 
             // Create $.get(tempVar, 0)[index]
@@ -598,8 +600,7 @@ export function transformReturnStatement(node: any, scopeManager: ScopeManager):
                     }
 
                     // Transform non-context-bound variables
-                    const [scopedName, kind] = scopeManager.getVariable(element.name);
-                    return ASTFactory.createContextVariableAccess0(kind, scopedName);
+                    return createScopedVariableAccess(element.name, scopeManager);
                 } else if (element.type === 'MemberExpression') {
                     // Check if this is a context variable reference ($.const.xxx, $.let.xxx, etc.)
                     const isContextVarRef =
@@ -653,7 +654,7 @@ export function transformReturnStatement(node: any, scopeManager: ScopeManager):
                     return {
                         type: 'Property',
                         key: ASTFactory.createIdentifier(prop.key.name),
-                        value: ASTFactory.createContextVariableReference(kind, scopedName),
+                        value: createScopedVariableReference(prop.value.name, scopeManager),
                         kind: 'init',
                         method: false,
                         shorthand: false,
@@ -670,8 +671,7 @@ export function transformReturnStatement(node: any, scopeManager: ScopeManager):
                         // FIXED: Keep native data as Series (don't dereference to value)
                     } else if (!scopeManager.isContextBound(prop.value.name)) {
                         // It's a user variable - transform to context reference
-                        const [scopedName, kind] = scopeManager.getVariable(prop.value.name);
-                        prop.value = ASTFactory.createContextVariableReference(kind, scopedName);
+                        prop.value = createScopedVariableReference(prop.value.name, scopeManager);
                     }
                 }
 
@@ -758,12 +758,15 @@ export function transformFunctionDeclaration(node: any, scopeManager: ScopeManag
     // node.params.push(ASTFactory.createIdentifier('_callId'));
 
     const callIdDecl = ASTFactory.createVariableDeclaration(
-        '_callId',
+        '$$',
         ASTFactory.createCallExpression(
-            ASTFactory.createMemberExpression(ASTFactory.createContextIdentifier(), ASTFactory.createIdentifier('peekId')),
+            ASTFactory.createMemberExpression(ASTFactory.createContextIdentifier(), ASTFactory.createIdentifier('peekCtx')),
             []
         )
     );
+    // Mark as special to skip transformation and be treated as raw variable
+    callIdDecl._skipTransformation = true;
+    scopeManager.addLoopVariable('$$', '$$');
 
     // Transform the function body
     if (node.body && node.body.type === 'BlockStatement') {

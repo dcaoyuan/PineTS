@@ -1,4 +1,12 @@
 # Change Log
+## [0.8.4]
+### Fixed
+-   **Variable Scope Collision**: Fixed critical issue where local variables (`var`, `let`, `const`) in user-defined functions were sharing state across different function calls. Implemented dynamic scoping using unique call IDs to ensure each function instance maintains isolated state and history.
+-   **SMA NaN Handling**: Improved `ta.sma` to correctly propagate `NaN` values and handle `NaN` contamination in the rolling window by falling back to full recalculation when necessary.
+-   **Transpiler Optimization**: Major optimization of user-defined function transpilation. Introduced local context (`$$`) for scoping variables, reducing transpiled code complexity and improving readability by removing redundant `_callId` argument passing.
+-   **Array Access in Expressions**: Fixed a bug in the transpiler where array access inside expressions (e.g. ternary operators) could use incorrect static scope keys.
+
+
 
 ## [0.8.3] - 2026-01-13 - Transpiler Critical Fixes
 

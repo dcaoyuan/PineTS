@@ -535,15 +535,23 @@ export class PineTS {
 
         // Fix: Rollback context variables (let, var, const, params)
         const contextVarNames = ['const', 'var', 'let', 'params'];
-        for (let ctxVarName of contextVarNames) {
-            for (let key in context[ctxVarName]) {
-                const item = context[ctxVarName][key];
-                if (item instanceof Series) {
-                    item.data.pop();
-                } else if (Array.isArray(item)) {
-                    item.pop();
+        const rollbackVariables = (container: any) => {
+            for (let ctxVarName of contextVarNames) {
+                if (!container[ctxVarName]) continue;
+                for (let key in container[ctxVarName]) {
+                    const item = container[ctxVarName][key];
+                    if (item instanceof Series) {
+                        item.data.pop();
+                    } else if (Array.isArray(item)) {
+                        item.pop();
+                    }
                 }
             }
+        };
+
+        rollbackVariables(context);
+        if (context.lctx) {
+            context.lctx.forEach((lctx: any) => rollbackVariables(lctx));
         }
     }
 
@@ -645,19 +653,27 @@ export class PineTS {
             }
 
             //shift context
-            for (let ctxVarName of contextVarNames) {
-                for (let key in context[ctxVarName]) {
-                    const item = context[ctxVarName][key];
+            const shiftVariables = (container: any) => {
+                for (let ctxVarName of contextVarNames) {
+                    if (!container[ctxVarName]) continue;
+                    for (let key in container[ctxVarName]) {
+                        const item = container[ctxVarName][key];
 
-                    if (item instanceof Series) {
-                        const val = item.get(0);
-                        item.data.push(val);
-                    } else if (Array.isArray(item)) {
-                        // Legacy array support during transition
-                        const val = item[item.length - 1];
-                        item.push(val);
+                        if (item instanceof Series) {
+                            const val = item.get(0);
+                            item.data.push(val);
+                        } else if (Array.isArray(item)) {
+                            // Legacy array support during transition
+                            const val = item[item.length - 1];
+                            item.push(val);
+                        }
                     }
                 }
+            };
+
+            shiftVariables(context);
+            if (context.lctx) {
+                context.lctx.forEach((lctx: any) => shiftVariables(lctx));
             }
         }
     }

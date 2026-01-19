@@ -11,6 +11,25 @@ const UNDEFINED_ARG = {
     name: 'undefined',
 };
 
+export function createScopedVariableReference(name: string, scopeManager: ScopeManager): any {
+    const [scopedName, kind] = scopeManager.getVariable(name);
+
+    // Check if function scoped and not $$ itself
+    if (scopedName.match(/^fn\d+_/) && name !== '$$') {
+        const [localCtxName] = scopeManager.getVariable('$$');
+        // Only if $$ is actually found (it should be in function scope)
+        if (localCtxName) {
+            return ASTFactory.createLocalContextVariableReference(kind, scopedName);
+        }
+    }
+    return ASTFactory.createContextVariableReference(kind, scopedName);
+}
+
+export function createScopedVariableAccess(name: string, scopeManager: ScopeManager): any {
+    const varRef = createScopedVariableReference(name, scopeManager);
+    return ASTFactory.createGetCall(varRef, 0);
+}
+
 export function transformArrayIndex(node: any, scopeManager: ScopeManager): void {
     if (node.computed && node.property.type === 'Identifier') {
         // If index is a loop variable, we still need to transform the object to use $.get()
@@ -18,9 +37,8 @@ export function transformArrayIndex(node: any, scopeManager: ScopeManager): void
             // Transform the object if it's a context-bound variable
             if (node.object.type === 'Identifier' && !scopeManager.isLoopVariable(node.object.name)) {
                 if (!scopeManager.isContextBound(node.object.name)) {
-                    const [scopedName, kind] = scopeManager.getVariable(node.object.name);
                     // Transform to $.get($.kind.scopedName, loopVar)
-                    const contextVarRef = ASTFactory.createContextVariableReference(kind, scopedName);
+                    const contextVarRef = createScopedVariableReference(node.object.name, scopeManager);
                     const getCall = ASTFactory.createGetCall(contextVarRef, node.property);
                     Object.assign(node, getCall);
                     node._indexTransformed = true;
@@ -31,10 +49,8 @@ export function transformArrayIndex(node: any, scopeManager: ScopeManager): void
 
         // Only transform if it's not a context-bound variable
         if (!scopeManager.isContextBound(node.property.name)) {
-            const [scopedName, kind] = scopeManager.getVariable(node.property.name);
-
             // Transform property to $.kind.scopedName
-            node.property = ASTFactory.createContextVariableReference(kind, scopedName);
+            node.property = createScopedVariableReference(node.property.name, scopeManager);
 
             // Add [0] to the index: $.get($.kind.scopedName, 0)
             node.property = ASTFactory.createGetCall(node.property, 0);
@@ -47,10 +63,8 @@ export function transformArrayIndex(node: any, scopeManager: ScopeManager): void
         }
 
         if (!scopeManager.isContextBound(node.object.name)) {
-            const [scopedName, kind] = scopeManager.getVariable(node.object.name);
-
             // Transform the object to scoped variable: $.kind.scopedName
-            node.object = ASTFactory.createContextVariableReference(kind, scopedName);
+            node.object = createScopedVariableReference(node.object.name, scopeManager);
         }
 
         if (node.property.type === 'MemberExpression') {
@@ -184,6 +198,20 @@ export function transformIdentifier(node: any, scopeManager: ScopeManager): void
                 return;
             }
 
+            // FIX: Don't transform function identifier if it's the first argument to $.call(fn, id, ...)
+            if (
+                node.parent &&
+                node.parent.type === 'CallExpression' &&
+                node.parent.callee &&
+                node.parent.callee.type === 'MemberExpression' &&
+                node.parent.callee.object &&
+                node.parent.callee.object.name === CONTEXT_NAME &&
+                node.parent.callee.property.name === 'call' &&
+                node.parent.arguments[0] === node
+            ) {
+                return;
+            }
+
             // For local series variables (hoisted params), don't rename or wrap if they are args to a namespace function
             if (scopeManager.isLocalSeriesVar(node.name)) {
                 return;
@@ -196,8 +224,7 @@ export function transformIdentifier(node: any, scopeManager: ScopeManager): void
             }
 
             // Don't add [0] for namespace function arguments or array indices
-            const [scopedName, kind] = scopeManager.getVariable(node.name);
-            const memberExpr = ASTFactory.createContextVariableReference(kind, scopedName);
+            const memberExpr = createScopedVariableReference(node.name, scopeManager);
             Object.assign(node, memberExpr);
             return;
         }
@@ -234,7 +261,7 @@ export function transformIdentifier(node: any, scopeManager: ScopeManager): void
             if (scopedName === node.name && !scopeManager.isContextBound(node.name)) {
                 return; // Global/unknown var, return as is
             }
-            memberExpr = ASTFactory.createContextVariableReference(kind, scopedName);
+            memberExpr = createScopedVariableReference(node.name, scopeManager);
         }
 
         if (!hasArrayAccess) {
@@ -328,7 +355,7 @@ export function transformMemberExpression(memberNode: any, originalParamName: st
         memberNode.object.object &&
         memberNode.object.object.type === 'MemberExpression' &&
         memberNode.object.object.object &&
-        memberNode.object.object.object.name === CONTEXT_NAME;
+        (memberNode.object.object.object.name === CONTEXT_NAME || memberNode.object.object.object.name === '$$');
 
     const isContextBoundIdentifier =
         memberNode.object && memberNode.object.type === 'Identifier' && scopeManager.isContextBound(memberNode.object.name);
@@ -391,7 +418,7 @@ function transformIdentifierForParam(node: any, scopeManager: ScopeManager): any
 
         // If it's a user variable, transform it
         if (isUserVariable) {
-            return ASTFactory.createContextVariableReference(kind, scopedName);
+            return createScopedVariableReference(node.name, scopeManager);
         }
 
         // JavaScript global literals should never be transformed
@@ -401,7 +428,7 @@ function transformIdentifierForParam(node: any, scopeManager: ScopeManager): any
         }
 
         // Otherwise transform with context variable reference (shouldn't reach here in normal cases)
-        return ASTFactory.createContextVariableReference(kind, scopedName);
+        return createScopedVariableReference(node.name, scopeManager);
     }
     return node;
 }
@@ -681,8 +708,7 @@ export function transformFunctionArgument(arg: any, namespace: string, scopeMana
                         return element;
                     }
                     // It's a user variable - transform to context reference
-                    const [scopedName, kind] = scopeManager.getVariable(element.name);
-                    return ASTFactory.createContextVariableAccess0(kind, scopedName);
+                    return createScopedVariableAccess(element.name, scopeManager);
                 }
                 return element;
             });
@@ -787,8 +813,6 @@ export function transformFunctionArgument(arg: any, namespace: string, scopeMana
                     };
                 }
 
-                const [scopedName, kind] = scopeManager.getVariable(prop.value.name);
-
                 // Convert shorthand to full property definition
                 return {
                     type: 'Property',
@@ -796,7 +820,7 @@ export function transformFunctionArgument(arg: any, namespace: string, scopeMana
                         type: 'Identifier',
                         name: prop.key.name,
                     },
-                    value: ASTFactory.createContextVariableReference(kind, scopedName),
+                    value: createScopedVariableReference(prop.value.name, scopeManager),
                     kind: 'init',
                     method: false,
                     shorthand: false,
@@ -917,21 +941,22 @@ export function transformCallExpression(node: any, scopeManager: ScopeManager, n
         // Inject unique call ID for TA functions to enable proper state management
         if (namespace === 'ta') {
             if (scopeManager.getCurrentScopeType() === 'fn') {
-                // If inside a function, combine _callId param with the static ID
+                // If inside a function, combine $$.id with the static ID
                 const staticId = scopeManager.getNextTACallId();
 
-                // Manually resolve _callId from scope to ensure it uses the scoped variable name
-                const [scopedName, kind] = scopeManager.getVariable('_callId');
+                // Manually resolve $$ from scope to ensure it uses the scoped variable name
+                const [localCtxName] = scopeManager.getVariable('$$');
 
                 let leftOperand;
-                if (scopedName !== '_callId') {
-                    // It was found in scope (e.g. fn1__callId), create context variable reference
-                    // _callId is a Series (from $.init/VariableDeclaration), so we must get current value
-                    const contextVar = ASTFactory.createContextVariableReference(kind, scopedName);
-                    leftOperand = ASTFactory.createGetCall(contextVar, 0);
+                if (localCtxName) {
+                    // $$.id
+                    leftOperand = ASTFactory.createMemberExpression(
+                        ASTFactory.createLocalContextIdentifier(),
+                        ASTFactory.createIdentifier('id')
+                    );
                 } else {
-                    // Fallback to identifier if not found (should not happen in valid PineTS)
-                    leftOperand = ASTFactory.createIdentifier('_callId');
+                    // Fallback to empty string if not found (should not happen in valid PineTS)
+                    leftOperand = ASTFactory.createLiteral('');
                 }
 
                 const callIdArg = {

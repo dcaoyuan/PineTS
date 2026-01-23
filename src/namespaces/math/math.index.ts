@@ -30,6 +30,8 @@ import { sin } from './methods/sin';
 import { sqrt } from './methods/sqrt';
 import { sum } from './methods/sum';
 import { tan } from './methods/tan';
+import { todegrees } from './methods/todegrees';
+import { toradians } from './methods/toradians';
 import { __eq } from './methods/__eq';
 
 const methods = {
@@ -61,6 +63,8 @@ const methods = {
   sqrt,
   sum,
   tan,
+  todegrees,
+  toradians,
   __eq
 };
 
@@ -94,6 +98,8 @@ export class PineMath {
   sqrt: ReturnType<typeof methods.sqrt>;
   sum: ReturnType<typeof methods.sum>;
   tan: ReturnType<typeof methods.tan>;
+  todegrees: ReturnType<typeof methods.todegrees>;
+  toradians: ReturnType<typeof methods.toradians>;
   __eq: ReturnType<typeof methods.__eq>;
 
   constructor(private context: any) {

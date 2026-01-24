@@ -1,6 +1,12 @@
 # Change Log
-## [0.8.4]
+
+## [0.8.4] - 2026-01-24 - Math Namespace Enhancements & Critical Fixes
+
+### Added
+-   **Math Namespace**: Added `math.todegrees` and `math.toradians` functions. (contribution)
+
 ### Fixed
+-   **Math Namespace**: Fixed `math.precision` implementation and `math.round` precision parameter handling.
 -   **Variable Scope Collision**: Fixed critical issue where local variables (`var`, `let`, `const`) in user-defined functions were sharing state across different function calls. Implemented dynamic scoping using unique call IDs to ensure each function instance maintains isolated state and history.
 -   **SMA NaN Handling**: Improved `ta.sma` to correctly propagate `NaN` values and handle `NaN` contamination in the rolling window by falling back to full recalculation when necessary.
 -   **Transpiler Optimization**: Major optimization of user-defined function transpilation. Introduced local context (`$$`) for scoping variables, reducing transpiled code complexity and improving readability by removing redundant `_callId` argument passing.

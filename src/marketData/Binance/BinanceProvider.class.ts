@@ -262,7 +262,7 @@ export class BinanceProvider implements IProvider {
             const needsPagination = this.shouldPaginate(timeframe, limit, sDate, eDate);
 
             if (needsPagination) {
-                if (sDate !== undefined && eDate !== undefined) {
+                if (sDate && eDate) {
                     // Forward pagination: Fetch all data using interval pagination, then apply limit
                     const allData = await this.getMarketDataInterval(tickerId, timeframe, sDate, eDate);
                     const result = limit ? allData.slice(0, limit) : allData;
@@ -289,10 +289,10 @@ export class BinanceProvider implements IProvider {
                 url += `&limit=${Math.min(limit, 1000)}`; // Cap at 1000 for single request
             }
 
-            if (sDate !== undefined) {
+            if (sDate) {
                 url += `&startTime=${sDate}`;
             }
-            if (eDate !== undefined) {
+            if (eDate) {
                 url += `&endTime=${eDate}`;
             }
 
@@ -341,7 +341,7 @@ export class BinanceProvider implements IProvider {
         }
 
         // If we have both start and end dates, calculate required candles
-        if (sDate !== undefined && eDate !== undefined) {
+        if (sDate && eDate) {
             const interval = timeframe_to_binance[timeframe.toUpperCase()];
             const timeframeDurations = {
                 '1m': 60 * 1000,

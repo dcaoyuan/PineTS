@@ -195,7 +195,49 @@ export class BinanceProvider implements IProvider {
             return [];
         }
     }
-    async getMarketData(tickerId: string, timeframe: string, limit?: number, sDate?: number, eDate?: number): Promise<any> {
+
+    private async getMarketDataBackwards(tickerId: string, timeframe: string, limit: number, endTime?: number): Promise<any[]> {
+        let remaining = limit;
+        let allData: any[] = [];
+        let currentEndTime = endTime;
+
+        // Safety break to prevent infinite loops
+        let iterations = 0;
+        const maxIterations = Math.ceil(limit / 1000) + 5;
+
+        while (remaining > 0 && iterations < maxIterations) {
+            iterations++;
+            const fetchSize = Math.min(remaining, 1000);
+            
+            // Fetch batch
+            const data = await this.getMarketData(
+                tickerId, 
+                timeframe, 
+                fetchSize, 
+                undefined, 
+                currentEndTime
+            );
+
+            if (data.length === 0) break;
+
+            // Prepend data since we fetch most recent first
+            allData = data.concat(allData);
+            remaining -= data.length;
+
+            // Update end time for next batch to be just before the oldest candle we got
+            // data[0] is the oldest candle in the batch
+            currentEndTime = data[0].openTime - 1;
+
+            if (data.length < fetchSize) {
+                // We got less than requested, meaning we reached the beginning of available data
+                break;
+            }
+        }
+
+        return allData;
+    }
+
+    async getMarketData(tickerId: string, timeframe: string, limit?: number, sDate?: number, eDate?: number): Promise<any> {        
         try {
             // Check cache first
             // Skip cache if eDate is undefined (live request) to ensure we get fresh data
@@ -219,14 +261,23 @@ export class BinanceProvider implements IProvider {
             // Determine if we need to paginate
             const needsPagination = this.shouldPaginate(timeframe, limit, sDate, eDate);
 
-            if (needsPagination && sDate && eDate) {
-                // Fetch all data using pagination, then apply limit if specified
-                const allData = await this.getMarketDataInterval(tickerId, timeframe, sDate, eDate);
-                const result = limit ? allData.slice(0, limit) : allData;
+            if (needsPagination) {
+                if (sDate !== undefined && eDate !== undefined) {
+                    // Forward pagination: Fetch all data using interval pagination, then apply limit
+                    const allData = await this.getMarketDataInterval(tickerId, timeframe, sDate, eDate);
+                    const result = limit ? allData.slice(0, limit) : allData;
 
-                // Cache the results with original params
-                this.cacheManager.set(cacheParams, result);
-                return result;
+                    // Cache the results with original params
+                    this.cacheManager.set(cacheParams, result);
+                    return result;
+                } else if (limit && limit > 1000) {
+                    // Backward pagination: Fetch 'limit' candles backwards from eDate (or now)
+                    const result = await this.getMarketDataBackwards(tickerId, timeframe, limit, eDate);
+                    
+                    // Cache the results
+                    this.cacheManager.set(cacheParams, result);
+                    return result;
+                }
             }
 
             // Single request for <= 1000 candles
@@ -238,10 +289,10 @@ export class BinanceProvider implements IProvider {
                 url += `&limit=${Math.min(limit, 1000)}`; // Cap at 1000 for single request
             }
 
-            if (sDate) {
+            if (sDate !== undefined) {
                 url += `&startTime=${sDate}`;
             }
-            if (eDate) {
+            if (eDate !== undefined) {
                 url += `&endTime=${eDate}`;
             }
 
@@ -290,7 +341,7 @@ export class BinanceProvider implements IProvider {
         }
 
         // If we have both start and end dates, calculate required candles
-        if (sDate && eDate) {
+        if (sDate !== undefined && eDate !== undefined) {
             const interval = timeframe_to_binance[timeframe.toUpperCase()];
             const timeframeDurations = {
                 '1m': 60 * 1000,

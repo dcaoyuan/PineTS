@@ -54,10 +54,7 @@ export async function runNSFunctionWithArgs(klines: any[], ns: string, fn: strin
 
     let sourceCode = `(context) =>{ 
         const { close, open, high, low, hlc3, volume, hl2, ohlc4 } = context.data;
-        const { plotchar, plot, na } = context.core;
-        const ta = context.ta;
-        const math = context.math;
-        const input = context.input;
+        const { plotchar, plot, na, ta, math, input } = context.pine;
         
 
         const values = ${ns}.${fn}(${args.join(',')});

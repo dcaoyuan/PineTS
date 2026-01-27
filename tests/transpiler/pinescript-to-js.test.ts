@@ -375,7 +375,7 @@ plot(gt ? 1 : 0)
         const result = transpile(code);
         const jsCode = result.toString();
 
-        expect(jsCode).toContain('$.math.__eq(');
+        expect(jsCode).toContain('$.pine.math.__eq(');
         expect(jsCode).toContain('>');
         expect(jsCode).toContain('<');
         expect(jsCode).toContain('>=');

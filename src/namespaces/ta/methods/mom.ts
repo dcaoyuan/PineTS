@@ -7,6 +7,6 @@ export function mom(context: any) {
         const length = Series.from(_length).get(0);
 
         // Momentum is same as change
-        return context.ta.change(source, length, _callId);
+        return context.pine.ta.change(source, length, _callId);
     };
 }

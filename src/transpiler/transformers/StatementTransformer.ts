@@ -407,11 +407,6 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
             // Transform the body of arrow functions
             scopeManager.pushScope('fn');
             walk.recursive(decl.init.body, scopeManager, {
-                BlockStatement(node: any, state: ScopeManager, c: any) {
-                    //state.pushScope('block');
-                    node.body.forEach((stmt: any) => c(stmt, state));
-                    //state.popScope();
-                },
                 IfStatement(node: any, state: ScopeManager, c: any) {
                     state.pushScope('if');
                     c(node.consequent, state);
@@ -430,6 +425,40 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
                 },
                 AssignmentExpression(node: any, state: ScopeManager) {
                     transformAssignmentExpression(node, state);
+                },
+                SwitchStatement(node: any, state: ScopeManager, c: any) {
+                    node.discriminant.parent = node;
+                    c(node.discriminant, state);
+                    node.cases.forEach((caseNode: any) => {
+                        caseNode.parent = node;
+                        c(caseNode, state);
+                    });
+                },
+                SwitchCase(node: any, state: ScopeManager, c: any) {
+                    if (node.test) {
+                        node.test.parent = node;
+                        c(node.test, state);
+                    }
+                    const newConsequent: any[] = [];
+                    node.consequent.forEach((stmt: any) => {
+                        state.enterHoistingScope();
+                        c(stmt, state);
+                        const hoistedStmts = state.exitHoistingScope();
+                        newConsequent.push(...hoistedStmts);
+                        newConsequent.push(stmt);
+                    });
+                    node.consequent = newConsequent;
+                },
+                BlockStatement(node: any, state: ScopeManager, c: any) {
+                    const newBody: any[] = [];
+                    node.body.forEach((stmt: any) => {
+                        state.enterHoistingScope();
+                        c(stmt, state);
+                        const hoistedStmts = state.exitHoistingScope();
+                        newBody.push(...hoistedStmts);
+                        newBody.push(stmt);
+                    });
+                    node.body = newBody;
                 },
             });
             scopeManager.popScope();
@@ -728,6 +757,9 @@ export function transformReturnStatement(node: any, scopeManager: ScopeManager):
                     },
                     // c is the callback function for recursion (acorn-walk)
                     CallExpression(node: any, state: ScopeManager, c: any) {
+                        if (node.callee.type === 'ArrowFunctionExpression' || node.callee.type === 'FunctionExpression') {
+                            c(node.callee, state);
+                        }
                         transformCallExpression(node, state);
                         if (node.type === 'CallExpression') {
                             node.arguments.forEach((arg: any) => c(arg, state));
@@ -736,6 +768,40 @@ export function transformReturnStatement(node: any, scopeManager: ScopeManager):
                     BinaryExpression(node: any, state: any, c: any) {
                         c(node.left, state);
                         c(node.right, state);
+                    },
+                    SwitchStatement(node: any, state: ScopeManager, c: any) {
+                        node.discriminant.parent = node;
+                        c(node.discriminant, state);
+                        node.cases.forEach((caseNode: any) => {
+                            caseNode.parent = node;
+                            c(caseNode, state);
+                        });
+                    },
+                    SwitchCase(node: any, state: ScopeManager, c: any) {
+                        if (node.test) {
+                            node.test.parent = node;
+                            c(node.test, state);
+                        }
+                        const newConsequent: any[] = [];
+                        node.consequent.forEach((stmt: any) => {
+                            state.enterHoistingScope();
+                            c(stmt, state);
+                            const hoistedStmts = state.exitHoistingScope();
+                            newConsequent.push(...hoistedStmts);
+                            newConsequent.push(stmt);
+                        });
+                        node.consequent = newConsequent;
+                    },
+                    BlockStatement(node: any, state: ScopeManager, c: any) {
+                        const newBody: any[] = [];
+                        node.body.forEach((stmt: any) => {
+                            state.enterHoistingScope();
+                            c(stmt, state);
+                            const hoistedStmts = state.exitHoistingScope();
+                            newBody.push(...hoistedStmts);
+                            newBody.push(stmt);
+                        });
+                        node.body = newBody;
                     },
                 });
             }

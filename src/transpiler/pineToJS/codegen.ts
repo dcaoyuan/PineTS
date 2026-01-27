@@ -1289,40 +1289,44 @@ export class CodeGenerator {
         this.write('}');
     }
 
-    // Generate SwitchExpression (convert to ternary chain)
+    // Generate SwitchExpression (convert to IIFE with switch statement)
     generateSwitchExpression(node) {
-        // switch discriminant => chain of ternary operators
-        // switch x
-        //   A => result1
-        //   B => result2
-        //   => defaultResult
-        // becomes: (x == A ? result1 : x == B ? result2 : defaultResult)
-        this.write('(');
-
-        for (let i = 0; i < node.cases.length; i++) {
-            const c = node.cases[i];
-
+        this.write('(() => {\n');
+        this.indent++;
+        this.write(this.indentStr.repeat(this.indent));
+        
+        this.write('switch (');
+        this.generateExpression(node.discriminant);
+        this.write(') {\n');
+        
+        this.indent++;
+        
+        for (const c of node.cases) {
+            this.write(this.indentStr.repeat(this.indent));
+            
             if (c.test) {
-                // Compare discriminant to test value
-                this.generateExpression(node.discriminant);
-                this.write(' == ');
+                this.write('case ');
                 this.generateExpression(c.test);
-                this.write(' ? ');
-                this.generateExpression(c.consequent);
-                this.write(' : ');
+                this.write(':\n');
             } else {
-                // Default case (no test) - just the consequent
-                this.generateExpression(c.consequent);
+                this.write('default:\n');
             }
+            
+            this.indent++;
+            this.write(this.indentStr.repeat(this.indent));
+            this.write('return ');
+            this.generateExpression(c.consequent);
+            this.write(';\n');
+            this.indent--;
         }
+        
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write('}\n'); // end switch
 
-        // If no default case was provided, add undefined
-        const hasDefault = node.cases.some((c) => !c.test);
-        if (!hasDefault) {
-            this.write('undefined');
-        }
-
-        this.write(')');
+        this.indent--;
+        this.write(this.indentStr.repeat(this.indent));
+        this.write('})()');
     }
 
     // Generate SequenceExpression

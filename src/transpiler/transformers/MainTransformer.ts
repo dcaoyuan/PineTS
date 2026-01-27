@@ -127,6 +127,30 @@ export function runTransformationPass(
         IfStatement(node: any, state: ScopeManager, c: any) {
             transformIfStatement(node, state, c);
         },
+        SwitchStatement(node: any, state: ScopeManager, c: any) {
+            node.discriminant.parent = node;
+            c(node.discriminant, state);
+            node.cases.forEach((caseNode: any) => {
+                caseNode.parent = node;
+                c(caseNode, state);
+            });
+        },
+        SwitchCase(node: any, state: ScopeManager, c: any) {
+            if (node.test) {
+                node.test.parent = node;
+                c(node.test, state);
+            }
+            const newConsequent: any[] = [];
+            node.consequent.forEach((stmt: any) => {
+                state.enterHoistingScope();
+                // stmt.parent = node; // Not strictly necessary for statements, but good for consistency
+                c(stmt, state);
+                const hoistedStmts = state.exitHoistingScope();
+                newConsequent.push(...hoistedStmts);
+                newConsequent.push(stmt);
+            });
+            node.consequent = newConsequent;
+        },
         AwaitExpression(node: any, state: ScopeManager, c: any) {
             // Mark the argument as being inside an await so transformCallExpression knows not to add another await
             if (node.argument) {

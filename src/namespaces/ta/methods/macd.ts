@@ -38,9 +38,9 @@ export function macd(context: any) {
         const signalEmaId = `${baseId}_signal`;
 
         // Calculate Fast and Slow EMAs
-        // context.ta.ema returns the current EMA value
-        const fastMA = context.ta.ema(source, fastLength, fastEmaId);
-        const slowMA = context.ta.ema(source, slowLength, slowEmaId);
+        // context.pine.ta.ema returns the current EMA value
+        const fastMA = context.pine.ta.ema(source, fastLength, fastEmaId);
+        const slowMA = context.pine.ta.ema(source, slowLength, slowEmaId);
 
         // Calculate MACD Line
         // Handle NaN cases if EMAs are not yet valid
@@ -55,7 +55,7 @@ export function macd(context: any) {
         // We must ensure we don't pass NaN to EMA, as it might corrupt the state (initSum).
         let signalLine = NaN;
         if (!isNaN(macdLine)) {
-            signalLine = context.ta.ema(macdLine, signalLength, signalEmaId);
+            signalLine = context.pine.ta.ema(macdLine, signalLength, signalEmaId);
         }
 
         // Calculate Histogram

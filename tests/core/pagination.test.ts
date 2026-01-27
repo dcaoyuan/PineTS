@@ -9,8 +9,7 @@ describe('Pagination', () => {
 
         const sourceCode = (context) => {
             const { close } = context.data;
-            const { plotchar } = context.core;
-            const ta = context.ta;
+            const { plotchar, ta } = context.pine;            
 
             const sma = ta.sma(close, 14);
             plotchar(sma, 'data');
@@ -173,7 +172,7 @@ describe('Pagination', () => {
 
         const sourceCode = (context) => {
             const { close } = context.data;
-            const ta = context.ta;
+            const { ta } = context.pine;
 
             const sma = ta.sma(close, 5);
 
@@ -235,7 +234,7 @@ describe('Pagination', () => {
 
         const sourceCode = (context) => {
             const { close } = context.data;
-            const ta = context.ta;
+            const { ta } = context.pine;
             const sma = ta.sma(close, 5);
             return { sma };
         };

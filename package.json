@@ -1,6 +1,6 @@
 {
     "name": "pinets",
-    "version": "0.8.4",
+    "version": "0.8.5",
     "description": "Run Pine Script anywhere. PineTS is an open-source transpiler and runtime that brings Pine Script logic to Node.js and the browser with 1:1 syntax compatibility. Reliably write, port, and run indicators or strategies on your own infrastructure.",
     "keywords": [
         "Pine Script",
@@ -92,6 +92,7 @@
         "rollup-plugin-esbuild": "^6.1.1",
         "rollup-plugin-sourcemaps": "^0.6.3",
         "rollup-plugin-typescript-paths": "^1.5.0",
+        "tsx": "^4.21.0",
         "vite-tsconfig-paths": "^4.3.2",
         "vitest": "^2.0.0"
     },

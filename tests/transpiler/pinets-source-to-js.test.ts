@@ -245,7 +245,7 @@ let src_open = input.any({ title: 'Open Source', defval: open });
   const p1 = ta.param(14, undefined, 'p1');
   const temp_1 = ta.sma(p0, p1, "_ta0");
   $.const.glb1_sma = $.init($.const.glb1_sma, temp_1);
-  if ($.math.__eq($.get(low, 0), NaN)) {
+  if ($.pine.math.__eq($.get(low, 0), NaN)) {
     $.const.if2_data3 = $.init($.const.if2_data3, $.get(high, 0));
   }
 }`;
@@ -929,7 +929,7 @@ let src_open = input.any({ title: 'Open Source', defval: open });
     for (let i = 1; i <= $.get(avg_len, 0); i++) {
       $.set($$.let.fn2_ret_val, $.get($$.let.fn2_ret_val, 0) + $.get(avg_src, i));
     }
-    if ($.math.__eq($.get(avg_len, 0), 0)) {
+    if ($.pine.math.__eq($.get(avg_len, 0), 0)) {
       $.set($$.let.fn2_ret_val, $.get($$.let.fn2_cc, 1));
     }
     return $.precision($.get($$.let.fn2_ret_val, 0) / $.get(avg_len, 0));
@@ -1120,7 +1120,7 @@ let src_open = input.any({ title: 'Open Source', defval: open });
     for (let i = 1; i <= $.get(avg_len, 0); i++) {
       $.set($$.let.fn1_ret_val, $.get($$.let.fn1_ret_val, 0) + $.get(avg_src, i));
     }
-    if ($.math.__eq($.get(avg_len, 0), 0)) {
+    if ($.pine.math.__eq($.get(avg_len, 0), 0)) {
       $.set($$.let.fn1_ret_val, $.get($$.let.fn1_cc, 1));
     }
     return $.precision($.get($$.let.fn1_ret_val, 0) / $.get(avg_len, 0));

@@ -134,9 +134,10 @@ export const ASTFactory = {
         return this.createCallExpression(setMethod, [target, value]);
     },
 
-    // Create $.math.__eq(left, right)
+    // Create $.pine.math.__eq(left, right)
     createMathEqCall(left: any, right: any): any {
-        const mathObj = this.createMemberExpression(this.createContextIdentifier(), this.createIdentifier('math'), false);
+        const pineObj = this.createMemberExpression(this.createContextIdentifier(), this.createIdentifier('pine'), false);
+        const mathObj = this.createMemberExpression(pineObj, this.createIdentifier('math'), false);
         const eqMethod = this.createMemberExpression(mathObj, this.createIdentifier('__eq'), false);
         return this.createCallExpression(eqMethod, [left, right]);
     },

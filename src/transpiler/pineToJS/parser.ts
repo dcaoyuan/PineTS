@@ -72,8 +72,43 @@ export class Parser {
         return this.advance();
     }
 
-    skipNewlines() {
+    // Match a token, optionally ignoring NEWLINE and INDENT (for line continuation)
+    matchEx(type, value = null, allowLineContinuation = false) {
+        if (!allowLineContinuation) {
+            return this.match(type, value);
+        }
+
+        let offset = 0;
+        let token = this.peek(offset);
+
+        // Skip NEWLINE and subsequent INDENT
+        if (token.type === TokenType.NEWLINE) {
+            offset++;
+            token = this.peek(offset);
+            
+            // Optional INDENT after NEWLINE
+            if (token.type === TokenType.INDENT) {
+                offset++;
+                token = this.peek(offset);
+            }
+        }
+
+        if (token.type !== type) return false;
+        if (value !== null && token.value !== value) return false;
+
+        // Consume skipped tokens
+        for (let i = 0; i < offset; i++) {
+            this.advance();
+        }
+        
+        return true;
+    }
+
+    skipNewlines(allowIndent = false) {
         while (this.match(TokenType.NEWLINE)) {
+            this.advance();
+        }
+        if (allowIndent && this.match(TokenType.INDENT)) {
             this.advance();
         }
     }
@@ -84,6 +119,13 @@ export class Parser {
 
         while (!this.match(TokenType.EOF)) {
             this.skipNewlines();
+            
+            // Handle DEDENTs at top level (from line continuations)
+            if (this.match(TokenType.DEDENT)) {
+                this.advance();
+                continue;
+            }
+
             if (this.match(TokenType.EOF)) break;
 
             const stmt = this.parseStatement();
@@ -170,7 +212,7 @@ export class Parser {
                 const op = this.peek().value;
                 if (['=', ':=', '+=', '-=', '*=', '/=', '%='].includes(op)) {
                     this.advance();
-                    this.skipNewlines();
+                    this.skipNewlines(true);
                     const right = this.parseExpression();
 
                     // Simple assignment with = creates variable declaration
@@ -344,7 +386,7 @@ export class Parser {
         }
 
         this.expect(TokenType.OPERATOR, '=');
-        this.skipNewlines();
+        this.skipNewlines(true);
         const init = this.parseExpression();
 
         const id = new Identifier(name);
@@ -366,7 +408,7 @@ export class Parser {
 
         const name = this.expect(TokenType.IDENTIFIER).value;
         this.expect(TokenType.OPERATOR, '=');
-        this.skipNewlines();
+        this.skipNewlines(true);
         const init = this.parseExpression();
 
         const id = new Identifier(name);
@@ -598,7 +640,7 @@ export class Parser {
                 const op = this.peek().value;
                 if (['=', ':=', '+=', '-=', '*=', '/=', '%='].includes(op)) {
                     this.advance();
-                    this.skipNewlines();
+                    this.skipNewlines(true);
                     const right = this.parseExpression();
 
                     // Simple assignment with = creates variable declaration
@@ -774,19 +816,38 @@ export class Parser {
             return new BlockStatement(stmt ? [stmt] : []);
         }
 
+        const blockIndent = this.peek().indent;
         this.advance(); // consume INDENT
 
         const statements = [];
-        while (!this.match(TokenType.DEDENT) && !this.match(TokenType.EOF)) {
+        while (!this.match(TokenType.EOF)) {
             this.skipNewlines();
-            if (this.match(TokenType.DEDENT)) break;
+            
+            // Check for DEDENT
+            if (this.match(TokenType.DEDENT)) {
+                const dedentLevel = this.peek().indent;
+                if (dedentLevel < blockIndent) {
+                    // Dedenting out of this block
+                    break;
+                } else {
+                    // Dedenting from a deeper level back to this block (or deeper)
+                    // Consume spurious DEDENT
+                    this.advance();
+                    continue;
+                }
+            }
+
+            if (this.match(TokenType.EOF)) break;
 
             const stmt = this.parseStatement();
             if (stmt) statements.push(stmt);
         }
 
         if (this.match(TokenType.DEDENT)) {
-            this.advance();
+            const dedentLevel = this.peek().indent;
+            if (dedentLevel < blockIndent) {
+                this.advance();
+            }
         }
 
         return new BlockStatement(statements);
@@ -846,7 +907,7 @@ export class Parser {
         this.expect(TokenType.RBRACKET);
         this.skipNewlines();
         this.expect(TokenType.OPERATOR, '=');
-        this.skipNewlines();
+        this.skipNewlines(true);
         const init = this.parseExpression();
 
         return new VariableDeclaration([new VariableDeclarator(new ArrayPattern(elements), init)], VariableDeclarationKind.CONST);
@@ -860,12 +921,19 @@ export class Parser {
     parseTernary() {
         let expr = this.parseLogicalOr();
 
-        if (this.match(TokenType.OPERATOR, '?')) {
+        if (this.matchEx(TokenType.OPERATOR, '?', true)) {
             this.advance();
-            this.skipNewlines();
+            this.skipNewlines(true);
             const consequent = this.parseExpression();
-            this.expect(TokenType.COLON);
-            this.skipNewlines();
+            
+            // Handle : with line continuation
+            if (this.matchEx(TokenType.COLON, null, true)) {
+                this.advance(); // Consume :
+            } else {
+                this.expect(TokenType.COLON);
+            }
+            
+            this.skipNewlines(true);
             const alternate = this.parseExpression();
             return new ConditionalExpression(expr, consequent, alternate);
         }
@@ -876,9 +944,9 @@ export class Parser {
     parseLogicalOr() {
         let left = this.parseLogicalAnd();
 
-        while (this.match(TokenType.KEYWORD, 'or') || (this.match(TokenType.OPERATOR) && this.peek().value === '||')) {
+        while (this.matchEx(TokenType.KEYWORD, 'or', true) || (this.matchEx(TokenType.OPERATOR, null, true) && this.peek().value === '||')) {
             this.advance();
-            this.skipNewlines();
+            this.skipNewlines(true);
             const right = this.parseLogicalAnd();
             left = new BinaryExpression('||', left, right);
         }
@@ -889,7 +957,7 @@ export class Parser {
     parseLogicalAnd() {
         let left = this.parseEquality();
 
-        while (this.match(TokenType.KEYWORD, 'and') || (this.match(TokenType.OPERATOR) && this.peek().value === '&&')) {
+        while (this.matchEx(TokenType.KEYWORD, 'and', true) || (this.matchEx(TokenType.OPERATOR, null, true) && this.peek().value === '&&')) {
             this.advance();
             this.skipNewlines();
             const right = this.parseEquality();
@@ -902,12 +970,12 @@ export class Parser {
     parseEquality() {
         let left = this.parseComparison();
 
-        while (this.match(TokenType.OPERATOR)) {
+        while (this.matchEx(TokenType.OPERATOR, null, true)) {
             const op = this.peek().value;
             if (!['==', '!='].includes(op)) break;
 
             this.advance();
-            this.skipNewlines();
+            this.skipNewlines(true);
             const right = this.parseComparison();
             left = new BinaryExpression(op, left, right);
         }
@@ -918,7 +986,7 @@ export class Parser {
     parseComparison() {
         let left = this.parseAdditive();
 
-        while (this.match(TokenType.OPERATOR)) {
+        while (this.matchEx(TokenType.OPERATOR, null, true)) {
             const op = this.peek().value;
             if (!['<', '>', '<=', '>='].includes(op)) break;
 
@@ -934,12 +1002,12 @@ export class Parser {
     parseAdditive() {
         let left = this.parseMultiplicative();
 
-        while (this.match(TokenType.OPERATOR)) {
+        while (this.matchEx(TokenType.OPERATOR, null, true)) {
             const op = this.peek().value;
             if (!['+', '-'].includes(op)) break;
 
             this.advance();
-            this.skipNewlines();
+            this.skipNewlines(true);
             const right = this.parseMultiplicative();
             left = new BinaryExpression(op, left, right);
         }
@@ -950,12 +1018,12 @@ export class Parser {
     parseMultiplicative() {
         let left = this.parseUnary();
 
-        while (this.match(TokenType.OPERATOR)) {
+        while (this.matchEx(TokenType.OPERATOR, null, true)) {
             const op = this.peek().value;
             if (!['*', '/', '%'].includes(op)) break;
 
             this.advance();
-            this.skipNewlines();
+            this.skipNewlines(true);
             const right = this.parseUnary();
             left = new BinaryExpression(op, left, right);
         }

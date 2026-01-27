@@ -233,8 +233,11 @@ export function transformIdentifier(node: any, scopeManager: ScopeManager): void
 
         if (isContextBoundVar) {
             const isFunctionArg = node.parent && node.parent.type === 'CallExpression' && node.parent.arguments.includes(node);
-            if (!isFunctionArg) {
-                // Return early if it's not a function arg that needs unwrapping
+            const isSwitchDiscriminant = node.parent && node.parent.type === 'SwitchStatement' && node.parent.discriminant === node;
+            const isSwitchCaseTest = node.parent && node.parent.type === 'SwitchCase' && node.parent.test === node;
+
+            if (!isFunctionArg && !isSwitchDiscriminant && !isSwitchCaseTest) {
+                // Return early if it's not a function arg or switch test that needs unwrapping
                 return;
             }
         }

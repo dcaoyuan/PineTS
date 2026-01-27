@@ -11,7 +11,7 @@ export function hma(context: any) {
         const sqrtPeriod = Math.floor(Math.sqrt(period));
 
         // Get wma function from context.ta
-        const wmaFn = context.ta.wma;
+        const wmaFn = context.pine.ta.wma;
 
         // Pass derived call IDs to internal WMA calls to avoid state collision
         const wma1 = wmaFn(source, halfPeriod, _callId ? `${_callId}_wma1` : undefined);

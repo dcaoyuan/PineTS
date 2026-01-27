@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.8.5] - 2026-01-27 - Transpiler Hotfixes
+
+### Fixed
+-   **Deprecation Warnings**: Fixed wrong warning message appearing with valid code.
+-   **Pine Script Parser**: Fixed multiline Pine Script conditions parsing (indent error).
+-   **Transpiler**: Fixed `switch` statement syntax conversion.
+
 ## [0.8.4] - 2026-01-24 - Math Namespace Enhancements & Critical Fixes
 
 ### Added

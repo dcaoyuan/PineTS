@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { type PlotCharOptions, type IndicatorOptions } from '../types/PineTypes';
 import { Series } from '../Series';
 import { PineTypeObject } from './PineTypeObject';
 import { parseArgsForPineParams } from './utils';
@@ -62,9 +63,85 @@ export class Core {
                 const b = parseInt(hex.slice(4, 6), 16);
 
                 return a ? `rgba(${r}, ${g}, ${b}, ${(100 - a) / 100})` : `rgb(${r}, ${g}, ${b})`;
+
+            } else {
+                let rgb: string
+                switch (color) {
+                    case 'aqua':
+                        rgb = '0, 188, 212';
+                        break;
+
+                    case 'black':
+                        rgb = '54, 58, 69';
+                        break;
+
+                    case 'blue':
+                        rgb = '33, 150, 243';
+                        break;
+
+                    case 'fuchsia':
+                        rgb = '224, 64, 251';
+                        break;
+
+                    case 'gray':
+                        rgb = '120, 123, 134';
+                        break;
+
+                    case 'green':
+                        rgb = '76, 175, 80';
+                        break;
+
+                    case 'lime':
+                        rgb = '0, 230, 118';
+                        break;
+
+                    case 'maroon':
+                        rgb = '136, 14, 79';
+                        break;
+
+                    case 'navy':
+                        rgb = '49, 27, 146';
+                        break;
+
+                    case 'olive':
+                        rgb = '128, 128, 0';
+                        break;
+
+                    case 'orange':
+                        rgb = '255, 152, 0';
+                        break;
+
+                    case 'purple':
+                        rgb = '156, 39, 176';
+                        break;
+
+                    case 'red':
+                        rgb = '242, 54, 69';
+                        break;
+
+                    case 'silver':
+                        rgb = '178, 181, 190';
+                        break;
+
+                    case 'teal':
+                        rgb = '8, 153, 129';
+                        break;
+
+                    case 'white':
+                        rgb = '255, 255, 255';
+                        break;
+
+                    case 'yellow':
+                        rgb = '0, 188, 212';
+                        break;
+
+                    default:
+                }
+
+                return rgb
+                    ? a ? `rgba(${rgb}, ${(100 - a) / 100})` : `rgb(${rgb})`
+                    : a ? `rgba(${color}, ${(100 - a) / 100})` : color; // Handle existing RGB format
             }
-            // Handle existing RGB format
-            return a ? `rgba(${color}, ${(100 - a) / 100})` : color;
         },
         white: 'white',
         lime: 'lime',
@@ -90,7 +167,7 @@ export class Core {
         silver: 'silver',
         bronze: 'bronze',
     };
-    constructor(private context: any) {}
+    constructor(private context: any) { }
     private extractPlotOptions(options: PlotCharOptions) {
         const _options: any = {};
         for (let key in options) {

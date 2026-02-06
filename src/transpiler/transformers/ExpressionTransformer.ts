@@ -683,6 +683,18 @@ function getParamFromUnaryExpression(node: any, scopeManager: ScopeManager, name
         end: node.end,
     };
 
+    // Walk through the unary expression to transform any function calls
+    walk.recursive(unaryExpr, scopeManager, {
+        CallExpression(node: any, scopeManager: ScopeManager) {
+            if (!node._transformed) {
+                transformCallExpression(node, scopeManager);
+            }
+        },
+        MemberExpression(node: any) {
+            transformMemberExpression(node, '', scopeManager);
+        },
+    });
+
     return unaryExpr;
 }
 

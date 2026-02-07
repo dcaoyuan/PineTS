@@ -78,16 +78,12 @@ export class Core {
             if (color && color.startsWith('#')) {
                 // Remove # and convert to RGB
                 const hex = color.slice(1);
-                const r = parseInt(hex.slice(0, 2), 16);
-                const g = parseInt(hex.slice(2, 4), 16);
-                const b = parseInt(hex.slice(4, 6), 16);
-
-                return a ? `rgba(${r}, ${g}, ${b}, ${(100 - a) / 100})` : `rgb(${r}, ${g}, ${b})`;
+                return a ? `#${hex}${Math.round(255 / 100 * (100 - a)).toString(16).padStart(2, '0').toUpperCase()}` : `#${hex}`
 
             } else {
                 const hex = COLOR_CONSTANTS[color]
                 return hex
-                    ? a ? `${hex}${a.toString(16).padStart(2, '0').toUpperCase()}` : `${hex}`
+                    ? a ? `#${hex}${Math.round(255 / 100 * (100 - a)).toString(16).padStart(2, '0').toUpperCase()}` : `#${hex}`
                     : a ? `rgba(${color}, ${(100 - a) / 100})` : color; // Handle existing RGB format
             }
         },
